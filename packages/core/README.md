@@ -51,6 +51,7 @@ export const { withRateLimit, checkRateLimit } = createRateLimit({
 ```ts
 import { Redis } from "@upstash/redis";
 import { createCache } from "@g14o/core/cache";
+import { logger } from "@/lib/logger";
 
 export const { withCache } = createCache({
   redis: Redis.fromEnv(),
