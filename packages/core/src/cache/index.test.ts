@@ -1,5 +1,5 @@
-import { configureUtils } from "@g14o/utils/config";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { configureUtils } from "../config";
 import {
   createCache,
   createCacheKey,

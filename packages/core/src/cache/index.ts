@@ -1,21 +1,16 @@
 /**
- * Cache middleware for `@g14o/cache`.
+ * Cache middleware for `@g14o/core/cache`.
  *
  * Prefer {@link createCache} for app-owned instances (`lib/cache.ts`).
- * Top-level exports are deprecated and rely on {@link configureUtils} from `@g14o/utils`.
+ * Top-level exports are deprecated and rely on {@link configureUtils} from `@g14o/core/config`.
  *
  * @packageDocumentation
  */
 /** biome-ignore-all lint/suspicious/noExplicitAny: we need to use any to avoid type errors */
 import { createHash } from "node:crypto";
-import { isArray, isObject } from "@g14o/utils";
-import {
-  getEnvName,
-  getLogger,
-  getRedis,
-  isInMemoryBackend,
-} from "@g14o/utils/config";
-import type { Result } from "@g14o/utils/types";
+import { getEnvName, getLogger, getRedis, isInMemoryBackend } from "../config";
+import type { Result } from "../types";
+import { isArray, isObject } from "../utils";
 import {
   CACHE_TTL,
   type CacheAdapter,

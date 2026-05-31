@@ -19,16 +19,13 @@ function tarballToPackageName(filename) {
   if (base.startsWith("g14o-")) {
     return `@g14o/${base.slice("g14o-".length)}`;
   }
-  if (base.startsWith("g14o-")) {
-    return `@g14o/${base.slice("g14o-".length)}`;
-  }
   throw new Error(`Unrecognized packed tarball name: ${filename}`);
 }
 
-const packages = [
+const coreSubpaths = [
   {
-    filter: "@g14o/utils",
-    importPath: "@g14o/utils",
+    importPath: "@g14o/core",
+    distFile: "dist/utils.js",
     exports: [
       "configureUtils",
       "createRedisClient",
@@ -38,27 +35,57 @@ const packages = [
     ],
   },
   {
-    filter: "@g14o/cache",
-    importPath: "@g14o/cache",
+    importPath: "@g14o/core/cache",
+    distFile: "dist/cache/index.js",
     exports: ["createCache", "withCache", "getCache", "createCacheKey"],
   },
   {
-    filter: "@g14o/ratelimit",
-    importPath: "@g14o/ratelimit",
+    importPath: "@g14o/core/ratelimit",
+    distFile: "dist/ratelimit/index.js",
     exports: [
       "createRateLimit",
       "checkRateLimit",
       "withRateLimit",
       "parseDurationToMs",
     ],
+    typesOnlyInNode: true,
   },
 ];
+
+const shimPackages = [
+  {
+    filter: "@g14o/utils",
+    importPath: "@g14o/utils",
+    distFile: "dist/utils.js",
+    exports: ["parseNumber", "stringifyParams"],
+  },
+  {
+    filter: "@g14o/cache",
+    importPath: "@g14o/cache",
+    distFile: "dist/index.js",
+    exports: ["createCache", "withCache"],
+  },
+  {
+    filter: "@g14o/ratelimit",
+    importPath: "@g14o/ratelimit",
+    distFile: "dist/index.js",
+    exports: ["createRateLimit", "checkRateLimit"],
+    typesOnlyInNode: true,
+  },
+];
+
+const shimToCore = {
+  "@g14o/utils": "@g14o/core",
+  "@g14o/cache": "@g14o/core/cache",
+  "@g14o/ratelimit": "@g14o/core/ratelimit",
+};
 
 const packDir = mkdtempSync(join(tmpdir(), "g14o-pack-"));
 const consumerDir = mkdtempSync(join(tmpdir(), "g14o-consumer-"));
 
 try {
-  for (const { filter } of packages) {
+  const filters = ["@g14o/core", ...shimPackages.map((p) => p.filter)];
+  for (const filter of filters) {
     execSync(`pnpm --filter ${filter} pack --pack-destination "${packDir}"`, {
       cwd: root,
       stdio: "pipe",
@@ -66,9 +93,9 @@ try {
   }
 
   const tarballs = readdirSync(packDir).filter((name) => name.endsWith(".tgz"));
-  if (tarballs.length !== packages.length) {
+  if (tarballs.length !== filters.length) {
     throw new Error(
-      `Expected ${packages.length} tarballs in ${packDir}, found: ${tarballs.join(", ")}`
+      `Expected ${filters.length} tarballs in ${packDir}, found: ${tarballs.join(", ")}`
     );
   }
 
@@ -79,7 +106,7 @@ try {
     ])
   );
 
-  for (const { filter } of packages) {
+  for (const filter of filters) {
     if (!tarballByScope[filter]) {
       throw new Error(
         `Missing tarball mapping for ${filter}. Found: ${Object.keys(tarballByScope).join(", ")}`
@@ -100,8 +127,7 @@ try {
         },
         pnpm: {
           overrides: {
-            "@g14o/utils": tarballByScope["@g14o/utils"],
-            "@g14o/cache": tarballByScope["@g14o/cache"],
+            "@g14o/core": tarballByScope["@g14o/core"],
           },
         },
       },
@@ -115,22 +141,62 @@ try {
     stdio: "inherit",
   });
 
-  const entryFileByPackage = {
-    "@g14o/utils": "dist/utils.js",
-    "@g14o/cache": "dist/index.js",
-    "@g14o/ratelimit": "dist/index.js",
-  };
+  const coreRoot = join(consumerDir, "node_modules", "@g14o", "core");
+  const corePkg = JSON.parse(
+    readFileSync(join(coreRoot, "package.json"), "utf8")
+  );
 
-  const importableInNode = new Set(["@g14o/utils", "@g14o/cache"]);
+  for (const { importPath, distFile, exports: names, typesOnlyInNode } of coreSubpaths) {
+    const entryPath = join(coreRoot, distFile);
+    if (!existsSync(entryPath)) {
+      throw new Error(`${importPath}: missing packed entry ${distFile}`);
+    }
 
-  for (const { importPath, exports: names } of packages) {
+    const exportKey =
+      importPath === "@g14o/core" ? "." : importPath.replace("@g14o/core", ".");
+    const packedExport =
+      exportKey === "."
+        ? corePkg.exports?.["."]
+        : corePkg.exports?.[exportKey];
+    const importTarget =
+      typeof packedExport === "string" ? packedExport : packedExport?.import;
+    if (!importTarget?.includes("dist")) {
+      throw new Error(
+        `${importPath}: packed export must point at dist (got ${JSON.stringify(packedExport)})`
+      );
+    }
+
+    if (typesOnlyInNode) {
+      const dtsPath = join(coreRoot, distFile.replace(".js", ".d.ts"));
+      const dts = readFileSync(dtsPath, "utf8");
+      for (const name of names) {
+        if (!dts.includes(name)) {
+          throw new Error(
+            `${importPath}: expected export "${name}" in ${dtsPath}`
+          );
+        }
+      }
+    } else {
+      const mod = await import(pathToFileURL(entryPath).href);
+      for (const name of names) {
+        if (typeof mod[name] !== "function") {
+          throw new Error(
+            `${importPath}: expected function export "${name}" in packed tarball`
+          );
+        }
+      }
+    }
+
+    console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
+  }
+
+  for (const { importPath, distFile, exports: names, typesOnlyInNode } of shimPackages) {
     const pkgName = importPath.split("/")[1];
     const pkgRoot = join(consumerDir, "node_modules", "@g14o", pkgName);
-    const entryFile = entryFileByPackage[importPath];
-    const entryPath = join(pkgRoot, entryFile);
+    const entryPath = join(pkgRoot, distFile);
 
     if (!existsSync(entryPath)) {
-      throw new Error(`${importPath}: missing packed entry ${entryFile}`);
+      throw new Error(`${importPath}: missing packed entry ${distFile}`);
     }
 
     const packedPkg = JSON.parse(
@@ -141,31 +207,33 @@ try {
       typeof rootExport === "string" ? rootExport : rootExport?.import;
     if (!importTarget?.includes("dist")) {
       throw new Error(
-        `${importPath}: packed package.json "." export must point at dist (got ${JSON.stringify(rootExport)})`
+        `${importPath}: packed export must point at dist (got ${JSON.stringify(rootExport)})`
       );
     }
 
-    if (importableInNode.has(importPath)) {
+    if (typesOnlyInNode) {
+      const dts = readFileSync(
+        join(pkgRoot, distFile.replace(".js", ".d.ts")),
+        "utf8"
+      );
+      const coreTarget = shimToCore[importPath];
+      if (!dts.includes(coreTarget)) {
+        throw new Error(
+          `${importPath}: expected re-export of "${coreTarget}" in shim dist types`
+        );
+      }
+    } else {
       const mod = await import(pathToFileURL(entryPath).href);
       for (const name of names) {
         if (typeof mod[name] !== "function") {
           throw new Error(
-            `${importPath}: expected function export "${name}" in packed tarball`
-          );
-        }
-      }
-    } else {
-      const dts = readFileSync(join(pkgRoot, "dist/index.d.ts"), "utf8");
-      for (const name of names) {
-        if (!dts.includes(name)) {
-          throw new Error(
-            `${importPath}: expected export "${name}" in dist/index.d.ts (Next.js runtime; types-only smoke in Node)`
+            `${importPath}: expected function export "${name}" in shim tarball`
           );
         }
       }
     }
 
-    console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
+    console.log(`${importPath}: shim smoke OK (${names.join(", ")})`);
   }
 
   console.log("All packed smoke checks passed.");

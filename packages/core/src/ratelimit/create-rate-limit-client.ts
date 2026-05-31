@@ -1,5 +1,9 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: route handler wrappers use dynamic args */
 
+import { Ratelimit } from "@upstash/ratelimit";
+import type { Redis } from "@upstash/redis";
+import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import {
   isInMemoryEnv,
   type Logger,
@@ -7,11 +11,7 @@ import {
   type RedisConfig,
   resolveEnvName,
   resolveRedisClient,
-} from "@g14o/utils/config";
-import { Ratelimit } from "@upstash/ratelimit";
-import type { Redis } from "@upstash/redis";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+} from "../config";
 import {
   getDefaultIdentifier,
   InMemoryRateLimiter,

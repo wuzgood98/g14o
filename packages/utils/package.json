@@ -1,7 +1,7 @@
 {
-  "name": "@g14o/cache",
+  "name": "@g14o/utils",
   "version": "0.3.0",
-  "description": "Deprecated shim — use @g14o/core/cache instead.",
+  "description": "Deprecated shim — use @g14o/core instead.",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
@@ -18,9 +18,6 @@
   "dependencies": {
     "@g14o/core": "workspace:^0.3.0"
   },
-  "peerDependencies": {
-    "next": ">=15"
-  },
   "devDependencies": {
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
@@ -29,22 +26,31 @@
     "typescript": "^5"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/utils.ts",
+    "./types": "./src/types.ts",
+    "./config": "./src/config.ts"
   },
   "publishConfig": {
     "access": "public",
     "exports": {
       ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
+        "types": "./dist/utils.d.ts",
+        "import": "./dist/utils.js"
+      },
+      "./types": {
+        "types": "./dist/types.d.ts",
+        "import": "./dist/types.js"
+      },
+      "./config": {
+        "types": "./dist/config.d.ts",
+        "import": "./dist/config.js"
       }
     }
   },
   "keywords": [
     "nextjs",
-    "cache",
-    "redis",
-    "upstash"
+    "utils",
+    "fetch"
   ],
   "engines": {
     "node": ">=20"

@@ -1,16 +1,16 @@
 /**
- * Rate limiting for `@g14o/ratelimit`.
+ * Rate limiting for `@g14o/core/ratelimit`.
  *
  * Prefer {@link createRateLimit} for app-owned instances (`lib/rate-limit.ts`).
- * Top-level exports are deprecated and rely on {@link configureUtils} from `@g14o/utils`.
+ * Top-level exports are deprecated and rely on {@link configureUtils} from `@g14o/core/config`.
  *
  * @packageDocumentation
  */
 /** biome-ignore-all lint/suspicious/noExplicitAny: we need to use any to avoid type errors */
 
-import { getLogger, getRedis, isInMemoryBackend } from "@g14o/utils/config";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+import { getLogger, getRedis, isInMemoryBackend } from "../config";
 import {
   getDefaultIdentifier,
   InMemoryRateLimiter,

@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic cache wrapper requires dynamic args */
 
+import type { Redis } from "@upstash/redis";
 import {
   isInMemoryEnv,
   type Logger,
@@ -7,9 +8,8 @@ import {
   type RedisConfig,
   resolveEnvName,
   resolveRedisClient,
-} from "@g14o/utils/config";
-import type { Result } from "@g14o/utils/types";
-import type { Redis } from "@upstash/redis";
+} from "../config";
+import type { Result } from "../types";
 import {
   CACHE_TTL,
   type CacheAdapter,

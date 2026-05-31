@@ -1,7 +1,7 @@
 import { Redis } from "@upstash/redis";
 
 /**
- * Logger interface used by `@g14o/cache` and `@g14o/ratelimit` for operational messages.
+ * Logger interface used by `@g14o/core/cache` and `@g14o/core/ratelimit` for operational messages.
  */
 export interface Logger {
   /**
@@ -38,7 +38,7 @@ type Environment = "development" | "test" | "production";
 /**
  * Options for {@link configureUtils}.
  *
- * @deprecated Use `createCache()` from `@g14o/cache` or `createRateLimit()` from `@g14o/ratelimit`.
+ * @deprecated Use `createCache()` from `@g14o/core/cache` or `createRateLimit()` from `@g14o/core/ratelimit`.
  */
 export interface ConfigureUtilsOptions {
   /**
@@ -149,7 +149,7 @@ export function isInMemoryEnv(envName: string): boolean {
 /**
  * Configure shared runtime dependencies for deprecated global cache/rate-limit APIs.
  *
- * @deprecated Use `createCache()` from `@g14o/cache` or `createRateLimit()` from `@g14o/ratelimit`.
+ * @deprecated Use `createCache()` from `@g14o/core/cache` or `createRateLimit()` from `@g14o/core/ratelimit`.
  *
  * @param options - Redis client or credentials, logger, and/or environment override.
  */

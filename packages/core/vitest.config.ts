@@ -5,5 +5,6 @@ export default defineConfig({
     environment: "node",
     globals: false,
     restoreMocks: true,
+    exclude: ["**/node_modules/**", "src/**/*.integration.test.ts"],
   },
 });

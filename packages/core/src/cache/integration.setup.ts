@@ -5,6 +5,6 @@ import { config } from "dotenv";
 config({
   path: resolve(
     fileURLToPath(new URL(".", import.meta.url)),
-    "../../../.env.local"
+    "../../../../.env.local"
   ),
 });
