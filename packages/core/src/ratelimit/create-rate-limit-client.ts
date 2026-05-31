@@ -233,20 +233,20 @@ export function createRateLimit(
       };
 
       if (!rateLimitResult.ok) {
+        const retryAfterSeconds = Math.max(
+          0,
+          Math.ceil((rateLimitResult.reset - Date.now()) / RETRY_AFTER_DELAY)
+        );
         return NextResponse.json(
           {
             error: "Too many requests",
-            retryAfter: Math.ceil(
-              (rateLimitResult.reset - Date.now()) / RETRY_AFTER_DELAY
-            ),
+            retryAfter: retryAfterSeconds,
           },
           {
             status: 429,
             headers: {
               ...headers,
-              "Retry-After": Math.ceil(
-                (rateLimitResult.reset - Date.now()) / RETRY_AFTER_DELAY
-              ).toString(),
+              "Retry-After": retryAfterSeconds.toString(),
             },
           }
         );
