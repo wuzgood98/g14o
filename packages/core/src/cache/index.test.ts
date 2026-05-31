@@ -137,6 +137,24 @@ describe("createCacheKey", () => {
     );
     expect(key).toMatch(HASHED_CACHE_KEY_PATTERN);
   });
+
+  it("produces identical keys regardless of object key order", () => {
+    const keyA = createCacheKey("users", { filter: { b: 2, a: 1 } });
+    const keyB = createCacheKey("users", { filter: { a: 1, b: 2 } });
+    expect(keyA).toBe(keyB);
+    expect(keyA).toContain("filter:a:1:b:2");
+  });
+
+  it("serializes nested objects deterministically", () => {
+    const key = createCacheKey("users", { meta: { z: 1, a: 2 } });
+    expect(key).toContain("meta:a:2:z:1");
+  });
+
+  it("serializes arrays of objects without default toString", () => {
+    const key = createCacheKey("users", { tags: [{ b: 2, a: 1 }] });
+    expect(key).not.toContain("[object Object]");
+    expect(key).toContain("tags:a:1:b:2");
+  });
 });
 
 describe("createEntityCacheKey", () => {
@@ -165,6 +183,15 @@ describe("createCachePattern", () => {
     expect(createCachePattern("users", { role: "admin" })).toBe(
       "users:*role:admin*"
     );
+  });
+
+  it("uses the same object serialization as createCacheKey", () => {
+    const filters = { role: { b: 2, a: 1 } };
+    const key = createCacheKey("users", filters, { includePagination: false });
+    const pattern = createCachePattern("users", filters);
+
+    expect(key).toBe("users:role:a:1:b:2");
+    expect(pattern).toBe("users:*role:a:1:b:2*");
   });
 });
 
