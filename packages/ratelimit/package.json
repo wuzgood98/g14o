@@ -1,7 +1,7 @@
 {
   "name": "@g14o/ratelimit",
-  "version": "0.2.0",
-  "description": "Rate limiting for Next.js API routes with in-memory dev backends and Upstash Redis in production.",
+  "version": "0.3.0",
+  "description": "Deprecated shim — use @g14o/core/ratelimit instead.",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
@@ -13,14 +13,10 @@
     "build": "tsup",
     "clean": "rimraf dist",
     "prepack": "tsup",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@g14o/utils": "workspace:^0.2.0",
-    "@upstash/ratelimit": "^2.0.5",
-    "@upstash/redis": "^1.34.0"
+    "@g14o/core": "workspace:^0.3.0"
   },
   "peerDependencies": {
     "next": ">=15"
@@ -28,13 +24,9 @@
   "devDependencies": {
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
-    "next": "16.2.6",
-    "dotenv": "^16.6.1",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
-    "typescript": "^5",
-    "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "typescript": "^5"
   },
   "exports": {
     ".": "./src/index.ts"

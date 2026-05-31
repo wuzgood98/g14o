@@ -1,7 +1,7 @@
 {
-  "name": "@g14o/utils",
+  "name": "@g14o/core",
   "version": "0.3.0",
-  "description": "Deprecated shim — use @g14o/core instead.",
+  "description": "Core utilities, cache, and rate limiting for Next.js apps.",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
@@ -13,22 +13,38 @@
     "build": "tsup",
     "clean": "rimraf dist",
     "prepack": "tsup",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
-    "@g14o/core": "workspace:^0.3.0"
+    "@upstash/ratelimit": "^2.0.5",
+    "@upstash/redis": "^1.34.0"
+  },
+  "peerDependencies": {
+    "next": ">=15"
+  },
+  "peerDependenciesMeta": {
+    "next": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
+    "dotenv": "^16.6.1",
+    "next": "16.2.6",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   },
   "exports": {
     ".": "./src/utils.ts",
     "./types": "./src/types.ts",
-    "./config": "./src/config.ts"
+    "./config": "./src/config.ts",
+    "./cache": "./src/cache/index.ts",
+    "./ratelimit": "./src/ratelimit/index.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -44,12 +60,22 @@
       "./config": {
         "types": "./dist/config.d.ts",
         "import": "./dist/config.js"
+      },
+      "./cache": {
+        "types": "./dist/cache/index.d.ts",
+        "import": "./dist/cache/index.js"
+      },
+      "./ratelimit": {
+        "types": "./dist/ratelimit/index.d.ts",
+        "import": "./dist/ratelimit/index.js"
       }
     }
   },
   "keywords": [
     "nextjs",
     "utils",
+    "cache",
+    "rate-limit",
     "fetch"
   ],
   "engines": {

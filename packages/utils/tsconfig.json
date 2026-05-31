@@ -4,7 +4,10 @@
     "paths": {
       "@g14o/utils": ["./src/utils.ts"],
       "@g14o/utils/types": ["./src/types.ts"],
-      "@g14o/utils/config": ["./src/config.ts"]
+      "@g14o/utils/config": ["./src/config.ts"],
+      "@g14o/core": ["../core/src/utils.ts"],
+      "@g14o/core/types": ["../core/src/types.ts"],
+      "@g14o/core/config": ["../core/src/config.ts"]
     },
     "strictNullChecks": true
   },

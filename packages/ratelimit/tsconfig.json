@@ -3,9 +3,7 @@
   "compilerOptions": {
     "paths": {
       "@g14o/ratelimit": ["./src/index.ts"],
-      "@g14o/utils": ["../utils/src/utils.ts"],
-      "@g14o/utils/types": ["../utils/src/types.ts"],
-      "@g14o/utils/config": ["../utils/src/config.ts"]
+      "@g14o/core/ratelimit": ["../core/src/ratelimit/index.ts"]
     },
     "strictNullChecks": true
   },

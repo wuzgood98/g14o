@@ -1,7 +1,7 @@
-import { configureUtils } from "@g14o/utils/config";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { configureUtils } from "../config";
 import {
   checkRateLimit,
   createRateLimit,
