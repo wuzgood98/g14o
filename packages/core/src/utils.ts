@@ -330,8 +330,14 @@ export async function mutationFn<TData>(
   });
 
   if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.error || options?.errorMessage || "Request failed");
+    let message = options?.errorMessage || "Request failed";
+    try {
+      const body = await res.json();
+      message = resolveFetcherErrorMessage(body, options?.errorMessage);
+    } catch {
+      message = "Invalid response body. Please try again later.";
+    }
+    throw new Error(message);
   }
 
   return await res.json();
