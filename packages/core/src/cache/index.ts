@@ -251,6 +251,24 @@ export function getCacheStats() {
 
 const HASH_LENGTH = 16;
 
+function serializeFilterValue(value: unknown, separator = ":"): string {
+  if (isArray(value)) {
+    return value.map((item) => serializeFilterValue(item, separator)).join(",");
+  }
+
+  if (isObject(value)) {
+    return Object.keys(value)
+      .sort()
+      .map(
+        (key) =>
+          `${key}${separator}${serializeFilterValue(value[key], separator)}`
+      )
+      .join(separator);
+  }
+
+  return String(value);
+}
+
 /** Loose record of filter/pagination parameters used when building cache keys. */
 export type NormalizedParams = Record<string, unknown>;
 
@@ -310,12 +328,8 @@ export function createCacheKey(
   const keyParts = sortedKeys.map((key) => {
     const value = normalized[key];
 
-    if (isArray(value)) {
-      return `${key}${separator}${(value as string[]).join(",")}`;
-    }
-
-    if (isObject(value)) {
-      return `${key}${separator}${JSON.stringify(value)}`;
+    if (isArray(value) || isObject(value)) {
+      return `${key}${separator}${serializeFilterValue(value, separator)}`;
     }
 
     return `${key}${separator}${String(value)}`;
@@ -393,7 +407,7 @@ export function createCachePattern(
       ([_, value]) => value !== undefined && value !== null && value !== ""
     )
     .sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
-    .map(([key, value]) => `${key}:${value}`);
+    .map(([key, value]) => `${key}:${serializeFilterValue(value)}`);
 
   if (filterParts.length === 0) {
     return `${prefix}:*`;
