@@ -20,9 +20,12 @@ const entries = [
 ];
 
 export default defineConfig(
-  entries.map((entry, index) => ({
-    ...shared,
-    entry,
-    clean: index === 0,
-  }))
+  entries.map((entry, index) => {
+    const isFirstEntry = index === 0;
+    return {
+      ...shared,
+      entry,
+      clean: isFirstEntry,
+    };
+  })
 );

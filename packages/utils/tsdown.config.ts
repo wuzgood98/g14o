@@ -14,9 +14,12 @@ const shared = {
 const entries = ["src/utils.ts", "src/types.ts", "src/config.ts"];
 
 export default defineConfig(
-  entries.map((entry, index) => ({
-    ...shared,
-    entry,
-    clean: index === 0,
-  }))
+  entries.map((entry, index) => {
+    const isFirstEntry = index === 0;
+    return {
+      ...shared,
+      entry,
+      clean: isFirstEntry,
+    };
+  })
 );
