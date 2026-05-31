@@ -118,11 +118,41 @@ type FetcherSearchParams = Record<
 >;
 
 type FetcherQueryOptions =
-  | { stringifiedParams: string; searchParams?: never }
-  | { searchParams: FetcherSearchParams; stringifiedParams?: never }
-  | { stringifiedParams?: undefined; searchParams?: undefined };
+  | {
+      /**
+       * Pre-built query string.
+       */
+      stringifiedParams: string;
+      /**
+       * No query parameters.
+       */
+      searchParams?: never;
+    }
+  | {
+      /**
+       * Query parameters to serialize.
+       */
+      searchParams: FetcherSearchParams;
+      /**
+       * No pre-built query string.
+       */
+      stringifiedParams?: never;
+    }
+  | {
+      /**
+       * No pre-built query string.
+       */
+      stringifiedParams?: undefined;
+      /**
+       * No query parameters.
+       */
+      searchParams?: undefined;
+    };
 
 type FetcherBaseOptions = FetcherQueryOptions & {
+  /**
+   * Custom error message used when the response body has no `error` field. Default `"Something went wrong. Please try again later."`.
+   */
   errorMessage?: string;
 };
 
@@ -185,16 +215,40 @@ function buildFetcherQueryString(options?: FetcherBaseOptions): string {
  * ```
  */
 export async function fetcher<TData>(
+  /**
+   * Request URL.
+   */
   url: string,
-  options?: FetcherBaseOptions & { throw?: true }
+  options?: FetcherBaseOptions & {
+    /**
+     * When `true` (default), throws on non-OK responses. When `false`, returns {@link Result}.
+     */
+    throw?: true;
+  }
 ): Promise<TData>;
 export async function fetcher<TData>(
+  /**
+   * Request URL.
+   */
   url: string,
-  options: FetcherBaseOptions & { throw: false }
+  options: FetcherBaseOptions & {
+    /**
+     * When `false`, returns {@link Result} instead of throwing on non-OK responses.
+     */
+    throw: false;
+  }
 ): Promise<Result<TData>>;
 export async function fetcher<TData>(
+  /**
+   * Request URL.
+   */
   url: string,
-  options?: FetcherBaseOptions & { throw?: boolean }
+  options?: FetcherBaseOptions & {
+    /**
+     * When `true` (default), throws on non-OK responses. When `false`, returns {@link Result}.
+     */
+    throw?: boolean;
+  }
 ): Promise<TData | Result<TData>> {
   if (options?.stringifiedParams && options?.searchParams) {
     throw new TypeError(
@@ -244,10 +298,25 @@ export async function fetcher<TData>(
  * @throws {Error} When `response.ok` is false.
  */
 export async function mutationFn<TData>(
+  /**
+   * Request URL.
+   */
   url: string,
+  /**
+   * Request options.
+   */
   options: {
+    /**
+     * JSON-serializable body. Omitted when undefined.
+     */
     data?: Record<string, unknown>;
+    /**
+     * Custom error message used when the response body has no `error` field. Default `"Request failed"`.
+     */
     errorMessage?: string;
+    /**
+     * HTTP method. Default `"POST"`.
+     */
     method?: "POST" | "PUT" | "PATCH" | "DELETE";
   }
 ): Promise<TData> {
@@ -298,9 +367,39 @@ export function formatGhsFromPesewas(pesewas: number): string {
  * @returns Formatted list (e.g. `"apples, oranges, and pears"`).
  */
 export function formatStringList(
+  /**
+   * List of strings to join.
+   * @example
+   * ```ts
+   * formatStringList(["apples", "oranges", "pears"]); // "apples, oranges, and pears"
+   * ```
+   */
   list: string[],
+  /**
+   * `Intl.ListFormat` options.
+   * @example
+   * ```ts
+   * formatStringList(["apples", "oranges", "pears"], { style: "long", type: "conjunction" }); // "apples, oranges, and pears"
+   * formatStringList(["apples", "oranges", "pears"], { style: "short" }); // "apples, oranges, or pears"
+   * formatStringList(["apples", "oranges", "pears"], { style: "narrow" }); // "apples, oranges, pears"
+   * ```
+   */
   options?: {
+    /**
+     * List style. Default `"long"`.
+     * @example
+     * ```ts
+     * formatStringList(["apples", "oranges", "pears"], { style: "long" }); // "apples, oranges, and pears"
+     * ```
+     */
     style?: "long" | "short" | "narrow";
+    /**
+     * Join type. Default `"conjunction"`.
+     * @example
+     * ```ts
+     * formatStringList(["apples", "oranges", "pears"], { type: "conjunction" }); // "apples, oranges, and pears"
+     * ```
+     */
     type?: "conjunction" | "disjunction" | "unit";
   }
 ): string {
