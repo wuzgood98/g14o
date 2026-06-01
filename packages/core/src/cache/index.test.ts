@@ -105,11 +105,30 @@ describe("createCache (factory API)", () => {
       expect(() => productionCache.getCache()).toThrow(REDIS_REQUIRED_PATTERN);
     });
 
-    it("uses in-memory cache during Next production build without redis", () => {
+    it("uses in-memory cache during Next production build by default", () => {
       vi.stubEnv("NEXT_PHASE", "phase-production-build");
       const productionCache = createCache({ env: "production" });
       productionCache.getCache();
       expect(productionCache.inMemoryCache()).not.toBeNull();
+      vi.unstubAllEnvs();
+    });
+
+    it("uses Redis during Next production build when inMemoryDuringNextBuild is false", () => {
+      vi.stubEnv("NEXT_PHASE", "phase-production-build");
+      const mockRedis = {
+        get: vi.fn(),
+        set: vi.fn(),
+        setex: vi.fn(),
+        del: vi.fn(),
+        keys: vi.fn(async () => []),
+      } as unknown as import("@upstash/redis").Redis;
+      const productionCache = createCache({
+        env: "production",
+        inMemoryDuringNextBuild: false,
+        redis: mockRedis,
+      });
+      productionCache.getCache();
+      expect(productionCache.inMemoryCache()).toBeNull();
       vi.unstubAllEnvs();
     });
 

@@ -2,6 +2,7 @@
 
 import type { Redis } from "@upstash/redis";
 import {
+  type InMemoryEnvOptions,
   isInMemoryEnv,
   type Logger,
   noopLogger,
@@ -21,7 +22,7 @@ import {
 } from "./internals";
 
 /** Options for {@link createCache}. */
-export interface CreateCacheOptions {
+export interface CreateCacheOptions extends InMemoryEnvOptions {
   /** Override environment (`"development"` / `"test"` use in-memory backends). */
   env?: string;
   /** Application logger. Defaults to a silent no-op logger. */
@@ -82,6 +83,7 @@ export interface CacheClient {
 
 interface CacheRuntime {
   envName: string;
+  inMemoryDuringNextBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
 }
@@ -89,10 +91,12 @@ interface CacheRuntime {
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
   const envName = resolveEnvName(options.env);
   const logger = options.logger ?? noopLogger;
+  const inMemoryDuringNextBuild = options.inMemoryDuringNextBuild ?? true;
   let redis: Redis | null | undefined;
 
   return {
     envName,
+    inMemoryDuringNextBuild,
     logger,
     resolveRedis: () => {
       if (redis === undefined) {
@@ -104,7 +108,11 @@ function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
 }
 
 function createAdapterForRuntime(runtime: CacheRuntime): CacheAdapter {
-  if (isInMemoryEnv(runtime.envName)) {
+  if (
+    isInMemoryEnv(runtime.envName, {
+      inMemoryDuringNextBuild: runtime.inMemoryDuringNextBuild,
+    })
+  ) {
     runtime.logger.info("Using in-memory cache (build/development mode)");
     return new InMemoryCache();
   }
@@ -227,6 +235,18 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
    * @param fn - The function to wrap with cache.
    * @param options - The options to wrap the function with.
    * @returns The wrapped function.
+   *
+   * @example
+   * ```ts
+   * import { withCache } from "@/lib/cache";
+   * import { getUserById } from "@/lib/user";
+   *
+   * const getUserCache = withCache(getUserById, { prefix: "user", ttl: "short" });
+   *
+   * const result = await getUserCache(123);
+   * console.log(result); // { ok: true, data: { id: 123, name: "John Doe", email: "john.doe@example.com" } } when cache is hit
+   * console.log(result); // { ok: false, error: Error("User not found"), status: 404 } when cache is missed
+   * ```
    */
   const withCache = <T extends (...args: any[]) => Promise<Result<any, any>>>(
     fn: T,

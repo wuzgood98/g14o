@@ -80,13 +80,21 @@ describe("isInMemoryEnv", () => {
     expect(isInMemoryEnv("production")).toBe(false);
   });
 
-  it("returns true for production during Next build/export", () => {
+  it("returns true for production during Next build/export by default", () => {
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
     expect(isInMemoryEnv("production")).toBe(true);
     vi.unstubAllEnvs();
 
     vi.stubEnv("NEXT_PHASE", "phase-export");
     expect(isInMemoryEnv("production")).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("returns false for production during Next build when inMemoryDuringNextBuild is false", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    expect(
+      isInMemoryEnv("production", { inMemoryDuringNextBuild: false })
+    ).toBe(false);
     vi.unstubAllEnvs();
   });
 });
@@ -192,10 +200,21 @@ describe("isInMemoryBackend", () => {
     expect(isInMemoryBackend()).toBe(false);
   });
 
-  it("returns true for production during Next build", () => {
+  it("returns true for production during Next build by default", () => {
     vi.stubEnv("NEXT_PHASE", "phase-production-build");
     configureUtils({ env: "production" });
     expect(isInMemoryBackend()).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("returns false for production during Next build when opted out via configureUtils", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    configureUtils({
+      env: "production",
+      inMemoryDuringNextBuild: false,
+    });
+    expect(isInMemoryBackend()).toBe(false);
+    configureUtils({ env: "test", inMemoryDuringNextBuild: true });
     vi.unstubAllEnvs();
   });
 });

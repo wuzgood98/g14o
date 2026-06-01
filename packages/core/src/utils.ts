@@ -417,6 +417,7 @@ export function formatStringList(
 
 export type {
   ConfigureUtilsOptions,
+  InMemoryEnvOptions,
   Logger,
   RedisConfig,
   RedisCredentials,
@@ -430,6 +431,7 @@ export {
   getRedis,
   isInMemoryBackend,
   isInMemoryEnv,
+  isNextBuildLikePhase,
   noopLogger,
   resolveEnvName,
   resolveRedisClient,

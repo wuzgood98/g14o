@@ -63,6 +63,36 @@ export const { withCache } = createCache({
 
 `configureUtils({ redis, logger })` still works for deprecated top-level exports but will be removed in a future release. Prefer `createCache()` / `createRateLimit()`.
 
+### Next.js: build vs runtime
+
+`withCache` and rate limiting are safe on server components that run during `next build` / static export when you use the default factory options.
+
+| Phase | Adapter (production + Redis configured) |
+|-------|----------------------------------------|
+| `next build` / `phase-export` | **In-memory** (default) — avoids Upstash `no-store` fetch and `DYNAMIC_SERVER_USAGE` during prerender |
+| Runtime requests | **Redis** |
+
+By default, `inMemoryDuringNextBuild` is **`true`** (you can omit it). Entries cached in-memory during build are **not** copied to Upstash; Redis is populated when your server code runs again at runtime.
+
+```ts
+// Default — recommended for Next apps using withCache on prerendered pages
+createCache({
+  redis: { url: process.env.UPSTASH_REDIS_REST_URL!, token: process.env.UPSTASH_REDIS_REST_TOKEN! },
+  logger,
+});
+
+// Opt-out — use Redis during next build (may warn/fail cache I/O; routes may become dynamic)
+createCache({
+  redis: { url: process.env.UPSTASH_REDIS_REST_URL!, token: process.env.UPSTASH_REDIS_REST_TOKEN! },
+  logger,
+  inMemoryDuringNextBuild: false,
+});
+```
+
+Set `inMemoryDuringNextBuild: false` only for debugging or when you intentionally want Redis during prerender. Expect cache read/write warnings, fallback to uncached functions, and routes such as `/` may show as dynamic (`ƒ`) in the build output. Runtime server renders still use Redis normally.
+
+The same option applies to `createRateLimit()`. For low-level checks, see `isNextBuildLikePhase()` and `isInMemoryEnv()` from `@g14o/core/config`.
+
 ## Import paths
 
 | Use case | Import |

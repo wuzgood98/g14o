@@ -5,6 +5,7 @@ import type { Redis } from "@upstash/redis";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import {
+  type InMemoryEnvOptions,
   isInMemoryEnv,
   type Logger,
   noopLogger,
@@ -24,7 +25,7 @@ import {
 } from "./internals";
 
 /** Options for {@link createRateLimit}. */
-export interface CreateRateLimitOptions {
+export interface CreateRateLimitOptions extends InMemoryEnvOptions {
   env?: string;
   logger?: Logger;
   redis?: RedisConfig;
@@ -100,6 +101,7 @@ class UpstashRateLimiter implements RateLimiterAdapter {
 
 interface RateLimitRuntime {
   envName: string;
+  inMemoryDuringNextBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
 }
@@ -109,10 +111,12 @@ function createRateLimitRuntime(
 ): RateLimitRuntime {
   const envName = resolveEnvName(options.env);
   const logger = options.logger ?? noopLogger;
+  const inMemoryDuringNextBuild = options.inMemoryDuringNextBuild ?? true;
   let redis: Redis | null | undefined;
 
   return {
     envName,
+    inMemoryDuringNextBuild,
     logger,
     resolveRedis: () => {
       if (redis === undefined) {
@@ -160,7 +164,11 @@ export function createRateLimit(
     const config = tokenConfig[tier];
     let limiter: RateLimiterAdapter;
 
-    if (isInMemoryEnv(runtime.envName)) {
+    if (
+      isInMemoryEnv(runtime.envName, {
+        inMemoryDuringNextBuild: runtime.inMemoryDuringNextBuild,
+      })
+    ) {
       logger.info(`Using in-memory rate limiter (tier: ${tier})`);
       limiter = new InMemoryRateLimiter(config);
     } else {
