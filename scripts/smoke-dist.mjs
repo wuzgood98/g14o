@@ -123,6 +123,7 @@ try {
         type: "module",
         dependencies: {
           ...tarballByScope,
+          react: "19.2.7",
           next: "16.2.6",
         },
         pnpm: {
@@ -146,7 +147,12 @@ try {
     readFileSync(join(coreRoot, "package.json"), "utf8")
   );
 
-  for (const { importPath, distFile, exports: names, typesOnlyInNode } of coreSubpaths) {
+  for (const {
+    importPath,
+    distFile,
+    exports: names,
+    typesOnlyInNode,
+  } of coreSubpaths) {
     const entryPath = join(coreRoot, distFile);
     if (!existsSync(entryPath)) {
       throw new Error(`${importPath}: missing packed entry ${distFile}`);
@@ -155,9 +161,7 @@ try {
     const exportKey =
       importPath === "@g14o/core" ? "." : importPath.replace("@g14o/core", ".");
     const packedExport =
-      exportKey === "."
-        ? corePkg.exports?.["."]
-        : corePkg.exports?.[exportKey];
+      exportKey === "." ? corePkg.exports?.["."] : corePkg.exports?.[exportKey];
     const importTarget =
       typeof packedExport === "string" ? packedExport : packedExport?.import;
     if (!importTarget?.includes("dist")) {
@@ -190,7 +194,12 @@ try {
     console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
   }
 
-  for (const { importPath, distFile, exports: names, typesOnlyInNode } of shimPackages) {
+  for (const {
+    importPath,
+    distFile,
+    exports: names,
+    typesOnlyInNode,
+  } of shimPackages) {
     const pkgName = importPath.split("/")[1];
     const pkgRoot = join(consumerDir, "node_modules", "@g14o", pkgName);
     const entryPath = join(pkgRoot, distFile);
