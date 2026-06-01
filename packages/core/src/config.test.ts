@@ -7,6 +7,7 @@ import {
   getRedis,
   isInMemoryBackend,
   isInMemoryEnv,
+  isNextBuildLikePhase,
   resolveEnvName,
   resolveRedisClient,
 } from "./config";
@@ -25,14 +26,68 @@ describe("resolveEnvName", () => {
   });
 });
 
+describe("isNextBuildLikePhase", () => {
+  const originalNextPhase = process.env.NEXT_PHASE;
+
+  afterEach(() => {
+    if (originalNextPhase === undefined) {
+      delete process.env.NEXT_PHASE;
+    } else {
+      process.env.NEXT_PHASE = originalNextPhase;
+    }
+  });
+
+  it("returns true during Next production build", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    expect(isNextBuildLikePhase()).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("returns true during Next export", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-export");
+    expect(isNextBuildLikePhase()).toBe(true);
+    vi.unstubAllEnvs();
+  });
+
+  it("returns false when NEXT_PHASE is unset or runtime", () => {
+    delete process.env.NEXT_PHASE;
+    expect(isNextBuildLikePhase()).toBe(false);
+    vi.stubEnv("NEXT_PHASE", "phase-production-server");
+    expect(isNextBuildLikePhase()).toBe(false);
+    vi.unstubAllEnvs();
+  });
+});
+
 describe("isInMemoryEnv", () => {
+  const originalNextPhase = process.env.NEXT_PHASE;
+
+  afterEach(() => {
+    if (originalNextPhase === undefined) {
+      delete process.env.NEXT_PHASE;
+    } else {
+      process.env.NEXT_PHASE = originalNextPhase;
+    }
+    vi.unstubAllEnvs();
+  });
+
   it("returns true for test and development", () => {
     expect(isInMemoryEnv("test")).toBe(true);
     expect(isInMemoryEnv("development")).toBe(true);
   });
 
-  it("returns false for production", () => {
+  it("returns false for production when not in a Next build phase", () => {
+    delete process.env.NEXT_PHASE;
     expect(isInMemoryEnv("production")).toBe(false);
+  });
+
+  it("returns true for production during Next build/export", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    expect(isInMemoryEnv("production")).toBe(true);
+    vi.unstubAllEnvs();
+
+    vi.stubEnv("NEXT_PHASE", "phase-export");
+    expect(isInMemoryEnv("production")).toBe(true);
+    vi.unstubAllEnvs();
   });
 });
 
@@ -109,8 +164,19 @@ describe("configureUtils", () => {
 });
 
 describe("isInMemoryBackend", () => {
+  const originalNextPhase = process.env.NEXT_PHASE;
+
   beforeEach(() => {
     configureUtils({ env: "test" });
+  });
+
+  afterEach(() => {
+    if (originalNextPhase === undefined) {
+      delete process.env.NEXT_PHASE;
+    } else {
+      process.env.NEXT_PHASE = originalNextPhase;
+    }
+    vi.unstubAllEnvs();
   });
 
   it("returns true for test and development", () => {
@@ -120,9 +186,17 @@ describe("isInMemoryBackend", () => {
     expect(isInMemoryBackend()).toBe(true);
   });
 
-  it("returns false for production", () => {
+  it("returns false for production when not in a Next build phase", () => {
+    delete process.env.NEXT_PHASE;
     configureUtils({ env: "production" });
     expect(isInMemoryBackend()).toBe(false);
+  });
+
+  it("returns true for production during Next build", () => {
+    vi.stubEnv("NEXT_PHASE", "phase-production-build");
+    configureUtils({ env: "production" });
+    expect(isInMemoryBackend()).toBe(true);
+    vi.unstubAllEnvs();
   });
 });
 
