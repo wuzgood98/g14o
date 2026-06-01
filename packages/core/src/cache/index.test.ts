@@ -100,8 +100,17 @@ describe("createCache (factory API)", () => {
 
   describe("production guard", () => {
     it("throws when production without redis", () => {
+      delete process.env.NEXT_PHASE;
       const productionCache = createCache({ env: "production" });
       expect(() => productionCache.getCache()).toThrow(REDIS_REQUIRED_PATTERN);
+    });
+
+    it("uses in-memory cache during Next production build without redis", () => {
+      vi.stubEnv("NEXT_PHASE", "phase-production-build");
+      const productionCache = createCache({ env: "production" });
+      productionCache.getCache();
+      expect(productionCache.inMemoryCache()).not.toBeNull();
+      vi.unstubAllEnvs();
     });
 
     it("accepts a duck-typed redis client in production", () => {
