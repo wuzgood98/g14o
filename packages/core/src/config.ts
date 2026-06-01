@@ -137,12 +137,32 @@ export function resolveEnvName(env?: string): string {
   return env ?? process.env.NODE_ENV ?? "development";
 }
 
+/** Next.js build/export phases where Redis REST calls break static prerender. */
+const NEXT_BUILD_LIKE_PHASES = new Set([
+  "phase-production-build",
+  "phase-export",
+]);
+
+/**
+ * Whether the process is in a Next.js build or static export phase.
+ *
+ * During these phases, Upstash Redis uses `fetch` with `cache: "no-store"`, which
+ * Next rejects while prerendering static routes.
+ */
+export function isNextBuildLikePhase(): boolean {
+  const phase = process.env.NEXT_PHASE;
+  return phase !== undefined && NEXT_BUILD_LIKE_PHASES.has(phase);
+}
+
 /**
  * Whether the given environment uses in-memory cache/rate-limit backends.
  *
  * @param envName - Environment name (e.g. `"development"`, `"test"`, `"production"`).
  */
 export function isInMemoryEnv(envName: string): boolean {
+  if (isNextBuildLikePhase()) {
+    return true;
+  }
   return envName === "development" || envName === "test";
 }
 
