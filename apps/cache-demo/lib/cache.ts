@@ -1,6 +1,7 @@
 import { type CacheClient, createCache } from "@g14o/core/cache";
 import { logger } from "@/lib/logger";
 
+// inMemoryDuringNextBuild defaults to true (in-memory during next build, Redis at runtime).
 const url = process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
