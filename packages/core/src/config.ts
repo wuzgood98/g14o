@@ -36,11 +36,31 @@ export type RedisConfig = Redis | RedisCredentials;
 type Environment = "development" | "test" | "production";
 
 /**
+ * Options for {@link isInMemoryEnv} and factory clients.
+ */
+export interface InMemoryEnvOptions {
+  /**
+   * When `true` (default), use in-memory cache/rate-limit backends during Next.js
+   * `phase-production-build` and `phase-export` so Upstash REST is not called while
+   * static routes prerender.
+   *
+   * When `false`, production builds use Redis during prerender if credentials are
+   * configured. That often causes `DYNAMIC_SERVER_USAGE` (Upstash uses `fetch` with
+   * `cache: "no-store"`), cache read/write warnings with fallback to uncached code,
+   * and routes such as `/` may be marked dynamic (`ƒ`) in the build output. Runtime
+   * server renders still use Redis successfully after deploy.
+   *
+   * @default true
+   */
+  inMemoryDuringNextBuild?: boolean;
+}
+
+/**
  * Options for {@link configureUtils}.
  *
  * @deprecated Use `createCache()` from `@g14o/core/cache` or `createRateLimit()` from `@g14o/core/ratelimit`.
  */
-export interface ConfigureUtilsOptions {
+export interface ConfigureUtilsOptions extends InMemoryEnvOptions {
   /**
    * Environment name override. When omitted, falls back to `process.env.NODE_ENV`
    * or `"development"`.
@@ -73,6 +93,7 @@ export const noopLogger: Logger = {
 let redisClient: Redis | null = null;
 let logger: Logger = noopLogger;
 let envName: Environment | undefined;
+let configuredInMemoryDuringNextBuild = true;
 
 function isRedisClient(value: RedisConfig): value is Redis {
   return (
@@ -146,8 +167,13 @@ const NEXT_BUILD_LIKE_PHASES = new Set([
 /**
  * Whether the process is in a Next.js build or static export phase.
  *
+ * Detects `NEXT_PHASE` values `phase-production-build` and `phase-export`.
+ * Has no effect on adapter selection unless {@link InMemoryEnvOptions.inMemoryDuringNextBuild}
+ * is enabled (default `true`) via `createCache()`, `createRateLimit()`, or
+ * {@link configureUtils}.
+ *
  * During these phases, Upstash Redis uses `fetch` with `cache: "no-store"`, which
- * Next rejects while prerendering static routes.
+ * Next rejects while prerendering static routes that call Redis-backed `withCache`.
  */
 export function isNextBuildLikePhase(): boolean {
   const phase = process.env.NEXT_PHASE;
@@ -157,10 +183,30 @@ export function isNextBuildLikePhase(): boolean {
 /**
  * Whether the given environment uses in-memory cache/rate-limit backends.
  *
+ * `"development"` and `"test"` always use in-memory adapters.
+ *
+ * In `"production"`, {@link InMemoryEnvOptions.inMemoryDuringNextBuild} defaults to
+ * `true`: during {@link isNextBuildLikePhase}, the in-memory adapter is used so
+ * `next build` / `next export` do not call Upstash. At runtime (no build phase),
+ * production uses Redis when configured. Entries written to in-memory during build
+ * are not copied to Upstash; Redis is populated on later runtime requests when
+ * server code runs again.
+ *
+ * Set `inMemoryDuringNextBuild: false` to use Redis during production builds as well.
+ * Expect `DYNAMIC_SERVER_USAGE` warnings, failed cache reads/writes during prerender
+ * (with fallback to your underlying functions), and prerendered routes may become
+ * dynamic (`ƒ`) in the build table. Use only for debugging or intentional build-time
+ * Redis access.
+ *
  * @param envName - Environment name (e.g. `"development"`, `"test"`, `"production"`).
+ * @param options - Build-phase behavior; omitted fields use defaults (`inMemoryDuringNextBuild: true`).
  */
-export function isInMemoryEnv(envName: string): boolean {
-  if (isNextBuildLikePhase()) {
+export function isInMemoryEnv(
+  envName: string,
+  options: InMemoryEnvOptions = {}
+): boolean {
+  const inMemoryDuringNextBuild = options.inMemoryDuringNextBuild ?? true;
+  if (inMemoryDuringNextBuild && isNextBuildLikePhase()) {
     return true;
   }
   return envName === "development" || envName === "test";
@@ -182,6 +228,9 @@ export function configureUtils(options: ConfigureUtilsOptions = {}): void {
   }
   if (options.env !== undefined) {
     envName = options.env;
+  }
+  if (options.inMemoryDuringNextBuild !== undefined) {
+    configuredInMemoryDuringNextBuild = options.inMemoryDuringNextBuild;
   }
 }
 
@@ -218,5 +267,7 @@ export function getEnvName(): Environment {
  * @deprecated Use {@link isInMemoryEnv} with your factory `env` option instead.
  */
 export function isInMemoryBackend(): boolean {
-  return isInMemoryEnv(getEnvName());
+  return isInMemoryEnv(getEnvName(), {
+    inMemoryDuringNextBuild: configuredInMemoryDuringNextBuild,
+  });
 }
