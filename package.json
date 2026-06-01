@@ -1,6 +1,7 @@
 {
   "devDependencies": {
     "@biomejs/biome": "2.4.15",
+    "@changesets/cli": "^2.31.0",
     "@workspace/typescript-config": "workspace:*",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.5",
@@ -22,6 +23,9 @@
     "test:dist": "node scripts/smoke-dist.mjs",
     "demo:cache": "pnpm --filter cache-demo dev",
     "demo:cache:build": "pnpm --filter cache-demo build",
+    "changeset": "changeset",
+    "version-packages": "changeset version",
+    "release:publish": "changeset publish",
     "prepare": "husky"
   },
   "version": "0.0.1",

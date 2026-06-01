@@ -1,6 +1,6 @@
 {
   "name": "@g14o/ratelimit",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Deprecated shim — use @g14o/core/ratelimit instead.",
   "type": "module",
   "sideEffects": false,
@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@g14o/core": "workspace:^0.4.0"
+    "@g14o/core": "workspace:^0.5.0"
   },
   "peerDependencies": {
     "next": ">=15"
