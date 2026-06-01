@@ -25,7 +25,7 @@
     "demo:cache:build": "pnpm --filter cache-demo build",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release:publish": "changeset publish",
+    "release:publish": "pnpm --filter @g14o/core publish --access public --no-git-checks",
     "prepare": "husky"
   },
   "version": "0.0.1",

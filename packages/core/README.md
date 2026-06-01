@@ -177,4 +177,4 @@ pnpm --filter @g14o/core build
 pnpm --filter @g14o/core publish --access public
 ```
 
-Shim packages (`@g14o/utils`, `@g14o/cache`, `@g14o/ratelimit`) can be published alongside for backward compatibility.
+Shim packages (`@g14o/utils`, `@g14o/cache`, `@g14o/ratelimit`) remain in the monorepo for migration but are not published; use `@g14o/core` only.
