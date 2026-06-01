@@ -32,17 +32,48 @@ export interface CreateCacheOptions {
 
 /** Cache client returned by {@link createCache}. */
 export interface CacheClient {
+  /** Clear all cache.
+   * @returns The result of the clear all cache.
+   */
   clearAllCache: () => Result<void, Error>;
+  /** Get the cache adapter.
+   * @returns The cache adapter.
+   */
   getCache: () => CacheAdapter;
+  /** Get the cache stats.
+   * @returns The cache stats.
+   */
   getCacheStats: () => { keys: string[]; size: number } | null;
+  /** Get the TTL for a given duration.
+   * @param duration - The duration to get the TTL for.
+   * @returns The TTL for the given duration.
+   */
   getTTL: (duration: CacheDuration) => number;
+  /** Get the in-memory cache.
+   * @returns The in-memory cache.
+   */
   inMemoryCache: () => InMemoryCache | null;
+  /** Invalidate the cache for a given pattern.
+   * @param pattern - The pattern to invalidate the cache for.
+   * @param options - The options to invalidate the cache for.
+   * @returns The result of the invalidation.
+   */
   invalidateCache: (
     pattern: string,
     options?: { prefix?: string }
   ) => Promise<Result<number, Error>>;
+  /** Invalidate the cache for a given key.
+   * @param key - The key to invalidate the cache for.
+   * @returns The result of the invalidation.
+   */
   invalidateCacheKey: (key: string) => Promise<Result<boolean, Error>>;
+  /** Reset the cache. */
   reset: () => void;
+  /** With cache.
+   * @param fn - The function to wrap with cache.
+   * @param options - The options to wrap the function with.
+   * @returns The wrapped function.
+   */
   withCache: <T extends (...args: any[]) => Promise<Result<any, any>>>(
     fn: T,
     options?: CacheOptions
@@ -74,7 +105,7 @@ function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
 
 function createAdapterForRuntime(runtime: CacheRuntime): CacheAdapter {
   if (isInMemoryEnv(runtime.envName)) {
-    runtime.logger.info("Using in-memory cache (development mode)");
+    runtime.logger.info("Using in-memory cache (build/development mode)");
     return new InMemoryCache();
   }
 
@@ -159,6 +190,9 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
   const runtime = createCacheRuntime(options);
   let cacheAdapter: CacheAdapter | null = null;
 
+  /** Get the cache adapter.
+   * @returns The cache adapter.
+   */
   const getCache = (): CacheAdapter => {
     if (!cacheAdapter) {
       cacheAdapter = createAdapterForRuntime(runtime);
@@ -166,6 +200,7 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     return cacheAdapter;
   };
 
+  /** Reset the cache. */
   const reset = (): void => {
     if (cacheAdapter instanceof InMemoryCache) {
       cacheAdapter.destroy();
@@ -173,14 +208,26 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     cacheAdapter = null;
   };
 
+  /** Get the in-memory cache.
+   * @returns The in-memory cache.
+   */
   const inMemoryCache = (): InMemoryCache | null => {
     const adapter = getCache();
     return adapter instanceof InMemoryCache ? adapter : null;
   };
 
+  /** Get the TTL for a given duration.
+   * @param duration - The duration to get the TTL for.
+   * @returns The TTL for the given duration.
+   */
   const getTTL = (duration: CacheDuration): number =>
     resolveTtlForRuntime(runtime, duration);
 
+  /** With cache.
+   * @param fn - The function to wrap with cache.
+   * @param options - The options to wrap the function with.
+   * @returns The wrapped function.
+   */
   const withCache = <T extends (...args: any[]) => Promise<Result<any, any>>>(
     fn: T,
     cacheOptions: CacheOptions = {}
@@ -214,6 +261,11 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     }) as unknown as T;
   };
 
+  /** Invalidate the cache for a given pattern.
+   * @param pattern - The pattern to invalidate the cache for.
+   * @param options - The options to invalidate the cache for.
+   * @returns The result of the invalidation.
+   */
   const invalidateCache = async (
     pattern: string,
     invalidateOptions: { prefix?: string } = {}
@@ -251,6 +303,10 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     }
   };
 
+  /** Invalidate the cache for a given key.
+   * @param key - The key to invalidate the cache for.
+   * @returns The result of the invalidation.
+   */
   const invalidateCacheKey = async (
     key: string
   ): Promise<Result<boolean, Error>> => {
@@ -274,6 +330,9 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     }
   };
 
+  /** Clear all cache.
+   * @returns The result of the clear all cache.
+   */
   const clearAllCache = (): Result<void, Error> => {
     const memory = inMemoryCache();
     if (memory) {
@@ -287,6 +346,9 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     };
   };
 
+  /** Get the cache stats.
+   * @returns The cache stats.
+   */
   const getCacheStats = () => {
     const memory = inMemoryCache();
     if (memory) {

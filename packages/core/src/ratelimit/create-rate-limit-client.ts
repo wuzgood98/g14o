@@ -32,18 +32,39 @@ export interface CreateRateLimitOptions {
 
 /** Rate limit client returned by {@link createRateLimit}. */
 export interface RateLimitClient {
+  /** Check the rate limit for a given request.
+   * @param req - The request to check the rate limit for.
+   * @param options - The options to check the rate limit for.
+   * @returns The result of the rate limit check.
+   */
   checkRateLimit: (
     req: NextRequest,
     options?: RateLimitOptions
   ) => Promise<RateLimitCheckResult>;
+  /** Get the rate limiter for a given tier.
+   * @param tier - The tier to get the rate limiter for.
+   * @returns The rate limiter for the given tier.
+   */
   getRateLimiter: (tier: RateLimitTier) => RateLimiterAdapter;
+  /** Reset the rate limit. */
   reset: () => void;
+  /** With rate limit.
+   * @param handler - The handler to wrap with rate limit.
+   * @param options - The options to wrap the handler with.
+   * @returns The wrapped handler.
+   */
   withRateLimit: <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
   >(
     handler: T,
     options?: RateLimitOptions
   ) => T;
+  /** With user rate limit.
+   * @param handler - The handler to wrap with user rate limit.
+   * @param getUserId - The function to get the user ID from the request.
+   * @param options - The options to wrap the handler with.
+   * @returns The wrapped handler.
+   */
   withUserRateLimit: <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
   >(
@@ -115,6 +136,7 @@ export function createRateLimit(
   const runtime = createRateLimitRuntime(options);
   const rateLimiterCache = new Map<RateLimitTier, RateLimiterAdapter>();
 
+  /** Reset the rate limit. */
   const reset = (): void => {
     for (const limiter of rateLimiterCache.values()) {
       if (limiter instanceof InMemoryRateLimiter) {
@@ -124,6 +146,10 @@ export function createRateLimit(
     rateLimiterCache.clear();
   };
 
+  /** Get the rate limiter for a given tier.
+   * @param tier - The tier to get the rate limiter for.
+   * @returns The rate limiter for the given tier.
+   */
   const getRateLimiter = (tier: RateLimitTier): RateLimiterAdapter => {
     const cached = rateLimiterCache.get(tier);
     if (cached) {
@@ -152,6 +178,11 @@ export function createRateLimit(
     return limiter;
   };
 
+  /** Check the rate limit for a given request.
+   * @param req - The request to check the rate limit for.
+   * @param options - The options to check the rate limit for.
+   * @returns The result of the rate limit check.
+   */
   const checkRateLimit = async (
     req: NextRequest,
     rateLimitOptions: RateLimitOptions = {}
@@ -217,6 +248,11 @@ export function createRateLimit(
     }
   };
 
+  /** With rate limit.
+   * @param handler - The handler to wrap with rate limit.
+   * @param options - The options to wrap the handler with.
+   * @returns The wrapped handler.
+   */
   const withRateLimit = <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
   >(
@@ -261,6 +297,12 @@ export function createRateLimit(
       return response;
     }) as T;
 
+  /** With user rate limit.
+   * @param handler - The handler to wrap with user rate limit.
+   * @param getUserId - The function to get the user ID from the request.
+   * @param options - The options to wrap the handler with.
+   * @returns The wrapped handler.
+   */
   const withUserRateLimit = <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
   >(
