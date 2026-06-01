@@ -20,6 +20,8 @@
     "test": "turbo test",
     "test:integration": "turbo test:integration",
     "test:dist": "node scripts/smoke-dist.mjs",
+    "demo:cache": "pnpm --filter cache-demo dev",
+    "demo:cache:build": "pnpm --filter cache-demo build",
     "prepare": "husky"
   },
   "version": "0.0.1",
