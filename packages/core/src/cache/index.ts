@@ -39,7 +39,7 @@ function createLegacyCacheAdapter(): CacheAdapter {
   const logger = getLogger();
 
   if (isInMemoryBackend()) {
-    logger.info("Using in-memory cache (development mode)");
+    logger.info("Using in-memory cache (build/development mode)");
     return new InMemoryCache();
   }
 
