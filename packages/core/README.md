@@ -149,10 +149,6 @@ import { withRateLimit } from "@/lib/rate-limit";
 export const GET = withRateLimit(handler, { tier: "moderate" });
 ```
 
-## Future packages
-
-Independent packages such as `@g14o/env` and `@g14o/next-env` will live alongside `@g14o/core` under the `@g14o/*` scope and can be installed separately when needed.
-
 ## Testing before publish
 
 ```bash

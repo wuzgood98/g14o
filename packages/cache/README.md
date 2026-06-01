@@ -2,6 +2,8 @@
 
 > **Deprecated.** This package is a compatibility shim. Install and import from [`@g14o/core/cache`](../core/README.md) instead.
 
+This shim is maintained in the monorepo for migration only and is **not published** to npm.
+
 ## Migration
 
 | Old import | New import |

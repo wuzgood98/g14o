@@ -10,6 +10,12 @@
     "ultracite": "7.8.0"
   },
   "name": "g14o",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuzgood98/g14o.git"
+  },
+  "bugs": "https://github.com/wuzgood98/g14o/issues",
+  "homepage": "https://github.com/wuzgood98/g14o#readme",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
