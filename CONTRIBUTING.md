@@ -4,7 +4,7 @@ Thanks for helping improve g14o. This guide covers local setup, development work
 
 ## Getting started
 
-**Prerequisites:** Node `>=20`, [pnpm](https://pnpm.io) (version pinned in root [`package.json`](package.json)).
+**Prerequisites:** Node `>=22.18`, [pnpm](https://pnpm.io) (version pinned in root [`package.json`](package.json)). CI uses Node 24.
 
 ```bash
 git clone https://github.com/wuzgood98/g14o.git

@@ -48,7 +48,7 @@ export const { withCache, invalidateCache } = createCache({
 
 ## Development
 
-**Prerequisites:** Node `>=20`, [pnpm](https://pnpm.io) (see `packageManager` in [`package.json`](package.json)).
+**Prerequisites:** Node `>=22.18`, [pnpm](https://pnpm.io) (see `packageManager` in [`package.json`](package.json)). CI uses Node 24.
 
 ```bash
 pnpm install
