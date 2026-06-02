@@ -1,5 +1,5 @@
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = dirname(fileURLToPath(import.meta.url));
@@ -48,10 +48,13 @@ mkdirSync(distDir, { recursive: true });
 
 for (const { name, target } of exports) {
   const relativeDir = dirname(name);
-  const baseName = name.endsWith(".js") ? name.slice(0, -3) : name;
-  const fileBase = baseName.endsWith(".d.ts")
-    ? baseName.slice(0, -5)
-    : baseName;
+  const fileStem = basename(name);
+  let fileBase = fileStem;
+  if (fileStem.endsWith(".js")) {
+    fileBase = fileStem.slice(0, -3);
+  } else if (fileStem.endsWith(".d.ts")) {
+    fileBase = fileStem.slice(0, -5);
+  }
   const outDir = join(distDir, relativeDir === "." ? "" : relativeDir);
   mkdirSync(outDir, { recursive: true });
 
