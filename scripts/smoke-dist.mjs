@@ -34,6 +34,12 @@ const coreSubpaths = [
     exports: ["configureUtils", "createRedisClient", "resolveRedisClient"],
   },
   {
+    importPath: "@g14o/core/types",
+    distFile: "dist/types.d.ts",
+    exports: ["Logger", "InMemoryEnvOptions"],
+    typesOnlyInNode: true,
+  },
+  {
     importPath: "@g14o/core/cache",
     distFile: "dist/cache/index.js",
     exports: ["createCache", "withCache", "getCache", "createCacheKey"],
