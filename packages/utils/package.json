@@ -16,7 +16,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@g14o/core": "workspace:^0.5.0"
+    "@g14o/core": "workspace:^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
