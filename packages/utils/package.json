@@ -10,19 +10,18 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "node ../../scripts/build-shim.mjs --cwd packages/utils utils:@g14o/core types:@g14o/core/types config:@g14o/core/config",
     "clean": "rimraf dist",
-    "prepack": "tsdown",
+    "prepack": "node ../../scripts/build-shim.mjs --cwd packages/utils utils:@g14o/core types:@g14o/core/types config:@g14o/core/config",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@g14o/core": "workspace:^0.5.0"
+    "@g14o/core": "workspace:^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
     "rimraf": "^6.0.1",
-    "tsdown": "^0.22.1",
     "typescript": "^5"
   },
   "exports": {

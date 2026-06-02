@@ -69,18 +69,18 @@ export class InMemoryCache implements CacheAdapter {
     return Array.from(this.cache.keys()).filter((key) => regex.test(key));
   }
 
-  clear() {
+  clear(): void {
     this.cache.clear();
   }
 
-  getStats() {
+  getStats(): { size: number; keys: string[] } {
     return {
       size: this.cache.size,
       keys: Array.from(this.cache.keys()),
     };
   }
 
-  destroy() {
+  destroy(): void {
     clearInterval(this.cleanupInterval);
     this.cache.clear();
   }

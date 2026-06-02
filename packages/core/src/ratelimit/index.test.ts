@@ -98,6 +98,8 @@ describe("createRateLimit (factory API)", () => {
 describe("parseDurationToMs", () => {
   it("parses supported duration strings", () => {
     expect(parseDurationToMs("60 s")).toBe(60_000);
+    expect(parseDurationToMs("60s")).toBe(60_000);
+    expect(parseDurationToMs("500ms")).toBe(500);
     expect(parseDurationToMs("15 m")).toBe(900_000);
     expect(parseDurationToMs("1 h")).toBe(3_600_000);
   });

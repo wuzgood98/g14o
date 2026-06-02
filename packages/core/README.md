@@ -4,19 +4,21 @@ Core utilities, cache, and rate limiting for Next.js applications.
 
 ## Install
 
-```bash
-pnpm add @g14o/core
-```
+`@g14o/core` has **no runtime dependencies**. Install peers for the subpaths you use:
 
-Peer dependency: `next` (>=15) when using `@g14o/core/cache` or `@g14o/core/ratelimit`.
+| Subpath | Command |
+|---------|---------|
+| Utilities + types only | `pnpm add @g14o/core` |
+| Cache | `pnpm add @g14o/core @upstash/redis` |
+| Rate limiting | `pnpm add @g14o/core @upstash/redis @upstash/ratelimit next` |
 
-Optional: install `@upstash/redis` only if you pass `Redis.fromEnv()` to the cache/rate-limit factories.
+The root entry (`@g14o/core`) is **utils-only** — config, Redis, cache, and rate limit live on subpaths (`@g14o/core/config`, `/cache`, `/ratelimit`). Peers are optional in `package.json` metadata so a utils-only install does not fail; you must add Upstash (and `next` for route wrappers) when importing those subpaths.
 
 ## Setup
 
 Create app-owned clients in `lib/cache.ts` and `lib/rate-limit.ts`.
 
-**Recommended — URL + token (no `@upstash/redis` in your app):**
+**Recommended — URL + token (`@upstash/redis` required as a peer):**
 
 ```ts
 // lib/cache.ts
@@ -98,8 +100,8 @@ The same option applies to `createRateLimit()`. For low-level checks, see `isNex
 | Use case | Import |
 |----------|--------|
 | Utility functions | `import { fetcher, mutationFn } from "@g14o/core"` |
-| Shared types | `import type { Result } from "@g14o/core/types"` |
-| Redis helpers | `import { createRedisClient, type RedisCredentials } from "@g14o/core/config"` |
+| Shared types (`Result`, `Logger`, …) | `import type { Result, Logger } from "@g14o/core/types"` |
+| Redis / env helpers | `import { createRedisClient, type RedisCredentials } from "@g14o/core/config"` |
 | Cache factory | `import { createCache } from "@g14o/core/cache"` |
 | Rate limit factory | `import { createRateLimit } from "@g14o/core/ratelimit"` |
 

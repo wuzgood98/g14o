@@ -30,6 +30,8 @@ pnpm typecheck
 pnpm test:dist      # smoke published tarballs (scripts/smoke-dist.mjs)
 ```
 
+`@g14o/core` lists `@upstash/redis`, `@upstash/ratelimit`, and `next` as **optional peers** (devDependencies in `packages/core` satisfy them for local work). `pnpm test:dist` installs those peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
+
 Optional Upstash integration tests (skipped when credentials are missing):
 
 ```bash

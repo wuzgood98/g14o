@@ -17,9 +17,9 @@ Monorepo for [`@g14o/*`](packages/core) npm packages. The primary publishable pa
 pnpm add @g14o/core
 ```
 
-Peer dependency: `next` (>=15) when using `@g14o/core/cache` or `@g14o/core/ratelimit`.
+Add peers for optional features: `@upstash/redis` for cache, plus `@upstash/ratelimit` and `next` for rate limiting.
 
-See the [@g14o/core README](packages/core/README.md) for full setup, import paths, build vs runtime behavior, migration from legacy packages, and examples.
+See the [@g14o/core README](packages/core/README.md) for the install table, import paths, build vs runtime behavior, migration from legacy packages, and examples.
 
 ## Quick example
 

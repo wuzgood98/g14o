@@ -1,6 +1,6 @@
-import { type Duration, Ratelimit } from "@upstash/ratelimit";
+import { Ratelimit } from "@upstash/ratelimit";
 import type { NextRequest } from "next/server";
-import { parseDurationToMs } from "./parse-duration";
+import { type Duration, parseDurationToMs } from "./parse-duration";
 
 type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
 
@@ -126,7 +126,7 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
     });
   }
 
-  destroy() {
+  destroy(): void {
     clearInterval(this.cleanupInterval);
     this.hits.clear();
   }
@@ -149,7 +149,10 @@ export class LegacyUpstashRateLimiter implements RateLimiterAdapter {
   constructor(config: TokenConfig, redis: import("@upstash/redis").Redis) {
     this.ratelimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(config.limit, config.window),
+      limiter: Ratelimit.slidingWindow(
+        config.limit,
+        config.window as `${number} s`
+      ),
       analytics: true,
       prefix: config.prefix,
     });
