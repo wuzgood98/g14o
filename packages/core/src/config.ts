@@ -1,28 +1,10 @@
 import { Redis } from "@upstash/redis";
+import type { InMemoryEnvOptions, Logger } from "./types";
+import { noopLogger } from "./types";
 
-/**
- * Logger interface used by `@g14o/core/cache` and `@g14o/core/ratelimit` for operational messages.
- */
-export interface Logger {
-  /**
-   * Log errors (invalidation failures, rate-limit internal errors).
-   *
-   * @param args - Values passed through to your logger implementation.
-   */
-  error: (...args: unknown[]) => void;
-  /**
-   * Log informational messages (cache hits/misses, rate-limit passes, adapter selection).
-   *
-   * @param args - Values passed through to your logger implementation.
-   */
-  info: (...args: unknown[]) => void;
-  /**
-   * Log non-fatal issues (cache read/write failures that fall back to uncached execution).
-   *
-   * @param args - Values passed through to your logger implementation.
-   */
-  warn: (...args: unknown[]) => void;
-}
+export type { InMemoryEnvOptions, Logger } from "./types";
+/** biome-ignore lint/performance/noBarrelFile: re-export shared types for @g14o/core/config consumers */
+export { noopLogger } from "./types";
 
 /** Upstash Redis REST credentials. */
 export interface RedisCredentials {
@@ -34,26 +16,6 @@ export interface RedisCredentials {
 export type RedisConfig = Redis | RedisCredentials;
 
 type Environment = "development" | "test" | "production";
-
-/**
- * Options for {@link isInMemoryEnv} and factory clients.
- */
-export interface InMemoryEnvOptions {
-  /**
-   * When `true` (default), use in-memory cache/rate-limit backends during Next.js
-   * `phase-production-build` and `phase-export` so Upstash REST is not called while
-   * static routes prerender.
-   *
-   * When `false`, production builds use Redis during prerender if credentials are
-   * configured. That often causes `DYNAMIC_SERVER_USAGE` (Upstash uses `fetch` with
-   * `cache: "no-store"`), cache read/write warnings with fallback to uncached code,
-   * and routes such as `/` may be marked dynamic (`ƒ`) in the build output. Runtime
-   * server renders still use Redis successfully after deploy.
-   *
-   * @default true
-   */
-  inMemoryDuringNextBuild?: boolean;
-}
 
 /**
  * Options for {@link configureUtils}.
@@ -79,16 +41,6 @@ export interface ConfigureUtilsOptions extends InMemoryEnvOptions {
    */
   redis?: RedisConfig;
 }
-
-const noop = (): void => {
-  /* silent default logger */
-};
-
-export const noopLogger: Logger = {
-  info: noop,
-  warn: noop,
-  error: noop,
-};
 
 let redisClient: Redis | null = null;
 let logger: Logger = noopLogger;

@@ -81,7 +81,10 @@ class UpstashRateLimiter implements RateLimiterAdapter {
   constructor(config: TokenConfig, redis: Redis) {
     this.ratelimit = new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(config.limit, config.window),
+      limiter: Ratelimit.slidingWindow(
+        config.limit,
+        config.window as `${number} s`
+      ),
       analytics: true,
       prefix: config.prefix,
     });

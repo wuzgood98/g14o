@@ -10,9 +10,9 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsdown",
+    "build": "node ../../scripts/build-shim.mjs --cwd packages/cache index:@g14o/core/cache",
     "clean": "rimraf dist",
-    "prepack": "tsdown",
+    "prepack": "node ../../scripts/build-shim.mjs --cwd packages/cache index:@g14o/core/cache",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -25,7 +25,6 @@
     "@types/node": "^20",
     "@workspace/typescript-config": "workspace:*",
     "rimraf": "^6.0.1",
-    "tsdown": "^0.22.1",
     "typescript": "^5"
   },
   "exports": {

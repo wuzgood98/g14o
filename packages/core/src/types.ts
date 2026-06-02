@@ -102,3 +102,36 @@ export type CursorPaginationResult<T> = Result<
   CursorPaginationResponse<T>,
   Error
 >;
+
+/**
+ * Logger interface used by `@g14o/core/cache` and `@g14o/core/ratelimit`.
+ */
+export interface Logger {
+  error: (...args: unknown[]) => void;
+  info: (...args: unknown[]) => void;
+  warn: (...args: unknown[]) => void;
+}
+
+/**
+ * Options for {@link isInMemoryEnv} and factory clients (`createCache`, `createRateLimit`).
+ */
+export interface InMemoryEnvOptions {
+  /**
+   * When `true` (default), use in-memory cache/rate-limit backends during Next.js
+   * `phase-production-build` and `phase-export`.
+   *
+   * @default true
+   */
+  inMemoryDuringNextBuild?: boolean;
+}
+
+const noop = (): void => {
+  /* silent default logger */
+};
+
+/** Silent logger used when no custom logger is configured. */
+export const noopLogger: Logger = {
+  info: noop,
+  warn: noop,
+  error: noop,
+};

@@ -1,31 +1,32 @@
 import { defineConfig } from "tsdown";
 
-const shared = {
-  format: "esm" as const,
-  dts: { sourcemap: false },
+export default defineConfig({
+  format: "esm",
+  dts: {
+    sourcemap: false,
+    tsconfig: "tsconfig.build.json",
+  },
   sourcemap: false,
   treeshake: true,
   minify: true,
   target: false,
   fixedExtension: false,
   root: "src",
-};
-
-const entries = [
-  "src/utils.ts",
-  "src/types.ts",
-  "src/config.ts",
-  "src/cache/index.ts",
-  "src/ratelimit/index.ts",
-];
-
-export default defineConfig(
-  entries.map((entry, index) => {
-    const isFirstEntry = index === 0;
-    return {
-      ...shared,
-      entry,
-      clean: isFirstEntry,
-    };
-  })
-);
+  entry: {
+    utils: "src/utils.ts",
+    types: "src/types.ts",
+    config: "src/config.ts",
+    "cache/index": "src/cache/index.ts",
+    "ratelimit/index": "src/ratelimit/index.ts",
+  },
+  clean: true,
+  deps: {
+    neverBundle: [
+      "@upstash/redis",
+      "@upstash/ratelimit",
+      "next",
+      "next/server",
+    ],
+    skipNodeModulesBundle: true,
+  },
+});

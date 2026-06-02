@@ -36,6 +36,7 @@ export {
   type RateLimitResultData,
   type RateLimitTier,
 } from "./internals";
+export type { Duration, Unit } from "./parse-duration";
 export { parseDurationToMs } from "./parse-duration";
 
 /** @deprecated Use {@link RateLimitCheckResult} instead. */

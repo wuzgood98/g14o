@@ -2,6 +2,8 @@ name: CI
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
 on:
   push:

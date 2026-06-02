@@ -241,7 +241,7 @@ export function clearAllCache(): Result<void, Error> {
  *
  * @deprecated Use `createCache().getCacheStats()` instead.
  */
-export function getCacheStats() {
+export function getCacheStats(): { size: number; keys: string[] } | null {
   const memory = inMemoryCache();
   if (memory) {
     return memory.getStats();
@@ -353,7 +353,7 @@ export function createCacheKey(
 export function createCacheKeyGenerator(
   prefix: string,
   options: CacheKeyOptions = {}
-) {
+): (params?: NormalizedParams) => string {
   return (params?: NormalizedParams) =>
     createCacheKey(prefix, params || {}, options);
 }

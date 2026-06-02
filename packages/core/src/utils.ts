@@ -87,7 +87,7 @@ export function stringifyParams<
     string,
     string | number | boolean | null | undefined | string[]
   > = Record<string, string>,
->(params: Partial<TParams>) {
+>(params: Partial<TParams>): string {
   const stringParams: Record<string, string> = {};
 
   const sortedEntries = Object.entries(params).sort(([a], [b]) =>
@@ -415,25 +415,5 @@ export function formatStringList(
   }).format(list);
 }
 
-export type {
-  ConfigureUtilsOptions,
-  InMemoryEnvOptions,
-  Logger,
-  RedisConfig,
-  RedisCredentials,
-} from "./config";
-/** biome-ignore lint/performance/noBarrelFile: intentional root re-export of config alongside utilities */
-export {
-  configureUtils,
-  createRedisClient,
-  getEnvName,
-  getLogger,
-  getRedis,
-  isInMemoryBackend,
-  isInMemoryEnv,
-  isNextBuildLikePhase,
-  noopLogger,
-  resolveEnvName,
-  resolveRedisClient,
-} from "./config";
+/** biome-ignore lint/performance/noBarrelFile: intentional root re-export of shared types */
 export * from "./types";

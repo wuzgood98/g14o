@@ -26,13 +26,12 @@ const coreSubpaths = [
   {
     importPath: "@g14o/core",
     distFile: "dist/utils.js",
-    exports: [
-      "configureUtils",
-      "createRedisClient",
-      "parseNumber",
-      "resolveRedisClient",
-      "stringifyParams",
-    ],
+    exports: ["parseNumber", "stringifyParams", "fetcher"],
+  },
+  {
+    importPath: "@g14o/core/config",
+    distFile: "dist/config.js",
+    exports: ["configureUtils", "createRedisClient", "resolveRedisClient"],
   },
   {
     importPath: "@g14o/core/cache",
@@ -123,6 +122,8 @@ try {
         type: "module",
         dependencies: {
           ...tarballByScope,
+          "@upstash/ratelimit": "^2.0.5",
+          "@upstash/redis": "^1.34.0",
           react: "19.2.7",
           next: "16.2.6",
         },
@@ -146,6 +147,12 @@ try {
   const corePkg = JSON.parse(
     readFileSync(join(coreRoot, "package.json"), "utf8")
   );
+
+  if (corePkg.dependencies && Object.keys(corePkg.dependencies).length > 0) {
+    throw new Error(
+      `@g14o/core: expected no runtime dependencies (got ${JSON.stringify(corePkg.dependencies)})`
+    );
+  }
 
   for (const {
     importPath,
