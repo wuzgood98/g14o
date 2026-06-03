@@ -61,9 +61,9 @@ export const { withCache } = createCache({
 });
 ```
 
-**Alternative — shared `lib/redis` client (e.g. `@upstash/realtime`):**
+**Alternative — shared `lib/redis` client:**
 
-Use this when you already construct one Upstash `Redis` client for other features. Export it from `lib/redis.ts` and pass the same instance to cache and rate limit.
+Reuse one Upstash `Redis` instance across your app—for example realtime, queues, or any feature that already uses `@upstash/redis`. Export the client from `lib/redis.ts` and pass it to cache and rate limit. `@upstash/realtime` is only an example; it is not required by `@g14o/core`.
 
 ```ts
 // lib/redis.ts -- example shared client
