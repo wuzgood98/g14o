@@ -26,7 +26,6 @@ import {
 
 /** Options for {@link createRateLimit}. */
 export interface CreateRateLimitOptions extends InMemoryEnvOptions {
-  env?: string;
   logger?: Logger;
   redis?: RedisConfig;
 }
@@ -313,6 +312,16 @@ export function createRateLimit(
    * @param getUserId - The function to get the user ID from the request.
    * @param options - The options to wrap the handler with.
    * @returns The wrapped handler.
+   *
+   * @example
+   * import { withUserRateLimit } from "@g14o/core/ratelimit";
+   *
+   * export const POST = withUserRateLimit(
+   *   () => NextResponse.json({ message: "Hello, world!" }),
+   *   (req) => req.headers.get("x-user-id"),
+   *   { tier: "moderate" }
+   * );
+   * ```
    */
   const withUserRateLimit = <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,

@@ -1,8 +1,8 @@
 import { Redis } from "@upstash/redis";
-import type { InMemoryEnvOptions, Logger } from "./types";
+import type { Environment, InMemoryEnvOptions, Logger } from "./types";
 import { noopLogger } from "./types";
 
-export type { InMemoryEnvOptions, Logger } from "./types";
+export type { Environment, InMemoryEnvOptions, Logger } from "./types";
 /** biome-ignore lint/performance/noBarrelFile: re-export shared types for @g14o/core/config consumers */
 export { noopLogger } from "./types";
 
@@ -15,21 +15,12 @@ export interface RedisCredentials {
 /** Credentials or a pre-built Upstash Redis client (e.g. `Redis.fromEnv()`). */
 export type RedisConfig = Redis | RedisCredentials;
 
-type Environment = "development" | "test" | "production";
-
 /**
  * Options for {@link configureUtils}.
  *
  * @deprecated Use `createCache()` from `@g14o/core/cache` or `createRateLimit()` from `@g14o/core/ratelimit`.
  */
 export interface ConfigureUtilsOptions extends InMemoryEnvOptions {
-  /**
-   * Environment name override. When omitted, falls back to `process.env.NODE_ENV`
-   * or `"development"`.
-   *
-   * Values `"development"` and `"test"` enable in-memory cache and rate limiting.
-   */
-  env?: Environment;
   /**
    * Application logger implementing {@link Logger}. Replaces the default silent logger.
    */
@@ -106,7 +97,7 @@ export function resolveRedisClient(config?: RedisConfig): Redis | null {
  *
  * @param env - Optional override; falls back to `process.env.NODE_ENV` or `"development"`.
  */
-export function resolveEnvName(env?: string): string {
+export function resolveEnvName(env?: Environment): string {
   return env ?? process.env.NODE_ENV ?? "development";
 }
 

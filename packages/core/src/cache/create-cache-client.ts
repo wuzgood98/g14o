@@ -23,8 +23,6 @@ import {
 
 /** Options for {@link createCache}. */
 export interface CreateCacheOptions extends InMemoryEnvOptions {
-  /** Override environment (`"development"` / `"test"` use in-memory backends). */
-  env?: string;
   /** Application logger. Defaults to a silent no-op logger. */
   logger?: Logger;
   /** Upstash credentials or a pre-built Redis client (e.g. `Redis.fromEnv()`). */
