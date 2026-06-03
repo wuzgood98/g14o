@@ -48,7 +48,7 @@ export const { withRateLimit, checkRateLimit } = createRateLimit({
 });
 ```
 
-**Alternative — pass an existing Redis client when you already use `@upstash/redis`:**
+**Alternative — pass a `Redis` client from `@upstash/redis` instead of URL + token:**
 
 ```ts
 import { Redis } from "@upstash/redis";
@@ -59,6 +59,38 @@ export const { withCache } = createCache({
   redis: Redis.fromEnv(),
   logger,
 });
+```
+
+**Alternative — shared `lib/redis` client (e.g. `@upstash/realtime`):**
+
+Use this when you already construct one Upstash `Redis` client for other features. Export it from `lib/redis.ts` and pass the same instance to cache and rate limit.
+
+```ts
+// lib/redis.ts -- example shared client
+import { Redis } from "@upstash/redis";
+
+export const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+```
+
+```ts
+// lib/cache.ts
+import { createCache } from "@g14o/core/cache";
+import { redis } from "@/lib/redis";
+import { logger } from "@/lib/logger";
+
+export const { withCache, invalidateCache } = createCache({ redis, logger });
+```
+
+```ts
+// lib/rate-limit.ts
+import { createRateLimit } from "@g14o/core/ratelimit";
+import { redis } from "@/lib/redis";
+import { logger } from "@/lib/logger";
+
+export const { withRateLimit, checkRateLimit } = createRateLimit({ redis, logger });
 ```
 
 ### Deprecated global setup
@@ -150,29 +182,3 @@ import { withRateLimit } from "@/lib/rate-limit";
 
 export const GET = withRateLimit(handler, { tier: "moderate" });
 ```
-
-## Testing before publish
-
-```bash
-pnpm test
-pnpm build
-pnpm typecheck
-pnpm dlx ultracite check packages/core packages/utils packages/cache packages/ratelimit
-pnpm test:dist
-```
-
-Optional Upstash integration tests (dedicated test database; skipped when credentials are missing):
-
-```bash
-# Copy .env.example → .env.local and set UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN
-pnpm --filter @g14o/core test:integration
-```
-
-## Publish
-
-```bash
-pnpm --filter @g14o/core build
-pnpm --filter @g14o/core publish --access public
-```
-
-Shim packages (`@g14o/utils`, `@g14o/cache`, `@g14o/ratelimit`) remain in the monorepo for migration but are not published; use `@g14o/core` only.
