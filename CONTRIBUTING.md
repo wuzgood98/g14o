@@ -91,5 +91,3 @@ git tag v<version>
 git push origin main --follow-tags
 gh release create v<version> --title "v<version>" --notes-file packages/core/CHANGELOG.md
 ```
-
-See also the [@g14o/core README](packages/core/README.md) publish section.
