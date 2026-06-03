@@ -1,5 +1,20 @@
 # @g14o/core
 
+## 1.1.0
+
+### Minor Changes
+
+- **feat:** Export `Environment` (`"development" | "test" | "production"`) from `@g14o/core/types`, re-exported from `@g14o/core/config`.
+- **feat:** Type `env` on `InMemoryEnvOptions` (used by `createCache()`, `createRateLimit()`, and deprecated `configureUtils()`) as `Environment` instead of `string`; `resolveEnvName()` accepts the same union for explicit overrides.
+
+### TypeScript
+
+- Custom `env` strings outside the union (e.g. `"staging"`) now fail at compile time. Omitting `env` is unchanged at runtime (`process.env.NODE_ENV` fallback).
+
+### Other
+
+- **docs:** Fix `RateLimitClient.withUserRateLimit` JSDoc example to use `createRateLimit()` and correct handler / `getUserId` signatures.
+
 ## 1.0.0
 
 ### Major Changes
