@@ -1,6 +1,6 @@
 {
   "name": "@g14o/core",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Core utilities, cache, and rate limiting for Next.js apps.",
   "type": "module",
   "sideEffects": false,

@@ -314,13 +314,18 @@ export function createRateLimit(
    * @returns The wrapped handler.
    *
    * @example
-   * import { withUserRateLimit } from "@/lib/ratelimit";
+   * ```ts
+   * import { NextResponse } from "next/server";
+   * import { createRateLimit } from "@g14o/core/ratelimit";
    *
-   * export const POST = withUserRateLimit(
-   *   () => NextResponse.json({ message: "Hello, world!" }),
-   *   (req) => req.headers.get("x-user-id"),
+   * const rateLimitClient = createRateLimit({ redis: { url, token } });
+   *
+   * export const POST = rateLimitClient.withUserRateLimit(
+   *   (req) => NextResponse.json({ message: "Hello, world!" }),
+   *   async (req) => req.headers.get("x-user-id"),
    *   { tier: "moderate" }
    * );
+   * ```
    */
   const withUserRateLimit = <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
