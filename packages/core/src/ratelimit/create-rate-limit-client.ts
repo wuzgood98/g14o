@@ -314,14 +314,13 @@ export function createRateLimit(
    * @returns The wrapped handler.
    *
    * @example
-   * import { withUserRateLimit } from "@g14o/core/ratelimit";
+   * import { withUserRateLimit } from "@/lib/ratelimit";
    *
    * export const POST = withUserRateLimit(
    *   () => NextResponse.json({ message: "Hello, world!" }),
    *   (req) => req.headers.get("x-user-id"),
    *   { tier: "moderate" }
    * );
-   * ```
    */
   const withUserRateLimit = <
     T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
