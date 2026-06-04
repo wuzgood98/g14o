@@ -20,6 +20,7 @@ import {
   type RateLimiterAdapter,
   type RateLimitOptions,
   type RateLimitTier,
+  resolveTierConfig,
   type TokenConfig,
   tokenConfig,
 } from "./internals";
@@ -179,6 +180,16 @@ export function createRateLimit(
   options: CreateRateLimitOptions = {}
 ): RateLimitClient {
   const runtime = createRateLimitRuntime(options);
+
+  if (runtime.tiers) {
+    for (const tier of Object.keys(tokenConfig) as RateLimitTier[]) {
+      const override = runtime.tiers[tier];
+      if (override !== undefined) {
+        resolveTierConfig(tier, override);
+      }
+    }
+  }
+
   const rateLimiterCache = new Map<RateLimitTier, RateLimiterAdapter>();
 
   /** Reset the rate limit. */
@@ -203,8 +214,8 @@ export function createRateLimit(
 
     const { logger } = runtime;
     const override = runtime.tiers?.[tier];
-    const config: TokenConfig = override
-      ? { ...tokenConfig[tier], ...override }
+    const config = override
+      ? resolveTierConfig(tier, override)
       : tokenConfig[tier];
     let limiter: RateLimiterAdapter;
 
@@ -362,7 +373,7 @@ export function createRateLimit(
    *
    * export const POST = withUserRateLimit(
    *   (req) => NextResponse.json({ message: "Hello, world!" }),
-   *   (req) => req.headers.get("x-user-id"),
+   *   async (req) => req.headers.get("x-user-id"),
    *   { tier: "moderate" }
    * );
    * ```
