@@ -239,6 +239,20 @@ try {
       );
     }
 
+    const rootExport = packedPkg.exports?.["."];
+    if (!rootExport) {
+      throw new Error(
+        `${importPath}: packed package.json must define exports["."] (got ${JSON.stringify(packedPkg.exports)})`
+      );
+    }
+    const importTarget =
+      typeof rootExport === "string" ? rootExport : rootExport?.import;
+    if (!importTarget?.startsWith("./dist")) {
+      throw new Error(
+        `${importPath}: packed export "." must point at dist (got ${JSON.stringify(rootExport)})`
+      );
+    }
+
     const mod = await import(pathToFileURL(entryPath).href);
     if (typeof mod.createEnv !== "function") {
       throw new Error(`${importPath}: expected function export "createEnv"`);
