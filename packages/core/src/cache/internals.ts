@@ -117,6 +117,9 @@ export class RedisCache implements CacheAdapter {
   }
 }
 
+/**
+ * Built-in TTL defaults in seconds per environment. Override via `createCache({ ttl })`.
+ */
 export const CACHE_TTL = {
   development: {
     short: 60,

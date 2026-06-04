@@ -4,12 +4,17 @@ import { type Duration, parseDurationToMs } from "./parse-duration";
 
 type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
 
+/** Resolved rate-limit settings for one tier (limit, window, Redis prefix). */
 export interface TokenConfig {
   limit: number;
   prefix: string;
   window: Duration;
 }
 
+/**
+ * Built-in tier defaults (internal singleton). Override per tier via `createRateLimit({ tiers })`.
+ * Consumers should use {@link tokenConfigSnapshot} or {@link getTokenConfigReadonly}.
+ */
 export const tokenConfig: Record<TokenTier, TokenConfig> = {
   strict: {
     limit: 5,
@@ -39,6 +44,65 @@ export const tokenConfig: Record<TokenTier, TokenConfig> = {
 };
 
 export type RateLimitTier = TokenTier;
+
+export type ReadonlyTokenConfigMap = Readonly<
+  Record<RateLimitTier, Readonly<TokenConfig>>
+>;
+
+/** Returns a deep-frozen snapshot of built-in tier defaults (safe for consumers). */
+export function getTokenConfigReadonly(): ReadonlyTokenConfigMap {
+  return Object.freeze(
+    Object.fromEntries(
+      (Object.keys(tokenConfig) as RateLimitTier[]).map((tier) => [
+        tier,
+        Object.freeze({ ...tokenConfig[tier] }),
+      ])
+    ) as Record<RateLimitTier, TokenConfig>
+  );
+}
+
+/** Frozen defaults for public export; internal code must use `tokenConfig`. */
+export const tokenConfigSnapshot: ReadonlyTokenConfigMap =
+  getTokenConfigReadonly();
+
+type TokenConfigOverride = Partial<
+  Pick<TokenConfig, "limit" | "prefix" | "window">
+>;
+
+/** Validates a resolved {@link TokenConfig} for one tier. */
+export function validateTokenConfig(
+  config: TokenConfig,
+  tier: RateLimitTier
+): void {
+  if (!Number.isFinite(config.limit) || config.limit <= 0) {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": limit must be a positive number, got ${config.limit}`
+    );
+  }
+  if (typeof config.prefix !== "string" || config.prefix.trim() === "") {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": prefix must be a non-empty string`
+    );
+  }
+  const windowMs = parseDurationToMs(config.window);
+  if (windowMs <= 0) {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": window must be a positive duration, got ${config.window}`
+    );
+  }
+}
+
+/** Merges tier defaults with an optional override and validates the result. */
+export function resolveTierConfig(
+  tier: RateLimitTier,
+  override?: TokenConfigOverride
+): TokenConfig {
+  const config: TokenConfig = override
+    ? { ...tokenConfig[tier], ...override }
+    : tokenConfig[tier];
+  validateTokenConfig(config, tier);
+  return config;
+}
 
 export interface RateLimitResultData {
   limit: number;
