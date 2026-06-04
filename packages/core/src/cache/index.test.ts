@@ -28,6 +28,24 @@ describe("createCache (factory API)", () => {
       expect(cache.getTTL("medium")).toBe(300);
       expect(cache.getTTL("long")).toBe(600);
     });
+
+    it("merges development TTL overrides in test env", () => {
+      const custom = createCache({
+        env: "test",
+        ttl: { development: { medium: 42 } },
+      });
+      expect(custom.getTTL("medium")).toBe(42);
+      expect(custom.getTTL("short")).toBe(60);
+    });
+
+    it("merges production TTL overrides", () => {
+      const custom = createCache({
+        env: "production",
+        ttl: { production: { long: 99 } },
+      });
+      expect(custom.getTTL("long")).toBe(99);
+      expect(custom.getTTL("short")).toBe(300);
+    });
   });
 
   describe("withCache", () => {

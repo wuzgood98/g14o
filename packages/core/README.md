@@ -48,6 +48,36 @@ export const { withRateLimit, checkRateLimit } = createRateLimit({
 });
 ```
 
+### Custom tiers and TTL
+
+Tier names (`strict`, `moderate`, `lenient`, `auth`, `write`) and cache duration names (`short`, `medium`, `long`) are fixed. Override only the values; omitted keys keep factory defaults.
+
+```ts
+export const { withRateLimit } = createRateLimit({
+  redis: {
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!
+  },
+  tiers: {
+    strict: { limit: 3, window: "30 s" },
+    auth: { limit: 10 },
+  },
+});
+```
+
+```ts
+export const { withCache, getTTL } = createCache({
+  redis: {
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!
+  },
+  ttl: {
+    development: { short: 30, long: 900 },
+    production: { medium: 3600 },
+  },
+});
+```
+
 **Alternative — pass a `Redis` client from `@upstash/redis` instead of URL + token:**
 
 ```ts

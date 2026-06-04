@@ -25,6 +25,8 @@ import {
 export type {
   CreateRateLimitOptions,
   RateLimitClient,
+  RateLimitTierConfig,
+  RateLimitTiersOverride,
 } from "./create-rate-limit-client";
 /** biome-ignore lint/performance/noBarrelFile: public package entry re-export */
 export { createRateLimit } from "./create-rate-limit-client";
@@ -35,6 +37,8 @@ export {
   type RateLimitOptions,
   type RateLimitResultData,
   type RateLimitTier,
+  type TokenConfig,
+  tokenConfig,
 } from "./internals";
 export type { Duration, Unit } from "./parse-duration";
 export { parseDurationToMs } from "./parse-duration";

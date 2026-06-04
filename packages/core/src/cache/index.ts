@@ -22,7 +22,12 @@ import {
 } from "./internals";
 
 export type { Redis } from "@upstash/redis";
-export type { CacheClient, CreateCacheOptions } from "./create-cache-client";
+export type {
+  CacheClient,
+  CacheEnvironmentTtlOverride,
+  CacheTtlOverride,
+  CreateCacheOptions,
+} from "./create-cache-client";
 /** biome-ignore lint/performance/noBarrelFile: public package entry re-export */
 export { createCache } from "./create-cache-client";
 export {

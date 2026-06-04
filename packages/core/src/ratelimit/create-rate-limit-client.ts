@@ -23,11 +23,48 @@ import {
   type TokenConfig,
   tokenConfig,
 } from "./internals";
+import type { Duration } from "./parse-duration";
+
+/** Fields you can override for a single rate-limit tier. Unset fields use factory defaults. */
+export interface RateLimitTierConfig {
+  /** Max requests allowed within `window`. */
+  limit?: number;
+  /** Redis key prefix for this tier (Upstash only). Default `@ratelimit:<tier>`. */
+  prefix?: string;
+  /** Sliding window length (Upstash-style, e.g. `"60 s"`, `"15 m"`). */
+  window?: Duration;
+}
+
+/**
+ * Per-tier overrides. Omitted tiers keep built-in defaults from {@link tokenConfig}.
+ */
+export interface RateLimitTiersOverride {
+  /** Default: 5 req / 15 m. Login, signup, password reset. */
+  auth?: RateLimitTierConfig;
+  /** Default: 20 req / 60 s. Higher-traffic read endpoints. */
+  lenient?: RateLimitTierConfig;
+  /** Default: 10 req / 60 s. General API default when `tier` is omitted. */
+  moderate?: RateLimitTierConfig;
+  /** Default: 5 req / 60 s. Tightest tier — abuse-prone or expensive routes. */
+  strict?: RateLimitTierConfig;
+  /** Default: 30 req / 1 h. Mutations and write-heavy actions. */
+  write?: RateLimitTierConfig;
+}
 
 /** Options for {@link createRateLimit}. */
 export interface CreateRateLimitOptions extends InMemoryEnvOptions {
   logger?: Logger;
   redis?: RedisConfig;
+  /**
+   * Override built-in tier limits/windows/prefixes. Each tier key is optional;
+   * each field inside a tier is optional and merged onto factory defaults.
+   *
+   * @example
+   * ```ts
+   * createRateLimit({ tiers: { strict: { limit: 3 } } });
+   * ```
+   */
+  tiers?: RateLimitTiersOverride;
 }
 
 /** Rate limit client returned by {@link createRateLimit}. */
@@ -106,6 +143,7 @@ interface RateLimitRuntime {
   inMemoryDuringNextBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
+  tiers?: RateLimitTiersOverride;
 }
 
 function createRateLimitRuntime(
@@ -120,6 +158,7 @@ function createRateLimitRuntime(
     envName,
     inMemoryDuringNextBuild,
     logger,
+    tiers: options.tiers,
     resolveRedis: () => {
       if (redis === undefined) {
         redis = options.redis ? resolveRedisClient(options.redis) : null;
@@ -134,7 +173,7 @@ const RETRY_AFTER_DELAY = 1000;
 /**
  * Creates a rate limit client with bound methods for Next.js route handlers.
  *
- * @param options - Redis credentials or client, logger, and environment.
+ * @param options - Redis credentials or client, logger, environment, and optional `tiers` overrides.
  */
 export function createRateLimit(
   options: CreateRateLimitOptions = {}
@@ -163,7 +202,10 @@ export function createRateLimit(
     }
 
     const { logger } = runtime;
-    const config = tokenConfig[tier];
+    const override = runtime.tiers?.[tier];
+    const config: TokenConfig = override
+      ? { ...tokenConfig[tier], ...override }
+      : tokenConfig[tier];
     let limiter: RateLimiterAdapter;
 
     if (
@@ -316,13 +358,11 @@ export function createRateLimit(
    * @example
    * ```ts
    * import { NextResponse } from "next/server";
-   * import { createRateLimit } from "@g14o/core/ratelimit";
+   * import { withUserRateLimit } from "@/lib/ratelimit";
    *
-   * const rateLimitClient = createRateLimit({ redis: { url, token } });
-   *
-   * export const POST = rateLimitClient.withUserRateLimit(
+   * export const POST = withUserRateLimit(
    *   (req) => NextResponse.json({ message: "Hello, world!" }),
-   *   async (req) => req.headers.get("x-user-id"),
+   *   (req) => req.headers.get("x-user-id"),
    *   { tier: "moderate" }
    * );
    * ```

@@ -4,12 +4,16 @@ import { type Duration, parseDurationToMs } from "./parse-duration";
 
 type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
 
+/** Resolved rate-limit settings for one tier (limit, window, Redis prefix). */
 export interface TokenConfig {
   limit: number;
   prefix: string;
   window: Duration;
 }
 
+/**
+ * Built-in tier defaults. Override per tier via `createRateLimit({ tiers })`.
+ */
 export const tokenConfig: Record<TokenTier, TokenConfig> = {
   strict: {
     limit: 5,

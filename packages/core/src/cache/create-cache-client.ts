@@ -21,12 +21,36 @@ import {
   RedisCache,
 } from "./internals";
 
+/** TTL overrides for one environment bucket (values in **seconds**). */
+export interface CacheEnvironmentTtlOverride {
+  /** Default: 600 (dev) / 3600 (prod). Stable reads; default for `withCache` when `ttl` omitted. */
+  long?: number;
+  /** Default: 300 (dev) / 1800 (prod). Typical list/detail responses. */
+  medium?: number;
+  /** Default: 60 (dev) / 300 (prod). Ephemeral or highly dynamic data. */
+  short?: number;
+}
+
+/**
+ * Per-environment TTL overrides merged onto {@link CACHE_TTL}.
+ * `development` applies when env is `development` or `test`; `production` when env is `production`.
+ */
+export interface CacheTtlOverride {
+  development?: CacheEnvironmentTtlOverride;
+  production?: CacheEnvironmentTtlOverride;
+}
+
 /** Options for {@link createCache}. */
 export interface CreateCacheOptions extends InMemoryEnvOptions {
   /** Application logger. Defaults to a silent no-op logger. */
   logger?: Logger;
   /** Upstash credentials or a pre-built Redis client (e.g. `Redis.fromEnv()`). */
   redis?: RedisConfig;
+  /**
+   * Override default TTL seconds per env and duration name (`short` | `medium` | `long`).
+   * Used by `getTTL()` and `withCache(..., { ttl })`.
+   */
+  ttl?: CacheTtlOverride;
 }
 
 /** Cache client returned by {@link createCache}. */
@@ -84,6 +108,7 @@ interface CacheRuntime {
   inMemoryDuringNextBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
+  ttl?: CacheTtlOverride;
 }
 
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
@@ -96,6 +121,7 @@ function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
     envName,
     inMemoryDuringNextBuild,
     logger,
+    ttl: options.ttl,
     resolveRedis: () => {
       if (redis === undefined) {
         redis = options.redis ? resolveRedisClient(options.redis) : null;
@@ -132,7 +158,8 @@ function resolveTtlForRuntime(
 ): number {
   const environment =
     runtime.envName === "production" ? "production" : "development";
-  return CACHE_TTL[environment][duration];
+  const override = runtime.ttl?.[environment]?.[duration];
+  return override ?? CACHE_TTL[environment][duration];
 }
 
 async function readCachedValue<T>(
@@ -181,7 +208,7 @@ async function writeCachedValue(
 /**
  * Creates a cache client with bound methods for caching and invalidation.
  *
- * @param options - Redis credentials or client, logger, and environment.
+ * @param options - Redis credentials or client, logger, environment, and optional `ttl` overrides.
  * @returns {@link CacheClient} instance.
  *
  * @example

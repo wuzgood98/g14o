@@ -70,6 +70,44 @@ describe("createRateLimit (factory API)", () => {
         expect(result.limit).toBe(0);
       }
     });
+
+    it("merges custom strict tier limit", async () => {
+      const custom = createRateLimit({
+        env: "test",
+        tiers: { strict: { limit: 2 } },
+      });
+      const req = mockRequest({ "x-forwarded-for": "custom-strict" });
+      const options = { tier: "strict" as const };
+
+      for (let i = 0; i < 2; i++) {
+        expect(await custom.checkRateLimit(req, options)).toMatchObject({
+          ok: true,
+        });
+      }
+
+      const blocked = await custom.checkRateLimit(req, options);
+      expect(blocked.ok).toBe(false);
+      custom.reset();
+    });
+
+    it("keeps default limit for unconfigured tiers", async () => {
+      const custom = createRateLimit({
+        env: "test",
+        tiers: { strict: { limit: 2 } },
+      });
+      const req = mockRequest({ "x-forwarded-for": "default-moderate" });
+      const options = { tier: "moderate" as const };
+
+      for (let i = 0; i < 10; i++) {
+        expect(await custom.checkRateLimit(req, options)).toMatchObject({
+          ok: true,
+        });
+      }
+
+      const blocked = await custom.checkRateLimit(req, options);
+      expect(blocked.ok).toBe(false);
+      custom.reset();
+    });
   });
 
   describe("withRateLimit", () => {

@@ -12,5 +12,7 @@ export default defineConfig({
       "src/ratelimit/integration.setup.ts",
     ],
     testTimeout: 30_000,
+    // Shared Upstash instance: avoid cache + ratelimit files hitting Redis concurrently.
+    fileParallelism: false,
   },
 });
