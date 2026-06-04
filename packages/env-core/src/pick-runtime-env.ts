@@ -8,7 +8,7 @@ export function pickRuntimeValues(
   const values: Record<string, unknown> = {};
 
   for (const key of keys) {
-    let value: unknown = runtime[key];
+    let value: unknown = Object.hasOwn(runtime, key) ? runtime[key] : undefined;
     if (emptyStringAsUndefined && value === "") {
       value = undefined;
     }
@@ -25,7 +25,7 @@ export function assertStrictRuntimeKeys(
   const missing: string[] = [];
 
   for (const key of expectedKeys) {
-    if (!(key in runtime)) {
+    if (!Object.hasOwn(runtime, key)) {
       missing.push(key);
     }
   }
