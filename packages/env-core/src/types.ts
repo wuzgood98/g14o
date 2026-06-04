@@ -63,12 +63,18 @@ export type StrictRuntimeEnv<
   [K in ShapeKeys<TServer> | ShapeKeys<TClient>]: RuntimeEnvValue;
 }>;
 
+type MutuallyExclusive<
+  A extends Record<string, unknown>,
+  B extends Record<string, unknown>,
+> = (A & { [K in keyof B]?: never }) | (B & { [K in keyof A]?: never });
+
 type RuntimeEnvSource<
   TServer extends SchemaShape | undefined,
   TClient extends SchemaShape | undefined,
-> =
-  | { runtimeEnv: RuntimeEnvInput }
-  | { runtimeEnvStrict: StrictRuntimeEnv<TServer, TClient> };
+> = MutuallyExclusive<
+  { runtimeEnv: RuntimeEnvInput },
+  { runtimeEnvStrict: StrictRuntimeEnv<TServer, TClient> }
+>;
 
 export type MergeEnvShapes<
   TServer extends SchemaShape | undefined,
