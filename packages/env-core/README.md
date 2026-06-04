@@ -10,6 +10,10 @@ Framework-agnostic, typesafe environment variables validated with any [Standard 
 pnpm add @g14o/env-core zod
 ```
 
+### Peer dependencies
+
+`zod`, `valibot`, and `arktype` are **optional** peers — install the validator you use. Ranges follow [Standard Schema v1](https://standardschema.dev) support on each major line (`arktype` ^2.0.0, `valibot` ^1.0.0, `zod` ^4.0.0). `typescript` (>=5) is optional but recommended for typed env definitions.
+
 ## Usage
 
 ```ts

@@ -73,7 +73,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/env-core
       arktype:
-        specifier: ^2.1.29
+        specifier: ^2.0.0
         version: 2.2.0
       next:
         specifier: 16.2.6
@@ -85,10 +85,10 @@ importers:
         specifier: 19.2.4
         version: 19.2.4(react@19.2.4)
       valibot:
-        specifier: ^1.2.0
+        specifier: ^1.0.0
         version: 1.4.1(typescript@5.9.3)
       zod:
-        specifier: ^4.1.13
+        specifier: ^4.0.0
         version: 4.4.3
     devDependencies:
       '@types/node':
@@ -223,7 +223,7 @@ importers:
         specifier: workspace:*
         version: link:../typescript-config
       arktype:
-        specifier: ^2.1.29
+        specifier: ^2.0.0
         version: 2.2.0
       rimraf:
         specifier: ^6.0.1
@@ -235,13 +235,13 @@ importers:
         specifier: ^5
         version: 5.9.3
       valibot:
-        specifier: ^1.2.0
+        specifier: ^1.0.0
         version: 1.4.1(typescript@5.9.3)
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@22.19.19)(jiti@2.7.0)(lightningcss@1.32.0)(msw@2.14.6(@types/node@22.19.19)(typescript@5.9.3))(yaml@2.9.0)
       zod:
-        specifier: ^4.1.13
+        specifier: ^4.0.0
         version: 4.4.3
 
   packages/ratelimit:
