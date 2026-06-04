@@ -44,6 +44,45 @@ export const tokenConfig: Record<TokenTier, TokenConfig> = {
 
 export type RateLimitTier = TokenTier;
 
+type TokenConfigOverride = Partial<
+  Pick<TokenConfig, "limit" | "prefix" | "window">
+>;
+
+/** Validates a resolved {@link TokenConfig} for one tier. */
+export function validateTokenConfig(
+  config: TokenConfig,
+  tier: RateLimitTier
+): void {
+  if (!Number.isFinite(config.limit) || config.limit <= 0) {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": limit must be a positive number, got ${config.limit}`
+    );
+  }
+  if (typeof config.prefix !== "string" || config.prefix.trim() === "") {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": prefix must be a non-empty string`
+    );
+  }
+  const windowMs = parseDurationToMs(config.window);
+  if (windowMs <= 0) {
+    throw new Error(
+      `Invalid rate limit for tier "${tier}": window must be a positive duration, got ${config.window}`
+    );
+  }
+}
+
+/** Merges tier defaults with an optional override and validates the result. */
+export function resolveTierConfig(
+  tier: RateLimitTier,
+  override?: TokenConfigOverride
+): TokenConfig {
+  const config: TokenConfig = override
+    ? { ...tokenConfig[tier], ...override }
+    : tokenConfig[tier];
+  validateTokenConfig(config, tier);
+  return config;
+}
+
 export interface RateLimitResultData {
   limit: number;
   remaining: number;
