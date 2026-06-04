@@ -4,4 +4,4 @@
 
 ### Minor Changes
 
-- Initial release: `createEnv` with server/client separation, optional `clientPrefix`, Standard Schema validation (Zod, Valibot, ArkType), `runtimeEnv` / `runtimeEnvStrict`, and `emptyStringAsUndefined`.
+- Initial release of `@g14o/env-core`: typesafe environment validation with Standard Schema (Zod, Valibot, ArkType), server/client separation, optional client prefix, and `runtimeEnvStrict`.
