@@ -30,7 +30,7 @@
     "demo:cache": "pnpm --filter cache-demo dev",
     "demo:cache:build": "pnpm --filter cache-demo build",
     "changeset": "changeset",
-    "version-packages": "changeset version",
+    "version-packages": "changeset version && node scripts/sync-shim-core-version.mjs && pnpm install",
     "release:publish": "pnpm --filter @g14o/core publish --access public --no-git-checks",
     "prepare": "husky"
   },

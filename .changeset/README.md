@@ -17,7 +17,7 @@ Only **`@g14o/core`** is versioned and published. Shim packages (`@g14o/utils`, 
 ## Maintainers
 
 ```bash
-pnpm version-packages   # bump versions and update CHANGELOG
+pnpm version-packages   # bump @g14o/core, update CHANGELOG, sync shim workspace:^ ranges, refresh pnpm-lock.yaml
 pnpm release:publish    # publish to npm
 ```
 

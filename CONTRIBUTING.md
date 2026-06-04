@@ -85,9 +85,11 @@ Maintainers run `pnpm version-packages` and `pnpm release:publish` during releas
 
 ```bash
 pnpm build
-pnpm version-packages   # after merging changesets
+pnpm version-packages   # after merging changesets: bumps @g14o/core, syncs shim workspace:^ ranges, updates lockfile
 pnpm release:publish
 git tag v<version>
 git push origin main --follow-tags
 gh release create v<version> --title "v<version>" --notes-file packages/core/CHANGELOG.md
 ```
+
+Commit `packages/{cache,ratelimit,utils}/package.json` and `pnpm-lock.yaml` when the release changes shim `@g14o/core` specifiers.

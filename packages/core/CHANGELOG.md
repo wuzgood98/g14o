@@ -1,12 +1,12 @@
 # @g14o/core
 
-## Unreleased
+## 1.2.0
 
 ### Minor Changes
 
 - **feat:** `createRateLimit({ tiers })` — optional per-tier overrides (`strict`, `moderate`, `lenient`, `auth`, `write`) merged onto built-in defaults; partial tier and field overrides supported.
 - **feat:** `createCache({ ttl })` — optional per-environment TTL overrides (`development` / `production` × `short` / `medium` / `long`, seconds) merged onto `CACHE_TTL`.
-- **feat:** Export `RateLimitTierConfig`, `RateLimitTiersOverride`, `TokenConfig`, `tokenConfig`, `CacheEnvironmentTtlOverride`, and `CacheTtlOverride` with JSDoc for IDE hover on factory options.
+- **feat:** Export `RateLimitTierConfig`, `RateLimitTiersOverride`, `TokenConfig`, `CacheEnvironmentTtlOverride`, and `CacheTtlOverride` with updated docs.
 
 ## 1.1.0
 
