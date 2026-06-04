@@ -11,10 +11,8 @@ export function EnvClientPanel() {
   function tryServerKeyOnClient() {
     setServerAccessError(null);
     try {
-      const value = envZod.DATABASE_URL;
-      setServerAccessError(
-        `Unexpected success — server value leaked: ${String(value)}`
-      );
+      Boolean(envZod.DATABASE_URL);
+      setServerAccessError("Unexpected success — server value leaked");
     } catch (error) {
       setServerAccessError(
         error instanceof Error ? error.message : String(error)
