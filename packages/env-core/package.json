@@ -23,6 +23,26 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json",
     "test": "vitest run"
   },
+  "peerDependencies": {
+    "typescript": ">=5.0.0",
+    "arktype": "^2.1.29",
+    "valibot": "^1.2.0",
+    "zod": "^4.1.13"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    },
+    "arktype": {
+      "optional": true
+    },
+    "valibot": {
+      "optional": true
+    },
+    "zod": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/node": "^22",
     "@workspace/typescript-config": "workspace:*",
