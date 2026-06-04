@@ -36,7 +36,7 @@ Import the same `env` object in server and client code — no separate client ex
 
 ### How client protection works
 
-`createEnv` returns a [`Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) around the validated environment object (on both server and client, matching t3-env):
+`createEnv` returns a [`Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) around the validated environment object (on both server and client):
 
 - **Server**: the proxy is transparent — all validated server and client keys are readable.
 - **Client**: only `client` schemas are validated at import time (missing server vars in `process.env` do not throw).
