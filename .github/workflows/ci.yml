@@ -34,11 +34,15 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - name: Build packages and apps
+        # env-demo validates these at module load during `next build` page-data
+        # collection. They are non-sensitive demo placeholders (see
+        # apps/env-demo/.env.example), so we provide them inline to keep the
+        # build deterministic instead of depending on optional repo secrets.
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          OPEN_AI_API_KEY: ${{ secrets.OPEN_AI_API_KEY }}
-          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
-          NEXT_PUBLIC_APP_NAME: ${{ secrets.NEXT_PUBLIC_APP_NAME }}
+          DATABASE_URL: https://example.com/db
+          OPEN_AI_API_KEY: sk-demo-key-min-8-chars
+          NEXT_PUBLIC_API_URL: https://api.example.com
+          NEXT_PUBLIC_APP_NAME: env-demo
         run: pnpm build
       - run: pnpm test:dist
       - run: pnpm demo:cache:build
