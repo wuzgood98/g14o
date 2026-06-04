@@ -24,7 +24,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@workspace/typescript-config": "workspace:*",
     "arktype": "^2.1.29",
     "rimraf": "^6.0.1",
