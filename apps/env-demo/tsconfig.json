@@ -2,7 +2,8 @@
   "extends": "@workspace/typescript-config/nextjs.json",
   "compilerOptions": {
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@g14o/env-core": ["../../packages/env-core/src/index.ts"]
     },
     "plugins": [
       {
