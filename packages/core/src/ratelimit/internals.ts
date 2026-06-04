@@ -12,7 +12,8 @@ export interface TokenConfig {
 }
 
 /**
- * Built-in tier defaults. Override per tier via `createRateLimit({ tiers })`.
+ * Built-in tier defaults (internal singleton). Override per tier via `createRateLimit({ tiers })`.
+ * Consumers should use {@link tokenConfigSnapshot} or {@link getTokenConfigReadonly}.
  */
 export const tokenConfig: Record<TokenTier, TokenConfig> = {
   strict: {
@@ -43,6 +44,26 @@ export const tokenConfig: Record<TokenTier, TokenConfig> = {
 };
 
 export type RateLimitTier = TokenTier;
+
+export type ReadonlyTokenConfigMap = Readonly<
+  Record<RateLimitTier, Readonly<TokenConfig>>
+>;
+
+/** Returns a deep-frozen snapshot of built-in tier defaults (safe for consumers). */
+export function getTokenConfigReadonly(): ReadonlyTokenConfigMap {
+  return Object.freeze(
+    Object.fromEntries(
+      (Object.keys(tokenConfig) as RateLimitTier[]).map((tier) => [
+        tier,
+        Object.freeze({ ...tokenConfig[tier] }),
+      ])
+    ) as Record<RateLimitTier, TokenConfig>
+  );
+}
+
+/** Frozen defaults for public export; internal code must use `tokenConfig`. */
+export const tokenConfigSnapshot: ReadonlyTokenConfigMap =
+  getTokenConfigReadonly();
 
 type TokenConfigOverride = Partial<
   Pick<TokenConfig, "limit" | "prefix" | "window">
