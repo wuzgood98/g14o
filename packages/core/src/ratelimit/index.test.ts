@@ -12,6 +12,9 @@ import {
 } from "./index";
 
 const INVALID_DURATION_PATTERN = /Invalid rate limit window/;
+const INVALID_LIMIT_PATTERN = /limit must be a positive number/;
+const INVALID_WINDOW_POSITIVE_PATTERN = /window must be a positive duration/;
+const INVALID_PREFIX_PATTERN = /prefix must be a non-empty string/;
 
 function mockRequest(headers: Record<string, string | null> = {}): NextRequest {
   return {
@@ -76,18 +79,22 @@ describe("createRateLimit (factory API)", () => {
         env: "test",
         tiers: { strict: { limit: 2 } },
       });
-      const req = mockRequest({ "x-forwarded-for": "custom-strict" });
-      const options = { tier: "strict" as const };
 
-      for (let i = 0; i < 2; i++) {
-        expect(await custom.checkRateLimit(req, options)).toMatchObject({
-          ok: true,
-        });
+      try {
+        const req = mockRequest({ "x-forwarded-for": "custom-strict" });
+        const options = { tier: "strict" as const };
+
+        for (let i = 0; i < 2; i++) {
+          expect(await custom.checkRateLimit(req, options)).toMatchObject({
+            ok: true,
+          });
+        }
+
+        const blocked = await custom.checkRateLimit(req, options);
+        expect(blocked.ok).toBe(false);
+      } finally {
+        custom.reset();
       }
-
-      const blocked = await custom.checkRateLimit(req, options);
-      expect(blocked.ok).toBe(false);
-      custom.reset();
     });
 
     it("keeps default limit for unconfigured tiers", async () => {
@@ -95,18 +102,51 @@ describe("createRateLimit (factory API)", () => {
         env: "test",
         tiers: { strict: { limit: 2 } },
       });
-      const req = mockRequest({ "x-forwarded-for": "default-moderate" });
-      const options = { tier: "moderate" as const };
 
-      for (let i = 0; i < 10; i++) {
-        expect(await custom.checkRateLimit(req, options)).toMatchObject({
-          ok: true,
-        });
+      try {
+        const req = mockRequest({ "x-forwarded-for": "default-moderate" });
+        const options = { tier: "moderate" as const };
+
+        for (let i = 0; i < 10; i++) {
+          expect(await custom.checkRateLimit(req, options)).toMatchObject({
+            ok: true,
+          });
+        }
+
+        const blocked = await custom.checkRateLimit(req, options);
+        expect(blocked.ok).toBe(false);
+      } finally {
+        custom.reset();
       }
+    });
+  });
 
-      const blocked = await custom.checkRateLimit(req, options);
-      expect(blocked.ok).toBe(false);
-      custom.reset();
+  describe("tier override validation", () => {
+    it("throws at init when limit is zero", () => {
+      expect(() =>
+        createRateLimit({ env: "test", tiers: { strict: { limit: 0 } } })
+      ).toThrow(INVALID_LIMIT_PATTERN);
+    });
+
+    it("throws at init when window format is invalid", () => {
+      expect(() =>
+        createRateLimit({
+          env: "test",
+          tiers: { moderate: { window: "invalid" as "60 s" } },
+        })
+      ).toThrow(INVALID_DURATION_PATTERN);
+    });
+
+    it("throws at init when window is non-positive", () => {
+      expect(() =>
+        createRateLimit({ env: "test", tiers: { auth: { window: "0 s" } } })
+      ).toThrow(INVALID_WINDOW_POSITIVE_PATTERN);
+    });
+
+    it("throws at init when prefix is empty", () => {
+      expect(() =>
+        createRateLimit({ env: "test", tiers: { write: { prefix: "" } } })
+      ).toThrow(INVALID_PREFIX_PATTERN);
     });
   });
 
