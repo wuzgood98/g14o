@@ -44,6 +44,7 @@ export const { withCache, invalidateCache } = createCache({
 | [`packages/core`](packages/core) | Source of truth; published as `@g14o/core` |
 | [`packages/utils`](packages/utils), [`packages/cache`](packages/cache), [`packages/ratelimit`](packages/ratelimit) | Deprecated shims (not published) |
 | [`apps/cache-demo`](apps/cache-demo) | Manual verification of build vs runtime cache behavior |
+| [`apps/env-demo`](apps/env-demo) | Zod / Valibot / ArkType showcase for `@g14o/env-core` |
 | [`apps/web`](apps/web) | Internal Next.js app |
 
 ## Development
@@ -61,9 +62,13 @@ pnpm fix              # auto-fix (alias: pnpm format)
 pnpm test:dist        # smoke published tarballs
 pnpm demo:cache       # cache-demo dev server
 pnpm demo:cache:build # cache-demo production build
+pnpm demo:env         # env-demo dev server (port 3001)
+pnpm demo:env:build   # env-demo production build
 ```
 
 See [apps/cache-demo/README.md](apps/cache-demo/README.md) for verifying cache behavior during `next build` and at runtime.
+
+See [apps/env-demo/README.md](apps/env-demo/README.md) for the environment validation showcase.
 
 ## Code quality
 

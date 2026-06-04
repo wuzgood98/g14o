@@ -36,6 +36,13 @@ jobs:
       - run: pnpm build
       - run: pnpm test:dist
       - run: pnpm demo:cache:build
+      - name: Build env-demo
+        env:
+          DATABASE_URL: https://example.com/db
+          OPEN_AI_API_KEY: sk-demo-key-min-8-chars
+          NEXT_PUBLIC_API_URL: https://api.example.com
+          NEXT_PUBLIC_APP_NAME: env-demo
+        run: pnpm demo:env:build
 
   integration:
     runs-on: ubuntu-latest

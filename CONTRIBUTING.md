@@ -14,7 +14,7 @@ pnpm install
 
 **Where to make changes:**
 
-- Product logic lives in [`packages/core/src`](packages/core/src).
+- Product logic lives in [`packages/core/src`](packages/core/src) and [`packages/env-core/src`](packages/env-core/src).
 - [`packages/utils`](packages/utils), [`packages/cache`](packages/cache), and [`packages/ratelimit`](packages/ratelimit) are deprecated shims that re-export from core — do not duplicate logic there.
 
 ## Development workflow
@@ -47,6 +47,15 @@ pnpm demo:cache:build
 
 See [apps/cache-demo/README.md](apps/cache-demo/README.md) for expected build and runtime behavior.
 
+Environment validation demo:
+
+```bash
+cp apps/env-demo/.env.example apps/env-demo/.env.local
+pnpm demo:env:build
+```
+
+See [apps/env-demo/README.md](apps/env-demo/README.md) for Zod, Valibot, and ArkType verification steps.
+
 ## Continuous integration
 
 GitHub Actions runs on every push and pull request to `main` (see [`.github/workflows/ci.yml`](.github/workflows/ci.yml)):
@@ -57,6 +66,7 @@ GitHub Actions runs on every push and pull request to `main` (see [`.github/work
 - `pnpm build`
 - `pnpm test:dist`
 - `pnpm demo:cache:build`
+- `pnpm demo:env:build` (with demo env vars set in the workflow)
 
 When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, an optional integration job also runs `pnpm --filter @g14o/core test:integration`. Fork PRs do not receive upstream secrets.
 
@@ -68,7 +78,7 @@ When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` 
 
 ## Changesets
 
-User-facing changes to `@g14o/core` require a changeset. Only **`@g14o/core`** is versioned and published (see [`.changeset/config.json`](.changeset/config.json)).
+User-facing changes to **`@g14o/core`** or **`@g14o/env-core`** require a changeset. Those packages are versioned and published (see [`.changeset/config.json`](.changeset/config.json)).
 
 1. Run `pnpm changeset` and describe your change (patch, minor, or major).
 2. Commit the generated `.changeset/*.md` file with your PR.

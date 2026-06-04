@@ -1,0 +1,59 @@
+{
+  "name": "@g14o/env-core",
+  "version": "0.1.0",
+  "description": "Framework-agnostic, typesafe environment variables via Standard Schema (Zod, Valibot, ArkType).",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuzgood98/g14o.git",
+    "directory": "packages/env-core"
+  },
+  "bugs": "https://github.com/wuzgood98/g14o/issues",
+  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/env-core#readme",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rimraf dist",
+    "prepack": "tsdown",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@workspace/typescript-config": "workspace:*",
+    "arktype": "^2.1.29",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.22.1",
+    "typescript": "^5",
+    "valibot": "^1.2.0",
+    "vitest": "^3.2.4",
+    "zod": "^4.1.13"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "environment",
+    "env",
+    "validation",
+    "zod",
+    "valibot",
+    "arktype",
+    "standard-schema",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  }
+}

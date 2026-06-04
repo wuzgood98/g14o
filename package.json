@@ -29,9 +29,11 @@
     "test:dist": "node scripts/smoke-dist.mjs",
     "demo:cache": "pnpm --filter cache-demo dev",
     "demo:cache:build": "pnpm --filter cache-demo build",
+    "demo:env": "pnpm --filter env-demo dev",
+    "demo:env:build": "pnpm --filter env-demo build",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-shim-core-version.mjs && pnpm install",
-    "release:publish": "pnpm --filter @g14o/core publish --access public --no-git-checks",
+    "release:publish": "pnpm --filter @g14o/core publish --access public --no-git-checks && pnpm --filter @g14o/env-core publish --access public --no-git-checks",
     "prepare": "husky"
   },
   "version": "0.0.1",
