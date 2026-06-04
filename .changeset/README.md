@@ -18,7 +18,8 @@ Only **`@g14o/core`** is versioned and published. Shim packages (`@g14o/utils`, 
 
 ```bash
 pnpm version-packages   # bump @g14o/core, update CHANGELOG, sync shim workspace:^ ranges, refresh pnpm-lock.yaml
-pnpm release:publish    # publish to npm
+pnpm release:publish:core    # publish core to npm
+pnpm release:publish:env    # publish env-core to npm
 ```
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for the full release flow.

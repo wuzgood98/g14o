@@ -83,7 +83,7 @@ User-facing changes to **`@g14o/core`** or **`@g14o/env-core`** require a change
 1. Run `pnpm changeset` and describe your change (patch, minor, or major).
 2. Commit the generated `.changeset/*.md` file with your PR.
 
-Maintainers run `pnpm version-packages` and `pnpm release:publish` during release — contributors do not need to bump versions manually.
+Maintainers run `pnpm version-packages` and `pnpm release:publish:core` or `pnpm release:publish:env` during release — contributors do not need to bump versions manually.
 
 ## Pull requests
 
@@ -96,10 +96,12 @@ Maintainers run `pnpm version-packages` and `pnpm release:publish` during releas
 ```bash
 pnpm build
 pnpm version-packages   # after merging changesets: bumps @g14o/core, syncs shim workspace:^ ranges, updates lockfile
-pnpm release:publish
+pnpm release:publish:core # for core packages
+pnpm release:publish:env # for env-core packages
 git tag v<version>
 git push origin main --follow-tags
 gh release create v<version> --title "v<version>" --notes-file packages/core/CHANGELOG.md
+gh release create v<version> --title "v<version>" --notes-file packages/env-core/CHANGELOG.md
 ```
 
 Commit `packages/{cache,ratelimit,utils}/package.json` and `pnpm-lock.yaml` when the release changes shim `@g14o/core` specifiers.
