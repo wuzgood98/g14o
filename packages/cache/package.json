@@ -22,7 +22,7 @@
     "next": ">=15"
   },
   "devDependencies": {
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@workspace/typescript-config": "workspace:*",
     "rimraf": "^6.0.1",
     "typescript": "^5"

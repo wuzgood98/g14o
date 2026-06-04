@@ -57,6 +57,13 @@ const coreSubpaths = [
   },
 ];
 
+const envCoreSmoke = {
+  filter: "@g14o/env-core",
+  importPath: "@g14o/env-core",
+  distFile: "dist/index.js",
+  exports: ["createEnv"],
+};
+
 const shimPackages = [
   {
     filter: "@g14o/utils",
@@ -89,7 +96,11 @@ const packDir = mkdtempSync(join(tmpdir(), "g14o-pack-"));
 const consumerDir = mkdtempSync(join(tmpdir(), "g14o-consumer-"));
 
 try {
-  const filters = ["@g14o/core", ...shimPackages.map((p) => p.filter)];
+  const filters = [
+    "@g14o/core",
+    envCoreSmoke.filter,
+    ...shimPackages.map((p) => p.filter),
+  ];
   for (const filter of filters) {
     execSync(`pnpm --filter ${filter} pack --pack-destination "${packDir}"`, {
       cwd: root,
@@ -202,6 +213,69 @@ try {
           );
         }
       }
+    }
+
+    console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
+  }
+
+  {
+    const { importPath, distFile, exports: names } = envCoreSmoke;
+    const pkgRoot = join(consumerDir, "node_modules", "@g14o", "env-core");
+    const entryPath = join(pkgRoot, distFile);
+
+    if (!existsSync(entryPath)) {
+      throw new Error(`${importPath}: missing packed entry ${distFile}`);
+    }
+
+    const packedPkg = JSON.parse(
+      readFileSync(join(pkgRoot, "package.json"), "utf8")
+    );
+    if (
+      packedPkg.dependencies &&
+      Object.keys(packedPkg.dependencies).length > 0
+    ) {
+      throw new Error(
+        `@g14o/env-core: expected no runtime dependencies (got ${JSON.stringify(packedPkg.dependencies)})`
+      );
+    }
+
+    const rootExport = packedPkg.exports?.["."];
+    if (!rootExport) {
+      throw new Error(
+        `${importPath}: packed package.json must define exports["."] (got ${JSON.stringify(packedPkg.exports)})`
+      );
+    }
+    const importTarget =
+      typeof rootExport === "string" ? rootExport : rootExport?.import;
+    if (!importTarget?.startsWith("./dist")) {
+      throw new Error(
+        `${importPath}: packed export "." must point at dist (got ${JSON.stringify(rootExport)})`
+      );
+    }
+
+    const mod = await import(pathToFileURL(entryPath).href);
+    if (typeof mod.createEnv !== "function") {
+      throw new Error(`${importPath}: expected function export "createEnv"`);
+    }
+
+    const env = mod.createEnv({
+      server: {
+        SMOKE: {
+          "~standard": {
+            version: 1,
+            vendor: "smoke",
+            validate: (value) => ({ value }),
+          },
+        },
+      },
+      runtimeEnv: { SMOKE: "ok" },
+      isServer: true,
+      skipValidation: true,
+    });
+    if (env.SMOKE !== "ok") {
+      throw new Error(
+        `${importPath}: createEnv smoke returned unexpected value`
+      );
     }
 
     console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);

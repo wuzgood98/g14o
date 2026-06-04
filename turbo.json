@@ -8,7 +8,13 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "passThroughEnv": [
+        "DATABASE_URL",
+        "OPEN_AI_API_KEY",
+        "NEXT_PUBLIC_API_URL",
+        "NEXT_PUBLIC_APP_NAME"
+      ]
     },
     "//#check": {},
     "//#fix": {
