@@ -6,8 +6,11 @@ import {
   checkRateLimit,
   createRateLimit,
   getDefaultIdentifier,
+  getTokenConfigReadonly,
   parseDurationToMs,
   resetRateLimiters,
+  tokenConfig,
+  tokenConfigSnapshot,
   withRateLimit,
 } from "./index";
 
@@ -200,6 +203,25 @@ describe("getDefaultIdentifier", () => {
 
   it("falls back to anonymous", () => {
     expect(getDefaultIdentifier(mockRequest())).toBe("anonymous");
+  });
+});
+
+describe("tokenConfig export", () => {
+  it("exports frozen defaults that cannot be mutated", () => {
+    expect(tokenConfig).toBe(tokenConfigSnapshot);
+    expect(Object.isFrozen(tokenConfig)).toBe(true);
+    expect(Object.isFrozen(tokenConfig.strict)).toBe(true);
+    expect(() => {
+      (tokenConfig as { strict: { limit: number } }).strict.limit = 999;
+    }).toThrow();
+  });
+
+  it("returns a new frozen clone from getTokenConfigReadonly", () => {
+    const snapshot = getTokenConfigReadonly();
+    expect(snapshot).not.toBe(tokenConfigSnapshot);
+    expect(Object.isFrozen(snapshot)).toBe(true);
+    expect(Object.isFrozen(snapshot.moderate)).toBe(true);
+    expect(snapshot.strict.limit).toBe(5);
   });
 });
 
