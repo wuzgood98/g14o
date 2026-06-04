@@ -32,7 +32,7 @@ Open [http://localhost:3001](http://localhost:3001).
 pnpm demo:env:build
 ```
 
-CI sets the same demo values via workflow `env:` when running this build.
+CI sets the same demo values via workflow `env:` when running `pnpm build`. Those variables must also be listed under `build.passThroughEnv` in [`turbo.json`](../../turbo.json) — Turbo 2 strict mode filters undeclared env vars before they reach `next build`.
 
 ## Scripts
 
