@@ -63,10 +63,9 @@ GitHub Actions runs on every push and pull request to `main` (see [`.github/work
 - `pnpm check`
 - `pnpm typecheck`
 - `pnpm test`
-- `pnpm build`
+- `pnpm build` (includes `env-demo`; workflow sets demo env vars — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml))
 - `pnpm test:dist`
 - `pnpm demo:cache:build`
-- `pnpm demo:env:build` (with demo env vars set in the workflow)
 
 When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, an optional integration job also runs `pnpm --filter @g14o/core test:integration`. Fork PRs do not receive upstream secrets.
 
@@ -95,13 +94,25 @@ Maintainers run `pnpm version-packages` and `pnpm release:publish:core` or `pnpm
 
 ```bash
 pnpm build
-pnpm version-packages   # after merging changesets: bumps @g14o/core, syncs shim workspace:^ ranges, updates lockfile
-pnpm release:publish:core # for core packages
-pnpm release:publish:env # for env-core packages
-git tag v<version>
+pnpm version-packages   # bumps versioned packages; syncs shim workspace:^ ranges; updates lockfile
+
+# @g14o/core (skip if not versioned this cycle)
+pnpm release:publish:core
+git tag '@g14o/core@<core-version>'    # from packages/core/package.json
 git push origin main --follow-tags
-gh release create v<version> --title "v<version>" --notes-file packages/core/CHANGELOG.md
-gh release create v<version> --title "v<version>" --notes-file packages/env-core/CHANGELOG.md
+gh release create '@g14o/core@<core-version>' \
+  --title '@g14o/core v<core-version>' \
+  --notes-file packages/core/CHANGELOG.md
+
+# @g14o/env-core (skip if not versioned this cycle)
+pnpm release:publish:env
+git tag '@g14o/env-core@<env-version>'   # from packages/env-core/package.json
+git push origin main --follow-tags
+gh release create '@g14o/env-core@<env-version>' \
+  --title '@g14o/env-core v<env-version>' \
+  --notes-file packages/env-core/CHANGELOG.md
 ```
+
+Read `<core-version>` and `<env-version>` from each package’s `package.json` after `pnpm version-packages`. Only run the core or env block when that package was bumped in the changeset release (do not re-tag unchanged versions).
 
 Commit `packages/{cache,ratelimit,utils}/package.json` and `pnpm-lock.yaml` when the release changes shim `@g14o/core` specifiers.
