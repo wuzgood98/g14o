@@ -20,7 +20,7 @@ export function maskSecret(value: string, visible = 2): string {
   if (value.length <= visible * 2) {
     return "•".repeat(value.length);
   }
-  return `${value.slice(0, visible)}${"•".repeat(Math.max(4, value.length - visible * 2))}${value.slice(-visible)}`;
+  return `${value.slice(0, visible)}${"•".repeat(value.length - visible * 2)}${value.slice(-visible)}`;
 }
 
 export interface ValidatorSnapshot {
