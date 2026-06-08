@@ -21,13 +21,13 @@ import { createEnv } from "@g14o/env-core";
 import * as z from "zod";
 
 export const env = createEnv({
-  clientPrefix: "NEXT_PUBLIC_",
+  clientPrefix: "PUBLIC_",
   server: {
     DATABASE_URL: z.url(),
     OPEN_AI_API_KEY: z.string().min(1),
   },
   client: {
-    NEXT_PUBLIC_API_URL: z.url(),
+    PUBLIC_API_URL: z.url(),
   },
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
