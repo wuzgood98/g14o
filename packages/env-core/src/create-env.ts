@@ -125,7 +125,7 @@ function resolveOptions<
  *     PUBLIC_API_URL: z.url(),
  *     PUBLIC_APP_NAME: z.string().min(1),
  *   },
- *   runtimeEnvStrict: runtimeEnvStrict(),
+ *   runtimeEnv: process.env,
  *   emptyStringAsUndefined: true,
  * });
  * ```
