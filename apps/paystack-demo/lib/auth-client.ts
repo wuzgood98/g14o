@@ -1,0 +1,8 @@
+import { paystackClientPlugin } from "@g14o/paystack/client";
+import { createAuthClient } from "better-auth/react";
+import { env } from "@/lib/env";
+
+export const authClient = createAuthClient({
+  baseURL: env.NEXT_PUBLIC_APP_URL,
+  plugins: [paystackClientPlugin()],
+});

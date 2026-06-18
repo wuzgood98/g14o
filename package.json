@@ -31,10 +31,13 @@
     "demo:cache:build": "pnpm --filter cache-demo build",
     "demo:env": "pnpm --filter env-demo dev",
     "demo:env:build": "pnpm --filter env-demo build",
+    "demo:paystack": "pnpm --filter paystack-demo dev",
+    "demo:paystack:build": "pnpm --filter paystack-demo build",
     "changeset": "changeset",
     "version-packages": "changeset version && node scripts/sync-shim-core-version.mjs && pnpm install",
     "release:publish:core": "pnpm --filter @g14o/core publish --access public --no-git-checks",
     "release:publish:env": "pnpm --filter @g14o/env-core publish --access public --no-git-checks",
+    "release:publish:paystack": "pnpm --filter @g14o/paystack publish --access public --no-git-checks",
     "prepare": "husky"
   },
   "version": "0.0.1",
