@@ -349,14 +349,14 @@ export class Paystack implements PaystackClient {
             page: query?.page,
           },
         });
-        const parsed = paystackPlanListSchema.parse(response);
-        if (!parsed.status) {
-          throw new PaystackError(parsed.message, {
+        const parsed = paystackPlanListSchema.safeParse(response);
+        if (!parsed.success) {
+          throw new PaystackError("Invalid Paystack API response shape", {
             code: "PAYSTACK_API_ERROR",
-            paystackMessage: parsed.message,
+            paystackMessage: parsed.error.message,
           });
         }
-        return parsed.data;
+        return parsed.data.data;
       },
     };
 
