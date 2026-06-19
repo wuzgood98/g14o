@@ -134,6 +134,10 @@ export type PaystackPlugin<O extends PaystackPluginOptions> = ReturnType<
   typeof paystack<O>
 >;
 
+export type { RawError } from "./error-codes";
+export { PAYSTACK_ERROR_CODES } from "./error-codes";
+export type PaystackErrorCodes = typeof PAYSTACK_ERROR_CODES;
+
 export {
   CheckoutError,
   CustomerSyncError,
