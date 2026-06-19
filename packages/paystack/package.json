@@ -44,28 +44,33 @@
     "vitest": "^4.1.8",
     "zod": "^4.4.3"
   },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "dev-source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
     },
     "./client": {
-      "types": "./dist/client.d.ts",
-      "import": "./dist/client.js"
+      "dev-source": "./src/client.ts",
+      "types": "./dist/client.d.mts",
+      "default": "./dist/client.mjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.mts"
+      ],
+      "./client": [
+        "./dist/client.d.mts"
+      ]
     }
   },
   "publishConfig": {
-    "access": "public",
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "import": "./dist/index.js"
-      },
-      "./client": {
-        "types": "./dist/client.d.ts",
-        "import": "./dist/client.js"
-      }
-    }
+    "access": "public"
   },
   "keywords": [
     "paystack",
