@@ -138,6 +138,7 @@ export type { RawError } from "./error-codes";
 export { PAYSTACK_ERROR_CODES } from "./error-codes";
 export type PaystackErrorCodes = typeof PAYSTACK_ERROR_CODES;
 
+export type { PaystackClientFetchOption } from "./client";
 export {
   CheckoutError,
   CustomerSyncError,
