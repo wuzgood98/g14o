@@ -64,18 +64,19 @@ async function listAllSubscriptionsForCustomer(
   const paystackClient = pluginContext.options.paystackClient;
   const subscriptions: PaystackSubscription[] = [];
   let page = options.page ?? 1;
+  const pageSize = options.perPage ?? SUBSCRIPTION_LIST_PAGE_SIZE;
 
   while (true) {
     const batch = await paystackClient.subscriptions.list({
       customer: options.customer,
-      perPage: options.perPage ?? SUBSCRIPTION_LIST_PAGE_SIZE,
+      perPage: pageSize,
       page,
       plan: options.plan,
     });
 
     subscriptions.push(...batch);
 
-    if (batch.length < SUBSCRIPTION_LIST_PAGE_SIZE) {
+    if (batch.length < pageSize) {
       break;
     }
 
