@@ -19,7 +19,6 @@ import { paystack, Paystack } from "@g14o/paystack";
 
 const paystackClient = new Paystack({
   secretKey: process.env.PAYSTACK_SECRET_KEY!,
-  publicKey: process.env.PAYSTACK_PUBLIC_KEY,
 });
 
 export const auth = betterAuth({
@@ -202,7 +201,6 @@ import { Paystack } from "@g14o/paystack";
 
 const paystack = new Paystack({
   secretKey: process.env.PAYSTACK_SECRET_KEY!,
-  publicKey: process.env.PAYSTACK_PUBLIC_KEY, // optional — for Paystack Popup integrations
 });
 
 await paystack.transactions.initialize({ email, amount: 1000 });
