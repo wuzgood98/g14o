@@ -51,18 +51,19 @@ export const paystackClientPlugin = <
         createCheckoutSession: async <const T extends CheckoutSessionInput>(
           input: Exactly<CheckoutSessionInput, T>,
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<CheckoutSessionData<GlobalDisableRedirect, T>>(
-            "/paystack/checkout/create-session",
-            {
-              method: "POST",
-              body: {
-                ...input,
-                disableRedirect: input.disableRedirect ?? globalDisableRedirect,
-              },
-              ...fetchOptions,
-            }
-          ),
+        ) => {
+          const res = await $fetch<
+            CheckoutSessionData<GlobalDisableRedirect, T>
+          >("/paystack/checkout/create-session", {
+            method: "POST",
+            body: {
+              ...input,
+              disableRedirect: input.disableRedirect ?? globalDisableRedirect,
+            },
+            ...fetchOptions,
+          });
+          return res;
+        },
         /**
          * Upgrade or start a subscription checkout for a plan.
          * Set `annual: true` for annual billing.
@@ -74,18 +75,19 @@ export const paystackClientPlugin = <
         upgrade: async <const T extends UpgradeSubscriptionInput>(
           input: Exactly<UpgradeSubscriptionInput, T>,
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<UpgradeSubscriptionData<GlobalDisableRedirect, T>>(
-            "/paystack/subscription/upgrade",
-            {
-              method: "POST",
-              body: {
-                ...input,
-                disableRedirect: input.disableRedirect ?? globalDisableRedirect,
-              },
-              ...fetchOptions,
-            }
-          ),
+        ) => {
+          const res = await $fetch<
+            UpgradeSubscriptionData<GlobalDisableRedirect, T>
+          >("/paystack/subscription/upgrade", {
+            method: "POST",
+            body: {
+              ...input,
+              disableRedirect: input.disableRedirect ?? globalDisableRedirect,
+            },
+            ...fetchOptions,
+          });
+          return res;
+        },
         /**
          * Cancel an active subscription (requires stored `emailToken`).
          * Returns `{ data, error }`.
@@ -107,12 +109,17 @@ export const paystackClientPlugin = <
             subscriptionCode?: string | undefined;
           } = {},
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<DbPaystackSubscription>("/paystack/subscription/cancel", {
-            method: "POST",
-            body: input,
-            ...fetchOptions,
-          }),
+        ) => {
+          const res = await $fetch<DbPaystackSubscription>(
+            "/paystack/subscription/cancel",
+            {
+              method: "POST",
+              body: input,
+              ...fetchOptions,
+            }
+          );
+          return res;
+        },
         /** Resume a cancelled subscription. Returns `{ data, error }`.
          * @param input - The input for the resume endpoint.
          * @param fetchOptions - The fetch options for the resume endpoint.
@@ -132,12 +139,17 @@ export const paystackClientPlugin = <
             subscriptionCode?: string | undefined;
           } = {},
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<DbPaystackSubscription>("/paystack/subscription/resume", {
-            method: "POST",
-            body: input,
-            ...fetchOptions,
-          }),
+        ) => {
+          const res = await $fetch<DbPaystackSubscription>(
+            "/paystack/subscription/resume",
+            {
+              method: "POST",
+              body: input,
+              ...fetchOptions,
+            }
+          );
+          return res;
+        },
         /** Fetch the current user's subscription. Returns `{ data, error }`.
          * @param input - The input for the get subscription endpoint.
          * @param fetchOptions - The fetch options for the get subscription endpoint.
@@ -157,12 +169,17 @@ export const paystackClientPlugin = <
             subscriptionCode?: string | undefined;
           } = {},
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<DbPaystackSubscription>("/paystack/subscription/get", {
-            method: "GET",
-            query: input,
-            ...fetchOptions,
-          }),
+        ) => {
+          const res = await $fetch<DbPaystackSubscription>(
+            "/paystack/subscription/get",
+            {
+              method: "GET",
+              query: input,
+              ...fetchOptions,
+            }
+          );
+          return res;
+        },
 
         /** List active subscriptions for the current user. Returns `{ data, error }`.
          * @param input - The input for the list subscriptions endpoint.
@@ -197,16 +214,18 @@ export const paystackClientPlugin = <
             plan?: number | undefined;
           } = {},
           fetchOptions?: Parameters<typeof $fetch>[1]
-        ) =>
-          $fetch<DbPaystackSubscription[]>("/paystack/subscription/list", {
-            method: "GET",
-            query: input,
-            ...fetchOptions,
-          }),
+        ) => {
+          const res = await $fetch<DbPaystackSubscription[]>(
+            "/paystack/subscription/list",
+            {
+              method: "GET",
+              query: input,
+              ...fetchOptions,
+            }
+          );
+          return res;
+        },
       },
     }),
   } satisfies BetterAuthClientPlugin;
 };
-
-// biome-ignore lint/performance/noBarrelFile: published package client entry point
-export * from "./error-codes";
