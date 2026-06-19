@@ -183,12 +183,10 @@ export const createCustomerForUser = async (
   }
 
   const nameParts = splitUserName(user.name);
-  const customParams = options.getCustomerCreateParams
-    ? await options.getCustomerCreateParams(
-        user,
-        options.authCtx as GenericEndpointContext
-      )
-    : {};
+  const customParams =
+    options.getCustomerCreateParams && options.authCtx
+      ? await options.getCustomerCreateParams(user, options.authCtx)
+      : {};
 
   const metadata = customerMetadata.set(
     { userId: user.id },
