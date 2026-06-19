@@ -534,10 +534,13 @@ const paystackWebhookPayloadSchemaImpl = z.object({
    * The event that occurred. eg: 'charge.success'
    * @required
    */
-  event: z.string().meta({
-    description:
-      "The event that occurred. Used to identify the event in the database. eg: 'charge.success'",
-  }),
+  event: z
+    .string()
+    .meta({
+      description:
+        "The event that occurred. Used to identify the event in the database. eg: 'charge.success'",
+    })
+    .min(1),
   /**
    * The data associated with the event.
    * @required
@@ -560,16 +563,22 @@ export const disableSubscriptionParamsSchema = z.object({
    * The code of the subscription to disable.
    * @required
    */
-  code: z.string().meta({
-    description: "The code of the subscription to disable.",
-  }),
+  code: z
+    .string()
+    .meta({
+      description: "The code of the subscription to disable.",
+    })
+    .min(1),
   /**
    * The token of the subscription to disable.
    * @required
    */
-  token: z.string().meta({
-    description: "The token of the subscription to disable.",
-  }),
+  token: z
+    .string()
+    .meta({
+      description: "The token of the subscription to disable.",
+    })
+    .min(1),
 });
 
 export type DisableSubscriptionParams = z.infer<
