@@ -32,9 +32,9 @@ export default function Page() {
           </dt>
           <dd>{env.BETTER_AUTH_URL}</dd>
           <dt>
-            <code>DATABASE_URL</code>
+            <code>SQLITE_DATABASE_PATH</code>
           </dt>
-          <dd>{env.DATABASE_URL}</dd>
+          <dd>{env.SQLITE_DATABASE_PATH}</dd>
         </dl>
       </section>
 
