@@ -68,7 +68,7 @@ export const subscriptionMetadata = {
       referenceId: string;
       planName?: string | undefined;
       supersedeSubscriptionCode?: string | undefined;
-      cancel_Action?: string | undefined;
+      cancel_action?: string | undefined;
     },
     ...userMetadata: (Record<string, unknown> | undefined)[]
   ): Record<string, unknown> {
