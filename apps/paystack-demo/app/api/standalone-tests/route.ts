@@ -110,7 +110,6 @@ export async function GET() {
   results.push(
     await runTest("plans.list", async () => {
       const plans = await paystack.plans.list({ perPage: 5, page: 1 });
-      console.log({ plans });
       return { count: plans.length };
     })
   );
