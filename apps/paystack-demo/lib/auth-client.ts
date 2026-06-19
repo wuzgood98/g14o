@@ -1,5 +1,5 @@
 import { paystackClientPlugin } from "@g14o/paystack/client";
-import { createAuthClient } from "better-auth/react";
+import { createAuthClient } from "better-auth/client";
 import { env } from "@/lib/env";
 
 export const authClient = createAuthClient({
