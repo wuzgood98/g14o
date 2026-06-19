@@ -46,7 +46,7 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://app.example.com
           NEXT_PUBLIC_APP_NAME: env-demo
           PAYSTACK_SECRET_KEY: sk_test_1234567890
-          BETTER_AUTH_SECRET: 1234567890
+          BETTER_AUTH_SECRET: demo-secret-key-min-32-chars-long
           BETTER_AUTH_URL: https://auth.example.com
         run: pnpm build
 
