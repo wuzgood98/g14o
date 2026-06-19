@@ -1,4 +1,5 @@
-import type { BetterAuthClientPlugin } from "better-auth/client";
+/* biome-ignore lint/style/noExportedImports: it resolves the type inference of the plugin type */
+import type { ClientFetchOption as PaystackClientFetchOption } from "@better-auth/core";
 import { PAYSTACK_ERROR_CODES } from "./error-codes";
 import type { paystack } from "./index";
 import type {
@@ -11,6 +12,17 @@ import type {
   UpgradeSubscriptionInput,
 } from "./types";
 import { PACKAGE_VERSION } from "./version";
+
+type PluginFetch = <T = unknown>(
+  url: string,
+  options?: PaystackClientFetchOption
+) => Promise<
+  | { data: T; error: null }
+  | {
+      data: null;
+      error: { message?: string; status: number; statusText: string };
+    }
+>;
 
 /**
  * Better Auth client plugin exposing typed Paystack billing actions on `authClient.subscription`.
@@ -40,7 +52,7 @@ export const paystackClientPlugin = <
     version: PACKAGE_VERSION,
     $ERROR_CODES: PAYSTACK_ERROR_CODES,
     $InferServerPlugin: {} as ReturnType<typeof paystack>,
-    getActions: ($fetch) => ({
+    getActions: ($fetch: PluginFetch) => ({
       subscription: {
         /** Initialize a hosted checkout for a one-time payment.
          * Returns `{ data, error }`.
@@ -50,7 +62,7 @@ export const paystackClientPlugin = <
          */
         createCheckoutSession: async <const T extends CheckoutSessionInput>(
           input: Exactly<CheckoutSessionInput, T>,
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<
             CheckoutSessionData<GlobalDisableRedirect, T>
@@ -74,7 +86,7 @@ export const paystackClientPlugin = <
          */
         upgrade: async <const T extends UpgradeSubscriptionInput>(
           input: Exactly<UpgradeSubscriptionInput, T>,
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<
             UpgradeSubscriptionData<GlobalDisableRedirect, T>
@@ -108,7 +120,7 @@ export const paystackClientPlugin = <
              */
             subscriptionCode?: string | undefined;
           } = {},
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<DbPaystackSubscription>(
             "/paystack/subscription/cancel",
@@ -138,7 +150,7 @@ export const paystackClientPlugin = <
              */
             subscriptionCode?: string | undefined;
           } = {},
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<DbPaystackSubscription>(
             "/paystack/subscription/resume",
@@ -168,7 +180,7 @@ export const paystackClientPlugin = <
              */
             subscriptionCode?: string | undefined;
           } = {},
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<DbPaystackSubscription>(
             "/paystack/subscription/get",
@@ -213,7 +225,7 @@ export const paystackClientPlugin = <
              */
             plan?: number | undefined;
           } = {},
-          fetchOptions?: Parameters<typeof $fetch>[1]
+          fetchOptions?: PaystackClientFetchOption
         ) => {
           const res = await $fetch<DbPaystackSubscription[]>(
             "/paystack/subscription/list",
@@ -227,5 +239,7 @@ export const paystackClientPlugin = <
         },
       },
     }),
-  } satisfies BetterAuthClientPlugin;
+  };
 };
+
+export type { PaystackClientFetchOption };
