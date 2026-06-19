@@ -1,33 +1,38 @@
 import { headers } from "next/headers";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { sqlite } from "@/lib/db";
 
-interface UserRow {
-  createdAt: string;
-  email: string;
-  emailVerified: boolean;
-  id: string;
-  image: string | null;
-  name: string;
-  paystackCustomerCode: string | null;
-  updatedAt: string;
-}
+const UserRowSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  emailVerified: z.boolean(),
+  image: z.string().nullable(),
+  paystackCustomerCode: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
 
-interface SubscriptionRow {
-  cancelAtPeriodEnd: boolean;
-  currentPeriodEnd: string | null;
-  currentPeriodStart: string;
-  customerCode: string;
-  id: string;
-  metadata: string | null;
-  planCode: string;
-  planName: string;
-  provider: string;
-  referenceId: string;
-  status: string;
-  subscriptionCode: string;
-  userId: string;
-}
+type UserRow = z.infer<typeof UserRowSchema>;
+
+const SubscriptionRowSchema = z.object({
+  cancelAtPeriodEnd: z.boolean(),
+  currentPeriodEnd: z.string().nullable(),
+  currentPeriodStart: z.string(),
+  customerCode: z.string(),
+  id: z.string(),
+  metadata: z.string().nullable(),
+  planCode: z.string(),
+  planName: z.string(),
+  provider: z.string(),
+  referenceId: z.string(),
+  status: z.string(),
+  subscriptionCode: z.string(),
+  userId: z.string(),
+});
+
+type SubscriptionRow = z.infer<typeof SubscriptionRowSchema>;
 
 interface UserWithSubscriptions extends UserRow {
   subscriptions: SubscriptionRow[];
@@ -43,7 +48,8 @@ export async function GET() {
        FROM user
        ORDER BY createdAt DESC`
     )
-    .all() as unknown as UserRow[];
+    .all();
+  const validatedUsers = z.array(UserRowSchema).parse(users);
 
   const subscriptions = sqlite
     .prepare(
@@ -53,19 +59,24 @@ export async function GET() {
        FROM subscription
        ORDER BY id DESC`
     )
-    .all() as unknown as SubscriptionRow[];
+    .all();
+  const validatedSubscriptions = z
+    .array(SubscriptionRowSchema)
+    .parse(subscriptions);
 
   const subscriptionsByUserId = new Map<string, SubscriptionRow[]>();
-  for (const subscription of subscriptions) {
+  for (const subscription of validatedSubscriptions) {
     const existing = subscriptionsByUserId.get(subscription.userId) ?? [];
     existing.push(subscription);
     subscriptionsByUserId.set(subscription.userId, existing);
   }
 
-  const usersWithSubscriptions: UserWithSubscriptions[] = users.map((user) => ({
-    ...user,
-    subscriptions: subscriptionsByUserId.get(user.id) ?? [],
-  }));
+  const usersWithSubscriptions: UserWithSubscriptions[] = validatedUsers.map(
+    (user) => ({
+      ...user,
+      subscriptions: subscriptionsByUserId.get(user.id) ?? [],
+    })
+  );
 
   const currentUserSubscriptions = session
     ? await auth.api.listActiveSubscriptions({
