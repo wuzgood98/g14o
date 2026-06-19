@@ -11,9 +11,9 @@
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
       "passThroughEnv": [
         "DATABASE_URL",
+        "SQLITE_DATABASE_PATH",
         "OPEN_AI_API_KEY",
         "NEXT_PUBLIC_API_URL",
-        "NEXT_PUBLIC_APP_NAME",
         "PAYSTACK_SECRET_KEY",
         "PAYSTACK_PUBLIC_KEY",
         "BETTER_AUTH_SECRET",

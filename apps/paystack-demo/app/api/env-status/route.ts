@@ -9,7 +9,7 @@ export function GET() {
       : null,
     betterAuthUrl: env.BETTER_AUTH_URL,
     appUrl: env.NEXT_PUBLIC_APP_URL,
-    databaseUrl: env.DATABASE_URL,
+    sqliteDatabasePath: env.SQLITE_DATABASE_PATH,
     envValidated: true,
   });
 }
