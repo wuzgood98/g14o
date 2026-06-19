@@ -31,11 +31,9 @@ jobs:
           node-version: 24
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - run: pnpm check
-      - run: pnpm typecheck
-      - run: pnpm test
       - name: Build packages and apps
         # env-demo validates these at module load during `next build` page-data
         # collection. They are non-sensitive demo placeholders (see
@@ -47,8 +45,21 @@ jobs:
           NEXT_PUBLIC_API_URL: https://api.example.com
           NEXT_PUBLIC_APP_NAME: env-demo
         run: pnpm build
-      - run: pnpm test:dist
-      - run: pnpm demo:cache:build
+
+      - name: Check
+        run: pnpm check
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Test dist
+        run: pnpm test:dist
+
+      - name: Build cache demo
+        run: pnpm demo:cache:build
 
   integration:
     runs-on: ubuntu-latest
