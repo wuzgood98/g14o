@@ -1,9 +1,11 @@
-import type { GenericEndpointContext, InferOptionSchema } from "better-auth";
-import type { Paystack } from "./client/paystack-client";
 import type {
+  Paystack,
   PaystackCustomer,
+  PaystackEventName,
   PaystackSubscription,
-} from "./client/responses";
+  PaystackWebhookEvent,
+} from "@g14o/paystack";
+import type { GenericEndpointContext, InferOptionSchema } from "better-auth";
 import type { subscriptions, user, webhookEvents } from "./schema";
 
 /** Billing provider identifier stored on plugin records. */
@@ -111,7 +113,7 @@ export interface PaystackWebhookEventRecord {
   payload: string;
   processedAt: Date | null;
   status: "pending" | "processed" | "failed";
-  type: string;
+  type: PaystackEventName;
 }
 
 /** Context passed to subscription lifecycle hooks. */
@@ -142,23 +144,19 @@ export interface CustomerCreateContext {
   };
 }
 
-/** Known Paystack webhook event types handled by the plugin. */
-export type PaystackWebhookEventType =
-  | "charge.success"
-  | "invoice.create"
-  | "invoice.update"
-  | "invoice.payment_failed"
-  | "subscription.create"
-  | "subscription.disable"
-  | "subscription.not_renew"
-  | "subscription.expiring_cards"
-  | (string & {});
+/** @deprecated Use PaystackEventName from `@g14o/paystack`. */
+export type PaystackWebhookEventType = PaystackEventName;
 
-/** Parsed Paystack webhook payload. */
-export interface PaystackWebhookEvent {
-  data: Record<string, unknown>;
-  event: PaystackWebhookEventType;
-}
+export type {
+  ChargeSuccessData,
+  InvoiceData,
+  PaystackEventDataMap,
+  PaystackEventName,
+  PaystackWebhookEvent,
+  SubscriptionCreateData,
+  SubscriptionDisableData,
+  SubscriptionNotRenewData,
+} from "@g14o/paystack";
 
 /** Subscription billing configuration and lifecycle hooks. */
 export interface PaystackSubscriptionOptions {

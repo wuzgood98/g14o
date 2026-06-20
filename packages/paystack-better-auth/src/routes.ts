@@ -1,26 +1,23 @@
 import { APIError } from "@better-auth/core/error";
-import type { GenericEndpointContext } from "better-auth";
-import { createAuthEndpoint, getSessionFromCtx } from "better-auth/api";
-
 import {
   CheckoutError,
+  type Paystack,
+  PaystackError,
   SubscriptionError,
-  WebhookVerificationError,
-} from "./client/errors";
-import type { Paystack } from "./client/paystack-client";
+} from "@g14o/paystack";
+import type { GenericEndpointContext } from "better-auth";
+import { createAuthEndpoint, getSessionFromCtx } from "better-auth/api";
+import {
+  assertSubscriptionOwnership,
+  toPublicSubscription,
+} from "./authorization";
 import {
   createCustomerForUser,
   getCustomerByUserId,
   syncCustomerForUser,
 } from "./customer";
 import { PAYSTACK_ERROR_CODES } from "./error-codes";
-import {
-  handlePaystackWebhookEvent,
-  markWebhookFailed,
-  markWebhookProcessed,
-  persistWebhookEvent,
-  shouldProcessWebhook,
-} from "./hooks";
+import { createAdapterWebhookStore, handlePaystackWebhookEvent } from "./hooks";
 import { checkoutMetadata, subscriptionMetadata } from "./metadata";
 import { getReferenceId, paystackSessionMiddleware } from "./middleware";
 import type { PlanRegistry } from "./plans";
@@ -36,17 +33,14 @@ import type {
 } from "./types";
 import {
   asDbSubscription,
-  createWebhookEventId,
   generateReference,
   mapTransactionStatus,
-  verifyPaystackWebhookSignature,
 } from "./utils";
 import {
   chargeAuthorizationBodySchema,
   checkoutSessionBodySchema,
   customerActionBodySchema,
   listActiveSubscriptionsBodySchema,
-  paystackWebhookPayloadSchema,
   subscriptionActionBodySchema,
   upgradeBodySchema,
 } from "./validation";
@@ -102,12 +96,7 @@ function resolveUpgradeFromExistingRecord(
     return { upgraded: false };
   }
 
-  if (existingRecord.userId !== userId) {
-    throw APIError.from(
-      "NOT_FOUND",
-      PAYSTACK_ERROR_CODES.SUBSCRIPTION_NOT_FOUND
-    );
-  }
+  assertSubscriptionOwnership(existingRecord, userId);
 
   if (!isLiveSubscription(existingRecord.status)) {
     return { upgraded: false };
@@ -247,7 +236,7 @@ export const createPaystackCustomer = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await createCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -266,12 +255,11 @@ export const getPaystackCustomer = (_pluginContext: PluginContext) =>
     "/paystack/customer/get",
     {
       method: "GET",
-      query: customerActionBodySchema.partial(),
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.query.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await getCustomerByUserId(ctx.context.adapter, userId);
 
       if (!customer) {
@@ -305,7 +293,7 @@ export const syncPaystackCustomer = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await syncCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -546,7 +534,7 @@ export const cancelSubscription = (pluginContext: PluginContext) =>
         },
       });
 
-      return ctx.json(asDbSubscription(updated));
+      return ctx.json(toPublicSubscription(asDbSubscription(updated)));
     }
   );
 
@@ -611,7 +599,7 @@ export const resumeSubscription = (pluginContext: PluginContext) =>
         },
       });
 
-      return ctx.json(asDbSubscription(updated));
+      return ctx.json(toPublicSubscription(asDbSubscription(updated)));
     }
   );
 
@@ -653,7 +641,7 @@ export const getSubscription = (pluginContext: PluginContext) =>
         );
       }
 
-      return ctx.json(record);
+      return ctx.json(toPublicSubscription(record));
     }
   );
 
@@ -679,19 +667,33 @@ export const listActiveSubscriptions = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      await reconcileSubscriptionsForUser({
-        adapter: ctx.context.adapter,
-        pluginContext,
-        userId: session.user.id,
-        query: ctx.query,
-      });
+      try {
+        await reconcileSubscriptionsForUser({
+          adapter: ctx.context.adapter,
+          pluginContext,
+          userId: session.user.id,
+          query: ctx.query,
+        });
+      } catch (error) {
+        if (
+          error instanceof PaystackError &&
+          error.code === "PAYSTACK_VALIDATION_ERROR"
+        ) {
+          throw APIError.from(
+            "BAD_REQUEST",
+            PAYSTACK_ERROR_CODES.INVALID_REQUEST_BODY
+          );
+        }
+
+        throw error;
+      }
       const records =
         await ctx.context.adapter.findMany<DbPaystackSubscription>({
           model: "subscription",
           where: [{ field: "userId", value: session.user.id }],
         });
 
-      return ctx.json(records);
+      return ctx.json(records.map(toPublicSubscription));
     }
   );
 
@@ -714,7 +716,7 @@ export const chargeAuthorization = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const result = await chargeCustomer({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -730,118 +732,6 @@ export const chargeAuthorization = (pluginContext: PluginContext) =>
       return ctx.json(result);
     }
   );
-
-/**
- * Verifies a Paystack webhook request.
- * @internal
- */
-async function verifyWebhookRequest(
-  request: Request | null | undefined,
-  webhookSecret: string
-): Promise<string> {
-  if (!request?.body) {
-    throw APIError.from(
-      "BAD_REQUEST",
-      PAYSTACK_ERROR_CODES.INVALID_REQUEST_BODY
-    );
-  }
-
-  const signature = request.headers.get("x-paystack-signature");
-  if (!signature) {
-    throw APIError.from(
-      "BAD_REQUEST",
-      PAYSTACK_ERROR_CODES.WEBHOOK_SIGNATURE_NOT_FOUND
-    );
-  }
-
-  const rawBody = await request.text();
-
-  try {
-    verifyPaystackWebhookSignature(rawBody, signature, webhookSecret);
-  } catch (error) {
-    if (error instanceof WebhookVerificationError) {
-      throw APIError.from(
-        "BAD_REQUEST",
-        PAYSTACK_ERROR_CODES.WEBHOOK_VERIFICATION_FAILED
-      );
-    }
-    throw error;
-  }
-
-  return rawBody;
-}
-
-/**
- * Parses a Paystack webhook payload.
- * @internal
- */
-function parseWebhookPayload(rawBody: string) {
-  try {
-    return paystackWebhookPayloadSchema.parse(JSON.parse(rawBody));
-  } catch {
-    throw APIError.from(
-      "BAD_REQUEST",
-      PAYSTACK_ERROR_CODES.INVALID_WEBHOOK_PAYLOAD
-    );
-  }
-}
-
-/**
- * Processes a Paystack webhook delivery.
- * @internal
- */
-async function processWebhookDelivery(options: {
-  adapter: Adapter;
-  pluginContext: PluginContext;
-  planRegistry: PlanRegistry | undefined;
-  payload: ReturnType<typeof paystackWebhookPayloadSchema.parse>;
-  rawBody: string;
-}) {
-  const { adapter, pluginContext, planRegistry, payload, rawBody } = options;
-  const eventId = createWebhookEventId(payload.event, payload.data);
-
-  if (!pluginContext.options.disableWebhookPersistence) {
-    const shouldProcess = await shouldProcessWebhook(adapter, eventId);
-
-    if (!shouldProcess) {
-      return { duplicate: true as const };
-    }
-
-    await persistWebhookEvent(adapter, {
-      eventId,
-      type: payload.event,
-      payload: rawBody,
-    });
-  }
-
-  try {
-    await handlePaystackWebhookEvent({
-      event: payload,
-      adapter,
-      pluginContext,
-      planRegistry,
-    });
-
-    if (!pluginContext.options.disableWebhookPersistence) {
-      await markWebhookProcessed(adapter, eventId);
-    }
-  } catch (error) {
-    if (!pluginContext.options.disableWebhookPersistence) {
-      await markWebhookFailed(
-        adapter,
-        eventId,
-        error instanceof Error ? error.message : "Unknown webhook error"
-      );
-    }
-
-    throw APIError.from(
-      "BAD_REQUEST",
-      PAYSTACK_ERROR_CODES.WEBHOOK_PROCESSING_ERROR
-    );
-  }
-
-  return { duplicate: false as const };
-}
 
 /**
  * Handles a Paystack webhook delivery.
@@ -862,28 +752,41 @@ export const paystackWebhook = (
       disableBody: true,
     },
     async (ctx) => {
-      const webhookSecret = pluginContext.options.paystackClient.secretKey;
-      if (!webhookSecret) {
-        throw APIError.from(
-          "INTERNAL_SERVER_ERROR",
-          PAYSTACK_ERROR_CODES.WEBHOOK_SECRET_NOT_FOUND
+      const paystackClient = pluginContext.options.paystackClient;
+
+      try {
+        const result = await paystackClient.webhook.processWebhookDelivery(
+          ctx.request,
+          {
+            disablePersistence: pluginContext.options.disableWebhookPersistence,
+            store: createAdapterWebhookStore(ctx.context.adapter),
+            handler: (event) =>
+              handlePaystackWebhookEvent({
+                event,
+                adapter: ctx.context.adapter,
+                pluginContext,
+                planRegistry,
+              }),
+          }
         );
+
+        if (result.duplicate) {
+          return ctx.json({ received: true, duplicate: true });
+        }
+
+        return ctx.json({ received: true });
+      } catch (error) {
+        if (
+          error instanceof PaystackError &&
+          error.code === "WEBHOOK_PROCESSING_ERROR"
+        ) {
+          throw APIError.from(
+            "BAD_REQUEST",
+            PAYSTACK_ERROR_CODES.WEBHOOK_PROCESSING_ERROR
+          );
+        }
+
+        throw error;
       }
-
-      const rawBody = await verifyWebhookRequest(ctx.request, webhookSecret);
-      const payload = parseWebhookPayload(rawBody);
-      const result = await processWebhookDelivery({
-        adapter: ctx.context.adapter,
-        pluginContext,
-        planRegistry,
-        payload,
-        rawBody,
-      });
-
-      if (result.duplicate) {
-        return ctx.json({ received: true, duplicate: true });
-      }
-
-      return ctx.json({ received: true });
     }
   );

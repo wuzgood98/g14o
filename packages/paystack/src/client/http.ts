@@ -313,7 +313,7 @@ const processHttpResponse = <T>(
 };
 
 export class PaystackHttpClient {
-  private readonly secretKey: string;
+  readonly #secretKey: string;
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
@@ -324,7 +324,7 @@ export class PaystackHttpClient {
   ) => Promise<void> | void;
 
   constructor(options: PaystackHttpOptions) {
-    this.secretKey = options.secretKey;
+    this.#secretKey = options.secretKey;
     this.baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
     this.fetchImpl = options.fetch ?? globalThis.fetch.bind(globalThis);
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -344,12 +344,15 @@ export class PaystackHttpClient {
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
       try {
-        await this.onPayloadValidationBeforeSending?.(options.body ?? {});
+        const validatePayload =
+          options.onPayloadValidationBeforeSending ??
+          this.onPayloadValidationBeforeSending;
+        await validatePayload?.(options.body ?? {});
 
         const response = await this.fetchImpl(url, {
           method: options.method,
           headers: {
-            Authorization: `Bearer ${this.secretKey}`,
+            Authorization: `Bearer ${this.#secretKey}`,
             "Content-Type": "application/json",
             Accept: "application/json",
           },

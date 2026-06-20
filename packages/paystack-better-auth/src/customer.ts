@@ -1,7 +1,10 @@
+import {
+  CustomerSyncError,
+  type Paystack,
+  type PaystackCustomer,
+  PaystackError,
+} from "@g14o/paystack";
 import type { GenericEndpointContext } from "better-auth";
-import { CustomerSyncError, PaystackError } from "./client/errors";
-import type { Paystack } from "./client/paystack-client";
-import type { PaystackCustomer } from "./client/responses";
 import { customerMetadata } from "./metadata";
 import type { PaystackCustomerRecord } from "./types";
 import { splitUserName } from "./utils";

@@ -42,7 +42,7 @@ export function paystackResponseEnvelopeSchema<T extends z.ZodType>(
 }
 
 const paystackAuthorizationSchemaImpl = z.object({
-  authorization_code: z.string(),
+  authorization_code: z.string().optional(),
   bin: z.string().optional(),
   last4: z.string().optional(),
   exp_month: z.string().optional(),

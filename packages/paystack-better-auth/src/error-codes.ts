@@ -22,8 +22,7 @@ export const PAYSTACK_ERROR_CODES = defineErrorCodes({
   WEBHOOK_VERIFICATION_FAILED: "Paystack webhook verification failed",
   WEBHOOK_PROCESSING_ERROR: "Paystack webhook processing error",
   INVALID_REQUEST_BODY: "Invalid request body",
-  INVALID_PLUGIN_OPTIONS:
-    "Provide either paystackClient or secretKey to the paystack plugin, not both",
+  INVALID_PLUGIN_OPTIONS: "Provide only paystackClient to the paystack plugin",
   MISSING_PLUGIN_CREDENTIALS:
-    "Either paystackClient or secretKey must be provided to the paystack plugin",
+    "paystackClient must be provided to the paystack plugin",
 });

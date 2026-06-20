@@ -103,7 +103,7 @@ describe("paystack subscription upgrade", () => {
     expect(json.message).toContain("already subscribed to this plan");
   });
 
-  test("rejects subscriptionCode owned by another user", async ({
+  test("ignores subscriptionCode owned by another user and starts a new checkout", async ({
     memory,
     paystackOptions,
   }) => {
@@ -127,7 +127,9 @@ describe("paystack subscription upgrade", () => {
       )
     );
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    const json = (await response.json()) as { upgraded: boolean };
+    expect(json.upgraded).toBe(false);
   });
 
   test("rejects live subscription missing email token", async ({

@@ -14,5 +14,5 @@ export default defineConfig({
   minify: true,
   sourcemap: false,
   clean: true,
-  entry: ["./src/index.ts"],
+  entry: ["./src/index.ts", "./src/client.ts"],
 });

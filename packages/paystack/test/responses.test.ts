@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   paystackResponseEnvelopeSchema,
   paystackSubscriptionSchema,
+  paystackTransactionSchema,
 } from "../src/client/responses";
-import {
-  DEMO_PAYSTACK_CUSTOMER_CODE,
-  DEMO_PAYSTACK_SUBSCRIPTION_CODES,
-} from "./_fixtures";
+
+const DEMO_PAYSTACK_CUSTOMER_CODE = "CUS_mkf7p9e3rtyahnz";
+const DEMO_PAYSTACK_SUBSCRIPTION_CODES = [
+  "SUB_ga4snx1n36kituq",
+  "SUB_aops53nsdklcs2h",
+] as const;
 
 describe("Paystack response schemas", () => {
   it("parses demo customer subscription list payloads with string metadata and numeric reusable", () => {
@@ -120,5 +123,30 @@ describe("Paystack response schemas", () => {
     });
 
     expect(parsed.authorization?.reusable).toBe(false);
+  });
+
+  it("accepts abandoned transaction verify payloads with partial authorization", () => {
+    const payload = {
+      status: true,
+      message: "Verification successful",
+      data: {
+        id: 1001,
+        status: "abandoned",
+        reference: "ref_abandoned_1",
+        amount: 1000,
+        currency: "GHS",
+        authorization: {
+          reusable: false,
+        },
+      },
+    };
+
+    const parsed = paystackResponseEnvelopeSchema(
+      paystackTransactionSchema
+    ).parse(payload);
+
+    expect(parsed.data.status).toBe("abandoned");
+    expect(parsed.data.authorization?.authorization_code).toBeUndefined();
+    expect(parsed.data.authorization?.reusable).toBe(false);
   });
 });

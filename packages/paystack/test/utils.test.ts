@@ -1,8 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PaystackError } from "../src/client/errors";
 import { PaystackHttpClient } from "../src/client/http";
-import { Paystack } from "../src/client/paystack-client";
-import { normalizePlanName } from "../src/utils";
 
 describe("PaystackHttpClient", () => {
   it("retries on 429 and succeeds", async () => {
@@ -56,56 +53,5 @@ describe("PaystackHttpClient", () => {
     await expect(
       client.request({ method: "GET", path: "/plan" })
     ).rejects.toMatchObject({ code: "PAYSTACK_API_ERROR", statusCode: 400 });
-  });
-});
-
-describe("Paystack client validation", () => {
-  it("parses initialize transaction response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(
-        JSON.stringify({
-          status: true,
-          message: "Authorization URL created",
-          data: {
-            authorization_url: "https://checkout.paystack.com/abc",
-            access_code: "access",
-            reference: "ref_123",
-          },
-        }),
-        { status: 200 }
-      )
-    );
-
-    const client = new Paystack({ secretKey: "sk_test", fetch: fetchMock });
-    const result = await client.transactions.initialize({
-      email: "test@example.com",
-      amount: 1000,
-    });
-
-    expect(result.authorization_url).toContain("checkout.paystack.com");
-    expect(result.reference).toBe("ref_123");
-  });
-
-  it("throws validation error for malformed response", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ status: true, message: "OK", data: {} }), {
-        status: 200,
-      })
-    );
-
-    const client = new Paystack({ secretKey: "sk_test", fetch: fetchMock });
-
-    await expect(
-      client.transactions.initialize({
-        email: "test@example.com",
-        amount: 1000,
-      })
-    ).rejects.toBeInstanceOf(PaystackError);
-  });
-});
-
-describe("normalizePlanName", () => {
-  it("normalizes plan names", () => {
-    expect(normalizePlanName(" Pro ")).toBe("pro");
   });
 });

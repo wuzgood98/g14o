@@ -1,0 +1,7 @@
+# Strip Cursor co-authored-by trailers
+commit_msg_file="$1"
+if [ -f "$commit_msg_file" ]; then
+  sed -i.bak '/^Co-authored-by:.*[Cc]ursor/d' "$commit_msg_file" 2>/dev/null \
+    || sed -i '' '/^Co-authored-by:.*[Cc]ursor/d' "$commit_msg_file" 2>/dev/null
+  rm -f "${commit_msg_file}.bak"
+fi

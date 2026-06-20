@@ -1,3 +1,4 @@
+import type { PaystackWebhookEvent } from "../webhook-events";
 import type {
   PaystackCustomer,
   PaystackInitializeTransaction,
@@ -5,6 +6,10 @@ import type {
   PaystackSubscription,
   PaystackTransaction,
 } from "./responses";
+import type {
+  ProcessWebhookDeliveryRequestOptions,
+  ProcessWebhookDeliveryResult,
+} from "./webhook-delivery";
 
 /** Paystack client interface. */
 export interface PaystackClient {
@@ -136,6 +141,51 @@ export interface PaystackClient {
     chargeAuthorization: (
       params: ChargeAuthorizationParams
     ) => Promise<PaystackTransaction>;
+  };
+  /**
+   * Webhook verification helpers.
+   */
+  webhook: {
+    /**
+     * Verify `x-paystack-signature` for a raw webhook body.
+     * Uses the client's secretKey. Throws WebhookVerificationError on failure.
+     */
+    verifyPaystackWebhookSignature: (
+      rawBody: string,
+      signature: string | null | undefined
+    ) => void;
+    /**
+     * Verify a Paystack webhook request.
+     * @param request - The request to verify.
+     * @returns The parsed webhook payload from the verified request body.
+     */
+    verifyWebhookRequest: (
+      request: Request | null | undefined
+    ) => Promise<string>;
+    /**
+     * Parse a Paystack webhook payload.
+     * @param rawBody - The raw body of the webhook request.
+     * @returns The parsed webhook payload.
+     */
+    parseWebhookPayload: (rawBody: string) => PaystackWebhookEvent;
+    /**
+     * Verify, parse, and process a Paystack webhook request with deduplication.
+     * @param request - The request to process.
+     * @param options - Handler and optional persistence store.
+     * @returns Whether the delivery was a duplicate and the parsed event.
+     */
+    processWebhookDelivery: (
+      request: Request | null | undefined,
+      options: ProcessWebhookDeliveryRequestOptions
+    ) => Promise<ProcessWebhookDeliveryResult>;
+    /**
+     * Process a Paystack webhook request.
+     * @param request - The request to process.
+     * @returns The processed webhook payload.
+     */
+    processWebhookRequest: (
+      request: Request | null | undefined
+    ) => Promise<PaystackWebhookEvent>;
   };
 }
 

@@ -4,7 +4,8 @@ export type PaystackErrorCode =
   | "PAYSTACK_VALIDATION_ERROR"
   | "PAYSTACK_NETWORK_ERROR"
   | "PAYSTACK_RATE_LIMIT"
-  | "PAYSTACK_TIMEOUT";
+  | "PAYSTACK_TIMEOUT"
+  | "WEBHOOK_PROCESSING_ERROR";
 
 /** Error codes for webhook signature verification failures. */
 export type WebhookVerificationErrorCode =
