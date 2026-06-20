@@ -42,7 +42,7 @@ export const { withCache, invalidateCache } = createCache({
 | Path | Purpose |
 |------|---------|
 | [`packages/core`](packages/core) | Source of truth; published as `@g14o/core` |
-| [`packages/utils`](packages/utils), [`packages/cache`](packages/cache), [`packages/ratelimit`](packages/ratelimit) | Deprecated shims (not published) |
+| [`packages/cache`](packages/cache), [`packages/ratelimit`](packages/ratelimit) | Standalone published packages (also mirrored under `@g14o/core`) |
 | [`apps/cache-demo`](apps/cache-demo) | Manual verification of build vs runtime cache behavior |
 | [`apps/env-demo`](apps/env-demo) | Zod / Valibot / ArkType showcase for `@g14o/env-core` |
 | [`apps/web`](apps/web) | Internal Next.js app |

@@ -31,7 +31,7 @@ const coreSubpaths = [
   {
     importPath: "@g14o/core/config",
     distFile: "dist/config.js",
-    exports: ["configureUtils", "createRedisClient", "resolveRedisClient"],
+    exports: ["createRedisClient", "resolveRedisClient"],
   },
   {
     importPath: "@g14o/core/types",
@@ -42,17 +42,12 @@ const coreSubpaths = [
   {
     importPath: "@g14o/core/cache",
     distFile: "dist/cache/index.js",
-    exports: ["createCache", "withCache", "getCache", "createCacheKey"],
+    exports: ["createCache", "createCacheKey"],
   },
   {
     importPath: "@g14o/core/ratelimit",
     distFile: "dist/ratelimit/index.js",
-    exports: [
-      "createRateLimit",
-      "checkRateLimit",
-      "withRateLimit",
-      "parseDurationToMs",
-    ],
+    exports: ["createRateLimit", "parseDurationToMs"],
     typesOnlyInNode: true,
   },
 ];
@@ -64,33 +59,20 @@ const envCoreSmoke = {
   exports: ["createEnv"],
 };
 
-const shimPackages = [
-  {
-    filter: "@g14o/utils",
-    importPath: "@g14o/utils",
-    distFile: "dist/utils.js",
-    exports: ["parseNumber", "stringifyParams"],
-  },
-];
-
 const standalonePackages = [
   {
     filter: "@g14o/cache",
     importPath: "@g14o/cache",
     distFile: "dist/index.mjs",
-    exports: ["createCache", "withCache", "createCacheKey"],
+    exports: ["createCache", "createCacheKey"],
   },
   {
     filter: "@g14o/ratelimit",
     importPath: "@g14o/ratelimit",
     distFile: "dist/index.mjs",
-    exports: ["createRateLimit", "checkRateLimit", "parseDurationToMs"],
+    exports: ["createRateLimit", "parseDurationToMs"],
   },
 ];
-
-const shimToCore = {
-  "@g14o/utils": "@g14o/core",
-};
 
 const packDir = mkdtempSync(join(tmpdir(), "g14o-pack-"));
 const consumerDir = mkdtempSync(join(tmpdir(), "g14o-consumer-"));
@@ -100,7 +82,6 @@ try {
     "@g14o/core",
     envCoreSmoke.filter,
     ...standalonePackages.map((p) => p.filter),
-    ...shimPackages.map((p) => p.filter),
   ];
   for (const filter of filters) {
     execSync(`pnpm --filter ${filter} pack --pack-destination "${packDir}"`, {
@@ -322,59 +303,6 @@ try {
     }
 
     console.log(`${importPath}: standalone smoke OK (${names.join(", ")})`);
-  }
-
-  for (const {
-    importPath,
-    distFile,
-    exports: names,
-    typesOnlyInNode,
-  } of shimPackages) {
-    const pkgName = importPath.split("/")[1];
-    const pkgRoot = join(consumerDir, "node_modules", "@g14o", pkgName);
-    const entryPath = join(pkgRoot, distFile);
-
-    if (!existsSync(entryPath)) {
-      throw new Error(`${importPath}: missing packed entry ${distFile}`);
-    }
-
-    const packedPkg = JSON.parse(
-      readFileSync(join(pkgRoot, "package.json"), "utf8")
-    );
-    const rootExport = packedPkg.exports?.["."];
-    const importTarget =
-      typeof rootExport === "string"
-        ? rootExport
-        : (rootExport?.default ?? rootExport?.import);
-    if (!importTarget?.includes("dist")) {
-      throw new Error(
-        `${importPath}: packed export must point at dist (got ${JSON.stringify(rootExport)})`
-      );
-    }
-
-    if (typesOnlyInNode) {
-      const dts = readFileSync(
-        join(pkgRoot, distFile.replace(".js", ".d.ts")),
-        "utf8"
-      );
-      const coreTarget = shimToCore[importPath];
-      if (!dts.includes(coreTarget)) {
-        throw new Error(
-          `${importPath}: expected re-export of "${coreTarget}" in shim dist types`
-        );
-      }
-    } else {
-      const mod = await import(pathToFileURL(entryPath).href);
-      for (const name of names) {
-        if (typeof mod[name] !== "function") {
-          throw new Error(
-            `${importPath}: expected function export "${name}" in shim tarball`
-          );
-        }
-      }
-    }
-
-    console.log(`${importPath}: shim smoke OK (${names.join(", ")})`);
   }
 
   console.log("All packed smoke checks passed.");

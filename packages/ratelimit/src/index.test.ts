@@ -1,15 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { configureUtils } from "./config";
 import {
-  checkRateLimit,
   createRateLimit,
   getDefaultIdentifier,
   getTokenConfigReadonly,
   parseDurationToMs,
-  resetRateLimiters,
-  tokenConfig,
   tokenConfigSnapshot,
-  withRateLimit,
 } from "./index";
 
 const INVALID_DURATION_PATTERN = /Invalid rate limit window/;
@@ -205,13 +200,12 @@ describe("getDefaultIdentifier", () => {
   });
 });
 
-describe("tokenConfig export", () => {
+describe("tokenConfigSnapshot export", () => {
   it("exports frozen defaults that cannot be mutated", () => {
-    expect(tokenConfig).toBe(tokenConfigSnapshot);
-    expect(Object.isFrozen(tokenConfig)).toBe(true);
-    expect(Object.isFrozen(tokenConfig.strict)).toBe(true);
+    expect(Object.isFrozen(tokenConfigSnapshot)).toBe(true);
+    expect(Object.isFrozen(tokenConfigSnapshot.strict)).toBe(true);
     expect(() => {
-      (tokenConfig as { strict: { limit: number } }).strict.limit = 999;
+      (tokenConfigSnapshot as { strict: { limit: number } }).strict.limit = 999;
     }).toThrow();
   });
 
@@ -221,29 +215,5 @@ describe("tokenConfig export", () => {
     expect(Object.isFrozen(snapshot)).toBe(true);
     expect(Object.isFrozen(snapshot.moderate)).toBe(true);
     expect(snapshot.strict.limit).toBe(5);
-  });
-});
-
-describe("deprecated global exports", () => {
-  beforeEach(() => {
-    configureUtils({ env: "test" });
-    resetRateLimiters();
-  });
-
-  it("checkRateLimit works via deprecated global API", async () => {
-    const req = mockRequest({ "x-forwarded-for": "legacy-client" });
-    const result = await checkRateLimit(req, { tier: "moderate" });
-    expect(result.ok).toBe(true);
-  });
-
-  it("withRateLimit works via deprecated global API", async () => {
-    const handler = vi.fn(async (_req: Request) => Response.json({ ok: true }));
-    const limited = withRateLimit(handler, {
-      tier: "strict",
-      identifierFn: async () => "legacy-wrapped",
-    });
-    const res = await limited(mockRequest());
-    expect(res.status).toBe(200);
-    resetRateLimiters();
   });
 });

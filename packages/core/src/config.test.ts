@@ -1,11 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  configureUtils,
   createRedisClient,
-  getEnvName,
-  getLogger,
-  getRedis,
-  isInMemoryBackend,
   isInMemoryEnv,
   isNextBuildLikePhase,
   resolveEnvName,
@@ -129,101 +124,5 @@ describe("createRedisClient", () => {
       token: "test-token",
     });
     expect(typeof client.get).toBe("function");
-  });
-});
-
-describe("configureUtils", () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-
-  beforeEach(() => {
-    vi.stubEnv("NODE_ENV", "test");
-    configureUtils({ env: "test" });
-  });
-
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
-    configureUtils({ env: "test" });
-  });
-
-  it("updates logger when provided", () => {
-    const info = vi.fn();
-    configureUtils({ logger: { info, warn: vi.fn(), error: vi.fn() } });
-    getLogger().info("hello");
-    expect(info).toHaveBeenCalledWith("hello");
-  });
-
-  it("updates env override", () => {
-    configureUtils({ env: "production" });
-    expect(getEnvName()).toBe("production");
-    expect(isInMemoryBackend()).toBe(false);
-  });
-
-  it("accepts redis credentials", () => {
-    configureUtils({
-      redis: { url: "https://example.upstash.io", token: "token" },
-    });
-    expect(getRedis()).toBeTruthy();
-  });
-});
-
-describe("isInMemoryBackend", () => {
-  const originalNextPhase = process.env.NEXT_PHASE;
-
-  beforeEach(() => {
-    configureUtils({ env: "test" });
-  });
-
-  afterEach(() => {
-    if (originalNextPhase === undefined) {
-      delete process.env.NEXT_PHASE;
-    } else {
-      process.env.NEXT_PHASE = originalNextPhase;
-    }
-    vi.unstubAllEnvs();
-  });
-
-  it("returns true for test and development", () => {
-    configureUtils({ env: "test" });
-    expect(isInMemoryBackend()).toBe(true);
-    configureUtils({ env: "development" });
-    expect(isInMemoryBackend()).toBe(true);
-  });
-
-  it("returns false for production when not in a Next build phase", () => {
-    delete process.env.NEXT_PHASE;
-    configureUtils({ env: "production" });
-    expect(isInMemoryBackend()).toBe(false);
-  });
-
-  it("returns true for production during Next build by default", () => {
-    vi.stubEnv("NEXT_PHASE", "phase-production-build");
-    configureUtils({ env: "production" });
-    expect(isInMemoryBackend()).toBe(true);
-    vi.unstubAllEnvs();
-  });
-
-  it("returns false for production during Next build when opted out via configureUtils", () => {
-    vi.stubEnv("NEXT_PHASE", "phase-production-build");
-    configureUtils({
-      env: "production",
-      inMemoryDuringNextBuild: false,
-    });
-    expect(isInMemoryBackend()).toBe(false);
-    configureUtils({ env: "test", inMemoryDuringNextBuild: true });
-    vi.unstubAllEnvs();
-  });
-});
-
-describe("getEnvName", () => {
-  it("prefers configureUtils env over NODE_ENV", () => {
-    vi.stubEnv("NODE_ENV", "production");
-    configureUtils({ env: "test" });
-    expect(getEnvName()).toBe("test");
-    vi.unstubAllEnvs();
   });
 });

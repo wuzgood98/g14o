@@ -14,8 +14,8 @@ pnpm install
 
 **Where to make changes:**
 
-- Product logic lives in [`packages/core/src`](packages/core/src) and [`packages/env-core/src`](packages/env-core/src).
-- [`packages/utils`](packages/utils), [`packages/cache`](packages/cache), and [`packages/ratelimit`](packages/ratelimit) are deprecated shims that re-export from core — do not duplicate logic there.
+- Product logic lives in [`packages/core/src`](packages/core/src), [`packages/cache/src`](packages/cache/src), [`packages/ratelimit/src`](packages/ratelimit/src), and [`packages/env-core/src`](packages/env-core/src).
+- Keep shared behavior in sync between `@g14o/core` subpaths and the standalone `@g14o/cache` / `@g14o/ratelimit` packages when both need the same change.
 
 ## Development workflow
 

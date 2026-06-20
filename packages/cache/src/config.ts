@@ -1,6 +1,5 @@
 import { Redis } from "@upstash/redis";
-import type { Environment, InMemoryEnvOptions, Logger } from "./types";
-import { noopLogger } from "./types";
+import type { Environment, InMemoryEnvOptions } from "./types";
 
 export type { Environment, InMemoryEnvOptions, Logger } from "./types";
 /** biome-ignore lint/performance/noBarrelFile: re-export shared types for @g14o/cache/config consumers */
@@ -14,29 +13,6 @@ export interface RedisCredentials {
 
 /** Credentials or a pre-built Upstash Redis client (e.g. `Redis.fromEnv()`). */
 export type RedisConfig = Redis | RedisCredentials;
-
-/**
- * Options for {@link configureUtils}.
- *
- * @deprecated Use `createCache()` from `@g14o/cache` instead.
- */
-export interface ConfigureUtilsOptions extends InMemoryEnvOptions {
-  /**
-   * Application logger implementing {@link Logger}. Replaces the default silent logger.
-   */
-  logger?: Logger;
-  /**
-   * Upstash credentials or a pre-built Redis client.
-   *
-   * @deprecated Pass `redis` to `createCache()` / `createRateLimit()` instead.
-   */
-  redis?: RedisConfig;
-}
-
-let redisClient: Redis | null = null;
-let logger: Logger = noopLogger;
-let envName: Environment | undefined;
-let configuredInMemoryDuringBuild = true;
 
 function isRedisClient(value: RedisConfig): value is Redis {
   return (
@@ -110,7 +86,7 @@ const STATIC_BUILD_PHASES = new Set(["phase-production-build", "phase-export"]);
  * Detects `NEXT_PHASE` values `phase-production-build` and `phase-export` (set by Next.js
  * during `next build` / static export). Has no effect on adapter selection unless
  * {@link InMemoryEnvOptions.inMemoryDuringBuild} is enabled (default `true`) via
- * `createCache()`, `createRateLimit()`, or {@link configureUtils}.
+ * `createCache()` or `createRateLimit()`.
  *
  * During these phases, Upstash Redis uses `fetch` with `cache: "no-store"`, which
  * frameworks may reject while prerendering static routes that call Redis-backed helpers.
@@ -150,64 +126,4 @@ export function isInMemoryEnv(
     return true;
   }
   return envName === "development" || envName === "test";
-}
-
-/**
- * Configure shared runtime dependencies for deprecated global cache/rate-limit APIs.
- *
- * @deprecated Use `createCache()` from `@g14o/cache` instead.
- *
- * @param options - Redis client or credentials, logger, and/or environment override.
- */
-export function configureUtils(options: ConfigureUtilsOptions = {}): void {
-  if (options.redis !== undefined) {
-    redisClient = resolveRedisClient(options.redis);
-  }
-  if (options.logger !== undefined) {
-    logger = options.logger;
-  }
-  if (options.env !== undefined) {
-    envName = options.env;
-  }
-  if (options.inMemoryDuringBuild !== undefined) {
-    configuredInMemoryDuringBuild = options.inMemoryDuringBuild;
-  }
-}
-
-/**
- * Returns the logger instance set by {@link configureUtils}, or a silent no-op logger.
- *
- * @deprecated Configure logger via `createCache()` / `createRateLimit()` instead.
- */
-export function getLogger(): Logger {
-  return logger;
-}
-
-/**
- * Returns the Upstash Redis client set by {@link configureUtils}.
- *
- * @deprecated Pass `redis` to `createCache()` / `createRateLimit()` instead.
- */
-export function getRedis(): Redis | null {
-  return redisClient;
-}
-
-/**
- * Returns the effective environment name used by deprecated global APIs.
- *
- * @deprecated Pass `env` to `createCache()` / `createRateLimit()` instead.
- */
-export function getEnvName(): Environment {
-  return (envName ?? process.env.NODE_ENV ?? "development") as Environment;
-}
-
-/**
- * Whether deprecated global APIs use in-memory backends.
- *
- * @deprecated Use {@link isInMemoryEnv} with your factory `env` option instead.
- */
-export function isInMemoryBackend(): boolean {
-  return isInMemoryEnv(getEnvName(), {
-    inMemoryDuringBuild: configuredInMemoryDuringBuild,
-  });
 }

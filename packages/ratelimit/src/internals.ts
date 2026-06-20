@@ -1,4 +1,3 @@
-import { Ratelimit } from "@upstash/ratelimit";
 import { type Duration, parseDurationToMs } from "./parse-duration";
 
 type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
@@ -203,27 +202,4 @@ export function getDefaultIdentifier(req: Request): string {
   const ip =
     forwarded?.split(",")[0] || realIp || cfConnectingIp || "anonymous";
   return ip.trim();
-}
-
-/** @internal Legacy Upstash limiter using global getRedis — used by deprecated exports only. */
-export class LegacyUpstashRateLimiter implements RateLimiterAdapter {
-  private readonly ratelimit: Ratelimit;
-
-  constructor(config: TokenConfig, redis: import("@upstash/redis").Redis) {
-    this.ratelimit = new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(
-        config.limit,
-        config.window as `${number} s`
-      ),
-      analytics: true,
-      prefix: config.prefix,
-    });
-  }
-
-  async limit(identifier: string): Promise<RateLimitResultData> {
-    const { success, limit, remaining, reset } =
-      await this.ratelimit.limit(identifier);
-    return { success, limit, remaining, reset };
-  }
 }

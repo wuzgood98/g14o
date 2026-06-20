@@ -244,10 +244,8 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
   /** Get the in-memory cache.
    * @returns The in-memory cache.
    */
-  const inMemoryCache = (): InMemoryCache | null => {
-    const adapter = getCache();
-    return adapter instanceof InMemoryCache ? adapter : null;
-  };
+  const inMemoryCache = (): InMemoryCache | null =>
+    cacheAdapter instanceof InMemoryCache ? cacheAdapter : null;
 
   /** Get the TTL for a given duration.
    * @param duration - The duration to get the TTL for.

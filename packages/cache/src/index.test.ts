@@ -1,15 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { configureUtils } from "./config";
 import {
   createCache,
   createCacheKey,
   createCachePattern,
   createEntityCacheKey,
   createListCacheKey,
-  getTTL,
-  invalidateCache,
-  resetCacheAdapter,
-  withCache,
 } from "./index";
 
 const HASHED_CACHE_KEY_PATTERN = /^users:[a-f0-9]{16}$/;
@@ -165,6 +160,45 @@ describe("createCache (factory API)", () => {
       expect(productionCache.getCache()).toBeTruthy();
     });
   });
+
+  describe("inMemoryCache probe", () => {
+    it("returns null before cache is initialized in test env", () => {
+      expect(cache.inMemoryCache()).toBeNull();
+    });
+  });
+
+  describe("clearAllCache and getCacheStats", () => {
+    it("do not initialize adapter in production without redis", () => {
+      delete process.env.NEXT_PHASE;
+      const productionCache = createCache({ env: "production" });
+
+      expect(() => productionCache.clearAllCache()).not.toThrow();
+      expect(productionCache.clearAllCache()).toEqual({
+        ok: false,
+        error: expect.any(Error),
+        status: 400,
+      });
+
+      expect(() => productionCache.getCacheStats()).not.toThrow();
+      expect(productionCache.getCacheStats()).toBeNull();
+      expect(productionCache.inMemoryCache()).toBeNull();
+    });
+
+    it("reports stats and clears after withCache use", async () => {
+      const fn = vi.fn(async () => ({ ok: true as const, data: 1 }));
+      const cached = cache.withCache(fn, {
+        prefix: "stats",
+        keyGenerator: () => "k",
+      });
+      await cached();
+
+      expect(cache.getCacheStats()?.size).toBe(1);
+
+      const result = cache.clearAllCache();
+      expect(result).toEqual({ ok: true, data: undefined });
+      expect(cache.getCacheStats()?.size).toBe(0);
+    });
+  });
 });
 
 describe("createCacheKey", () => {
@@ -238,29 +272,5 @@ describe("createCachePattern", () => {
 
     expect(key).toBe("users:role:a:1:b:2");
     expect(pattern).toBe("users:*role:a:1:b:2*");
-  });
-});
-
-describe("deprecated global exports", () => {
-  beforeEach(() => {
-    configureUtils({ env: "test" });
-    resetCacheAdapter();
-  });
-
-  it("getTTL resolves using global env", () => {
-    expect(getTTL("medium")).toBe(300);
-  });
-
-  it("withCache works via deprecated global API", async () => {
-    const fn = vi.fn(async () => ({ ok: true as const, data: 1 }));
-    const cached = withCache(fn, {
-      prefix: "legacy",
-      keyGenerator: () => "one",
-    });
-    await cached();
-    await cached();
-    expect(fn).toHaveBeenCalledTimes(1);
-    await invalidateCache("*", { prefix: "legacy" });
-    resetCacheAdapter();
   });
 });

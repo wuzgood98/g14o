@@ -21,12 +21,10 @@ Published packages (separate fixed groups in [`.changeset/config.json`](config.j
 - `@g14o/paystack`
 - `@g14o/paystack-better-auth`
 
-`@g14o/utils` is listed in `ignore` (deprecated unpublished shim).
-
 ## Maintainers
 
 ```bash
-pnpm version-packages        # bump versioned packages, update CHANGELOGs, sync shim ranges, refresh pnpm-lock.yaml
+pnpm version-packages        # bump versioned packages, update CHANGELOGs, refresh pnpm-lock.yaml
 pnpm release:publish:core    # publish @g14o/core to npm
 pnpm release:publish:env     # publish @g14o/env-core to npm
 pnpm release:publish:cache   # publish @g14o/cache to npm
