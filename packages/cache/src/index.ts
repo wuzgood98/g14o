@@ -77,8 +77,8 @@ export function createCacheKey(
   const normalized: NormalizedParams = {};
 
   if (includePagination) {
-    normalized.page = params.page || 1;
-    normalized.limit = params.limit || 10;
+    normalized.page = params.page ?? 1;
+    normalized.limit = params.limit ?? 10;
   }
 
   for (const [key, value] of Object.entries(params)) {
