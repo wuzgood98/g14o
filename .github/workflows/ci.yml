@@ -93,6 +93,14 @@ jobs:
         if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
         run: pnpm --filter @g14o/core test:integration
 
+      - name: Run cache integration tests
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        run: pnpm --filter @g14o/cache test:integration
+
+      - name: Run ratelimit integration tests
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        run: pnpm --filter @g14o/ratelimit test:integration
+
       - name: Run paystack integration tests
         if: env.PAYSTACK_SECRET_KEY != ''
         run: pnpm --filter @g14o/paystack test:integration
