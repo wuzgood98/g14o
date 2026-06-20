@@ -29,6 +29,8 @@ pnpm release:publish:core    # publish @g14o/core to npm
 pnpm release:publish:env     # publish @g14o/env-core to npm
 pnpm release:publish:cache   # publish @g14o/cache to npm
 pnpm release:publish:ratelimit # publish @g14o/ratelimit to npm
+pnpm release:publish:paystack # publish @g14o/paystack to npm
+pnpm release:publish:paystack-better-auth # publish @g14o/paystack-better-auth to npm
 ```
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for git tags, GitHub releases, and the full release flow.
