@@ -1,6 +1,5 @@
+import { type Paystack, SubscriptionError } from "@g14o/paystack";
 import { describe, expect, it, vi } from "vitest";
-import { SubscriptionError } from "../src/client/errors";
-import type { Paystack } from "../src/client/paystack-client";
 import { PlanRegistry } from "../src/plans";
 import {
   mapPaystackSubscriptionStatus,

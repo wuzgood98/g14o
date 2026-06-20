@@ -5,9 +5,9 @@ export default defineConfig({
     environment: "node",
     globals: false,
     restoreMocks: true,
-    clearMocks: true,
-    include: ["test/**/*.test.ts"],
-    exclude: ["node_modules/**", "test/**/*.integration.test.ts"],
-    testTimeout: 10_000,
+    include: ["test/**/*.integration.test.ts"],
+    exclude: ["**/node_modules/**"],
+    setupFiles: ["test/integration.setup.ts"],
+    testTimeout: 30_000,
   },
 });

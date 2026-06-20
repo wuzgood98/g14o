@@ -1,10 +1,18 @@
+import {
+  type ChargeSuccessData,
+  type InvoiceData,
+  type PaystackEventName,
+  type PaystackSubscription,
+  type PaystackWebhookEvent,
+  parseSafeMetadata,
+  type SubscriptionCreateData,
+  type WebhookDeliveryStore,
+} from "@g14o/paystack";
 import type { GenericEndpointContext } from "better-auth";
-import type { PaystackSubscription } from "./client/responses";
-import { parseSafeMetadata, subscriptionMetadata } from "./metadata";
+import { subscriptionMetadata } from "./metadata";
 import type { PlanRegistry } from "./plans";
 import type {
   PaystackSubscriptionRecord,
-  PaystackWebhookEvent,
   PluginContext,
   ResolvedPlan,
 } from "./types";
@@ -24,11 +32,19 @@ type Adapter = GenericEndpointContext["context"]["adapter"];
 
 interface WebhookHandlerContext {
   adapter: Adapter;
-  data: Record<string, unknown>;
-  event: PaystackWebhookEvent;
   planRegistry?: PlanRegistry | undefined;
   pluginContext: PluginContext;
 }
+
+type TypedWebhookHandler<E extends PaystackEventName> = (
+  ctx: WebhookHandlerContext & {
+    event: Extract<PaystackWebhookEvent, { event: E }>;
+  }
+) => Promise<void>;
+
+const assertNever = (value: never): void => {
+  throw new Error(`Invalid webhook event: ${JSON.stringify(value)}`);
+};
 
 const mapSubscriptionRecord = (
   record: ReturnType<typeof asDbSubscription>
@@ -157,41 +173,30 @@ const findUserIdByCustomerCode = async (
   return (user as { id?: string } | null)?.id ?? null;
 };
 
-const parseWebhookMetadata = (
-  data: Record<string, unknown>
+const parseChargeSuccessMetadata = (
+  data: ChargeSuccessData
 ): Record<string, unknown> | undefined => {
   if (typeof data.metadata === "object" && data.metadata !== null) {
     return parseSafeMetadata(data.metadata as Record<string, unknown>);
   }
 
-  return;
-};
-
-const parseCustomerCode = (
-  data: Record<string, unknown>
-): string | undefined => {
-  if (
-    typeof data.customer === "object" &&
-    data.customer !== null &&
-    "customer_code" in data.customer
-  ) {
-    return String((data.customer as { customer_code: string }).customer_code);
+  if (typeof data.metadata === "string") {
+    try {
+      return parseSafeMetadata(
+        JSON.parse(data.metadata) as Record<string, unknown>
+      );
+    } catch {
+      return;
+    }
   }
 
   return;
 };
 
-const parseCustomerMetadata = (
-  data: Record<string, unknown>
-): Record<string, unknown> | undefined => {
-  if (typeof data.customer === "object" && data.customer !== null) {
-    return parseSafeMetadata(
-      (data.customer as { metadata?: Record<string, unknown> }).metadata
-    );
-  }
-
-  return;
-};
+const parseCustomerMetadataFromCustomer = (
+  customer: SubscriptionCreateData["customer"]
+): Record<string, unknown> | undefined =>
+  parseSafeMetadata(customer.metadata ?? undefined);
 
 const resolveUserId = (
   adapter: Adapter,
@@ -203,19 +208,6 @@ const resolveUserId = (
   }
 
   return findUserIdByCustomerCode(adapter, customerCode);
-};
-
-const getSubscriptionCodeFromData = (data: Record<string, unknown>): string =>
-  String(data.subscription_code ?? "");
-
-const getInvoiceSubscriptionCode = (data: Record<string, unknown>): string => {
-  const subscriptionData = data.subscription as
-    | { subscription_code?: string }
-    | undefined;
-
-  return String(
-    subscriptionData?.subscription_code ?? data.subscription_code ?? ""
-  );
 };
 
 const findExistingSubscription = async (
@@ -236,12 +228,12 @@ const fetchPaystackSubscription = async (
 ): Promise<PaystackSubscription> =>
   pluginContext.options.paystackClient.subscriptions.fetch(subscriptionCode);
 
-const handleChargeSuccessWebhook = async (
-  ctx: WebhookHandlerContext
-): Promise<void> => {
-  const { event, data, adapter, pluginContext } = ctx;
-  const metadata = parseWebhookMetadata(data);
-  const customerCode = parseCustomerCode(data);
+const handleChargeSuccessWebhook: TypedWebhookHandler<
+  "charge.success"
+> = async ({ event, adapter, pluginContext }) => {
+  const data = event.data;
+  const metadata = parseChargeSuccessMetadata(data);
+  const customerCode = data.customer.customer_code;
   const userId = await resolveUserId(adapter, metadata, customerCode);
 
   if (!userId) {
@@ -252,10 +244,7 @@ const handleChargeSuccessWebhook = async (
     return;
   }
 
-  const subscriptionCode =
-    typeof data.subscription_code === "string"
-      ? data.subscription_code
-      : undefined;
+  const subscriptionCode = data.subscription_code;
 
   if (!subscriptionCode) {
     return;
@@ -315,11 +304,11 @@ const handleChargeSuccessWebhook = async (
   }
 };
 
-const handleSubscriptionCreateWebhook = async (
-  ctx: WebhookHandlerContext
-): Promise<void> => {
-  const { event, data, adapter, pluginContext } = ctx;
-  const subscriptionCode = getSubscriptionCodeFromData(data);
+const handleSubscriptionCreateWebhook: TypedWebhookHandler<
+  "subscription.create"
+> = async ({ event, adapter, pluginContext }) => {
+  const data = event.data;
+  const subscriptionCode = data.subscription_code;
 
   if (!subscriptionCode) {
     return;
@@ -329,7 +318,7 @@ const handleSubscriptionCreateWebhook = async (
     pluginContext,
     subscriptionCode
   );
-  const metadata = parseCustomerMetadata(data);
+  const metadata = parseCustomerMetadataFromCustomer(data.customer);
   const userId = await resolveUserId(
     adapter,
     metadata,
@@ -360,11 +349,10 @@ const handleSubscriptionCreateWebhook = async (
   }
 };
 
-const handleSubscriptionDisableWebhook = async (
-  ctx: WebhookHandlerContext
-): Promise<void> => {
-  const { event, data, adapter, pluginContext } = ctx;
-  const subscriptionCode = getSubscriptionCodeFromData(data);
+const handleSubscriptionDisableWebhook: TypedWebhookHandler<
+  "subscription.disable"
+> = async ({ event, adapter, pluginContext }) => {
+  const subscriptionCode = event.data.subscription_code;
 
   if (!subscriptionCode) {
     return;
@@ -405,11 +393,10 @@ const handleSubscriptionDisableWebhook = async (
   }
 };
 
-const handleSubscriptionNotRenewWebhook = async (
-  ctx: WebhookHandlerContext
-): Promise<void> => {
-  const { event, data, adapter, pluginContext } = ctx;
-  const subscriptionCode = getSubscriptionCodeFromData(data);
+const handleSubscriptionNotRenewWebhook: TypedWebhookHandler<
+  "subscription.not_renew"
+> = async ({ event, adapter, pluginContext }) => {
+  const subscriptionCode = event.data.subscription_code;
 
   if (!subscriptionCode) {
     return;
@@ -448,10 +435,18 @@ const handleSubscriptionNotRenewWebhook = async (
 };
 
 const handleInvoiceWebhook = async (
-  ctx: WebhookHandlerContext
+  ctx: WebhookHandlerContext & {
+    event: Extract<
+      PaystackWebhookEvent,
+      {
+        event: "invoice.create" | "invoice.payment_failed" | "invoice.update";
+      }
+    >;
+  }
 ): Promise<void> => {
-  const { event, data, adapter, pluginContext } = ctx;
-  const subscriptionCode = getInvoiceSubscriptionCode(data);
+  const { event, adapter, pluginContext } = ctx;
+  const data: InvoiceData = event.data;
+  const subscriptionCode = data.subscription.subscription_code;
 
   if (!subscriptionCode) {
     return;
@@ -506,8 +501,6 @@ export const handlePaystackWebhookEvent = async (options: {
   }
 
   const ctx: WebhookHandlerContext = {
-    event,
-    data: event.data,
     adapter,
     pluginContext,
     planRegistry,
@@ -515,22 +508,54 @@ export const handlePaystackWebhookEvent = async (options: {
 
   switch (event.event) {
     case "charge.success":
-      return handleChargeSuccessWebhook(ctx);
+      return handleChargeSuccessWebhook({ ...ctx, event });
     case "subscription.create":
-      return handleSubscriptionCreateWebhook(ctx);
+      return handleSubscriptionCreateWebhook({ ...ctx, event });
     case "subscription.disable":
-      return handleSubscriptionDisableWebhook(ctx);
+      return handleSubscriptionDisableWebhook({ ...ctx, event });
     case "subscription.not_renew":
-      return handleSubscriptionNotRenewWebhook(ctx);
+      return handleSubscriptionNotRenewWebhook({ ...ctx, event });
     case "invoice.create":
     case "invoice.update":
     case "invoice.payment_failed":
+      return handleInvoiceWebhook({ ...ctx, event });
     case "subscription.expiring_cards":
-      return handleInvoiceWebhook(ctx);
-    default:
+    case "charge.dispute.create":
+    case "charge.dispute.remind":
+    case "charge.dispute.resolve":
+    case "customeridentification.failed":
+    case "customeridentification.success":
+    case "dedicatedaccount.assign.failed":
+    case "dedicatedaccount.assign.success":
+    case "paymentrequest.pending":
+    case "paymentrequest.success":
+    case "refund.failed":
+    case "refund.pending":
+    case "refund.processed":
+    case "refund.processing":
+    case "transfer.failed":
+    case "transfer.success":
+    case "transfer.reversed":
       return;
+    default:
+      return assertNever(event);
   }
 };
+
+export const createAdapterWebhookStore = (
+  adapter: GenericEndpointContext["context"]["adapter"]
+): WebhookDeliveryStore => ({
+  shouldProcess: (eventId) => shouldProcessWebhook(adapter, eventId),
+  persist: async (input) => {
+    await persistWebhookEvent(adapter, input);
+  },
+  markProcessed: async (eventId) => {
+    await markWebhookProcessed(adapter, eventId);
+  },
+  markFailed: async (eventId, errorMessage) => {
+    await markWebhookFailed(adapter, eventId, errorMessage);
+  },
+});
 
 export const findWebhookEvent = async (
   adapter: GenericEndpointContext["context"]["adapter"],

@@ -1,7 +1,7 @@
+import { Paystack } from "@g14o/paystack";
 import type { Auth } from "better-auth";
 import { getTestInstance } from "better-auth/test";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { Paystack } from "../src/client/paystack-client";
 import { PAYSTACK_ERROR_CODES } from "../src/error-codes";
 import { type PaystackPlugin, paystack } from "../src/index";
 import type {

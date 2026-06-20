@@ -1,4 +1,4 @@
-import { paystackClientPlugin } from "@g14o/paystack/client";
+import { paystackClientPlugin } from "@g14o/paystack-better-auth/client";
 import { createAuthClient } from "better-auth/client";
 import { env } from "@/lib/env";
 

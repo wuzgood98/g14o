@@ -1,93 +1,158 @@
-import { createHmac } from "node:crypto";
-import { memoryAdapter } from "better-auth/adapters/memory";
-import { getTestInstance } from "better-auth/test";
 import type { Mock } from "vitest";
-import { test as baseTest, vi } from "vitest";
+import { vi } from "vitest";
 import { Paystack } from "../src/client/paystack-client";
-import type { getUserById } from "../src/customer";
-import { paystack } from "../src/index";
-import type { PaystackPluginOptions } from "../src/types";
-import {
-  createInitializeTransaction,
-  createPaystackCustomer,
-  createPaystackPlan,
-  createPaystackSubscription,
-} from "./_factories";
+import type {
+  PaystackCustomer,
+  PaystackInitializeTransaction,
+  PaystackPlan,
+  PaystackSubscription,
+  PaystackTransaction,
+} from "../src/client/responses";
 
-export const TEST_SECRET_KEY = "sk_test_integration";
+export const TEST_SECRET_KEY = "sk_test_unit";
 
-/** Demo Paystack customer with two active subscriptions on the test integration. */
 export const DEMO_PAYSTACK_CUSTOMER_CODE = "CUS_mkf7p9e3rtyahnz";
-
 export const DEMO_PAYSTACK_CUSTOMER_ID = 374_466_993;
-
-export const DEMO_PAYSTACK_SUBSCRIPTION_CODES = [
-  "SUB_ga4snx1n36kituq",
-  "SUB_aops53nsdklcs2h",
-] as const;
-
 export const DEMO_PAYSTACK_CUSTOMER_EMAIL = "demo+paystack@example.com";
+export const DEMO_PAYSTACK_SUBSCRIPTION_CODE = "SUB_ga4snx1n36kituq";
+export const DEMO_PAYSTACK_PLAN_CODE = "PLN_pro";
 
-export const TEST_PLANS = {
-  pro: {
-    name: "pro",
-    interval: "monthly" as const,
-    amount: "800",
+export function requireLiveSecretKey(): string {
+  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+
+  if (!secretKey) {
+    throw new Error(
+      "PAYSTACK_SECRET_KEY is required for live Paystack integration tests."
+    );
+  }
+
+  if (!secretKey.startsWith("sk_test_")) {
+    throw new Error(
+      "PAYSTACK_SECRET_KEY must be a Paystack test secret key (sk_test_*)."
+    );
+  }
+
+  return secretKey;
+}
+
+export function createUniqueTestEmail(prefix = "paystack-test"): string {
+  return `${prefix}+${Date.now()}@example.com`;
+}
+
+export function createUniqueReference(prefix = "ref_test"): string {
+  return `${prefix}_${Date.now()}`;
+}
+
+export function createPaystackCustomer(
+  overrides: Partial<PaystackCustomer> = {}
+): PaystackCustomer {
+  return {
+    id: DEMO_PAYSTACK_CUSTOMER_ID,
+    customer_code: DEMO_PAYSTACK_CUSTOMER_CODE,
+    email: DEMO_PAYSTACK_CUSTOMER_EMAIL,
+    first_name: "Demo",
+    last_name: "User",
+    phone: null,
+    metadata: { userId: "user_1" },
+    authorizations: [],
+    ...overrides,
+  };
+}
+
+export function createPaystackPlan(
+  overrides: Partial<PaystackPlan> = {}
+): PaystackPlan {
+  return {
+    id: 1716,
+    name: "Pro",
+    plan_code: DEMO_PAYSTACK_PLAN_CODE,
+    amount: 800,
+    interval: "monthly",
     currency: "GHS",
-  },
-  basic: {
-    name: "basic",
-    interval: "monthly" as const,
-    amount: "500",
+    ...overrides,
+  };
+}
+
+export function createPaystackSubscription(
+  overrides: Partial<PaystackSubscription> = {}
+): PaystackSubscription {
+  return {
+    id: 4192,
+    status: "active",
+    subscription_code: DEMO_PAYSTACK_SUBSCRIPTION_CODE,
+    email_token: "email_token_demo",
+    amount: 800,
+    plan: createPaystackPlan(),
+    customer: createPaystackCustomer(),
+    authorization: {
+      authorization_code: "AUTH_test",
+      reusable: true,
+    },
+    ...overrides,
+  };
+}
+
+export function createPaystackTransaction(
+  overrides: Partial<PaystackTransaction> = {}
+): PaystackTransaction {
+  return {
+    id: 1001,
+    status: "success",
+    reference: "ref_tx_123",
+    amount: 1500,
     currency: "GHS",
-  },
-};
+    metadata: { userId: "user_1" },
+    ...overrides,
+  };
+}
 
-export const testUser = {
-  email: "test@email.com",
-  password: "password",
-  name: "Test User",
-};
+export function createInitializeTransaction(
+  overrides: Partial<PaystackInitializeTransaction> = {}
+): PaystackInitializeTransaction {
+  return {
+    authorization_url: "https://checkout.paystack.com/test",
+    access_code: "access_code_test",
+    reference: "ref_checkout",
+    ...overrides,
+  };
+}
 
-export const createMemoryDatabase = (
-  seed: {
-    user?: unknown[];
-    session?: unknown[];
-    account?: unknown[];
-    verification?: unknown[];
-    subscription?: unknown[];
-    webhookEvent?: unknown[];
-  } = {}
-) =>
-  memoryAdapter({
-    user: seed.user ?? [],
-    session: seed.session ?? [],
-    account: seed.account ?? [],
-    verification: seed.verification ?? [],
-    subscription: seed.subscription ?? [],
-    webhookEvent: seed.webhookEvent ?? [],
-  });
+export function mockJsonResponse(payload: {
+  status: boolean;
+  message: string;
+  data?: unknown;
+  meta?: unknown;
+}): Response {
+  return new Response(JSON.stringify(payload), { status: 200 });
+}
 
 interface MockFetchRequest {
   body: Record<string, unknown>;
+  headers: Headers;
   method: string;
   url: string;
 }
 
-const mockJsonResponse = (payload: {
-  status: boolean;
-  message: string;
-  data?: unknown;
-}): Response => new Response(JSON.stringify(payload), { status: 200 });
-
 const parseMockFetchRequest = (
   input: string | URL | Request,
   init?: RequestInit
-): MockFetchRequest => ({
-  url: typeof input === "string" ? input : input.toString(),
-  method: init?.method ?? "GET",
-  body: init?.body ? JSON.parse(String(init.body)) : {},
-});
+): MockFetchRequest => {
+  if (input instanceof Request) {
+    return {
+      url: input.url,
+      method: input.method,
+      headers: input.headers,
+      body: {},
+    };
+  }
+
+  return {
+    url: typeof input === "string" ? input : input.toString(),
+    method: init?.method ?? "GET",
+    headers: new Headers(init?.headers),
+    body: init?.body ? JSON.parse(String(init.body)) : {},
+  };
+};
 
 const parseMetadataBody = (
   metadata: unknown
@@ -103,367 +168,367 @@ const parseMetadataBody = (
   return metadata as Record<string, unknown>;
 };
 
-const handleCustomerCreate = (body: Record<string, unknown>): Response =>
-  mockJsonResponse({
-    status: true,
-    message: "Customer created",
-    data: {
-      id: DEMO_PAYSTACK_CUSTOMER_ID,
-      customer_code: "CUS_test123",
-      email: body.email,
-      metadata: parseMetadataBody(body.metadata),
-    },
-  });
+export interface FetchCallDetails {
+  body: Record<string, unknown> | undefined;
+  headers: Headers;
+  method: string;
+  url: string;
+}
 
-const handleTransactionInitialize = (body: Record<string, unknown>): Response =>
-  mockJsonResponse({
-    status: true,
-    message: "Authorization URL created",
-    data: createInitializeTransaction({
-      reference: String(body.reference ?? "ref_checkout"),
-    }),
-  });
-
-const handlePlansList = (): Response =>
-  mockJsonResponse({
-    status: true,
-    message: "Plans retrieved",
-    data: [
-      createPaystackPlan({
-        id: 1,
-        name: "Pro",
-        plan_code: "PLN_pro",
-        amount: 800,
-      }),
-      createPaystackPlan({
-        id: 2,
-        name: "Basic",
-        plan_code: "PLN_basic",
-        amount: 500,
-      }),
-    ],
-  });
-
-const handleSubscriptionDisable = (): Response =>
-  mockJsonResponse({ status: true, message: "Subscription disabled" });
-
-const handleSubscriptionEnable = (): Response =>
-  mockJsonResponse({ status: true, message: "Subscription enabled" });
-
-const handleCustomerFetch = (): Response =>
-  mockJsonResponse({
-    status: true,
-    message: "Customer fetched",
-    data: createPaystackCustomer({
-      id: DEMO_PAYSTACK_CUSTOMER_ID,
-      customer_code: DEMO_PAYSTACK_CUSTOMER_CODE,
-      email: DEMO_PAYSTACK_CUSTOMER_EMAIL,
-    }),
-  });
-
-const createDemoRemoteSubscription = (
-  subscriptionCode: (typeof DEMO_PAYSTACK_SUBSCRIPTION_CODES)[number],
-  plan: ReturnType<typeof createPaystackPlan>
-) =>
-  createPaystackSubscription({
-    id: subscriptionCode === DEMO_PAYSTACK_SUBSCRIPTION_CODES[0] ? 1 : 2,
-    subscription_code: subscriptionCode,
-    email_token: `email_token_${subscriptionCode}`,
-    status: "active",
-    plan,
-    customer: createPaystackCustomer({
-      id: DEMO_PAYSTACK_CUSTOMER_ID,
-      customer_code: DEMO_PAYSTACK_CUSTOMER_CODE,
-      email: DEMO_PAYSTACK_CUSTOMER_EMAIL,
-      metadata: { userId: "demo_user" },
-    }),
-    authorization: {
-      authorization_code: "AUTH_demo",
-      reusable: true,
-    },
-  });
-
-/** Two active subscriptions for the demo Paystack customer. */
-export const createDemoRemoteTestSubscriptions = () => [
-  createDemoRemoteSubscription(
-    DEMO_PAYSTACK_SUBSCRIPTION_CODES[0],
-    createPaystackPlan({
-      id: 1,
-      name: "Pro",
-      plan_code: "PLN_pro",
-      amount: 800,
-    })
-  ),
-  createDemoRemoteSubscription(
-    DEMO_PAYSTACK_SUBSCRIPTION_CODES[1],
-    createPaystackPlan({
-      id: 2,
-      name: "Basic",
-      plan_code: "PLN_basic",
-      amount: 500,
-    })
-  ),
-];
-
-const handleSubscriptionFetch = (url: string): Response => {
-  const subscriptionCode = decodeURIComponent(
-    url.split("/subscription/")[1]?.split("?")[0] ?? "SUB_new"
-  );
-  const isOld = subscriptionCode === "SUB_old";
-  const demoSubscription = createDemoRemoteTestSubscriptions().find(
-    (subscription) => subscription.subscription_code === subscriptionCode
-  );
-
-  if (demoSubscription) {
-    return mockJsonResponse({
-      status: true,
-      message: "Subscription fetched",
-      data: demoSubscription,
-    });
+export function getLastFetchCall(
+  fetchMock: Mock
+): FetchCallDetails | undefined {
+  const call = fetchMock.mock.calls.at(-1);
+  if (!call) {
+    return;
   }
 
-  return mockJsonResponse({
-    status: true,
-    message: "Subscription fetched",
-    data: createPaystackSubscription({
-      id: isOld ? 1 : 2,
-      subscription_code: subscriptionCode,
-      email_token: isOld ? "email_token_old" : "email_token_new",
-      amount: isOld ? 800 : 500,
-      plan: createPaystackPlan(
-        isOld
-          ? { id: 1, name: "Pro", plan_code: "PLN_pro", amount: 800 }
-          : { id: 2, name: "Basic", plan_code: "PLN_basic", amount: 500 }
-      ),
-      customer: createPaystackCustomer({ email: "test@test.com" }),
-    }),
-  });
-};
+  const [input, init] = call as [
+    string | URL | Request,
+    RequestInit | undefined,
+  ];
 
-const mockDefaultResponse = (): Response =>
-  mockJsonResponse({ status: true, message: "OK", data: {} });
+  if (input instanceof Request) {
+    return {
+      url: input.url,
+      method: input.method,
+      headers: input.headers,
+      body: undefined,
+    };
+  }
 
-export const createMockFetch = (
+  const url = typeof input === "string" ? input : input.toString();
+  const method = init?.method ?? "GET";
+  const headers = new Headers(init?.headers);
+  const body = init?.body ? JSON.parse(String(init.body)) : undefined;
+
+  return { url, method, headers, body };
+}
+
+export function createMockFetch(
   options: {
-    remoteSubscriptions?: ReturnType<typeof createPaystackSubscription>[];
+    defaultResponse?: Response;
+    handlers?: Array<{
+      match: (request: MockFetchRequest) => boolean;
+      handle: (request: MockFetchRequest) => Response;
+    }>;
   } = {}
-): typeof fetch => {
-  const remoteSubscriptions = options.remoteSubscriptions ?? [];
-
-  const handleSubscriptionList = (request: MockFetchRequest): Response => {
-    const url = new URL(request.url);
-    const customerParam = url.searchParams.get("customer");
-    const customerId = customerParam
-      ? Number.parseInt(customerParam, 10)
-      : Number.NaN;
-
-    const filteredSubscriptions =
-      Number.isNaN(customerId) || customerId !== DEMO_PAYSTACK_CUSTOMER_ID
-        ? []
-        : remoteSubscriptions;
-
-    return mockJsonResponse({
-      status: true,
-      message: "Subscriptions retrieved",
-      data: filteredSubscriptions,
-    });
-  };
-
-  const mockFetchHandlers: Array<{
+): typeof fetch {
+  const defaultHandlers: Array<{
     match: (request: MockFetchRequest) => boolean;
     handle: (request: MockFetchRequest) => Response;
   }> = [
     {
       match: (request) =>
-        request.url.includes("/customer") && request.method === "POST",
-      handle: (request) => handleCustomerCreate(request.body),
-    },
-    {
-      match: (request) => request.url.includes("/transaction/initialize"),
-      handle: (request) => handleTransactionInitialize(request.body),
-    },
-    {
-      match: (request) =>
-        request.url.includes("/plan") && request.method === "GET",
-      handle: () => handlePlansList(),
-    },
-    {
-      match: (request) =>
-        request.url.includes("/subscription/disable") &&
-        request.method === "POST",
-      handle: () => handleSubscriptionDisable(),
-    },
-    {
-      match: (request) =>
-        request.url.includes("/subscription/enable") &&
-        request.method === "POST",
-      handle: () => handleSubscriptionEnable(),
+        request.url.includes("/customer") &&
+        request.method === "POST" &&
+        !request.url.includes("/customer/"),
+      handle: (request) =>
+        mockJsonResponse({
+          status: true,
+          message: "Customer created",
+          data: createPaystackCustomer({
+            customer_code: "CUS_created",
+            email: String(request.body.email ?? DEMO_PAYSTACK_CUSTOMER_EMAIL),
+            metadata: parseMetadataBody(request.body.metadata),
+          }),
+        }),
     },
     {
       match: (request) =>
         request.url.includes("/customer/") && request.method === "GET",
-      handle: () => handleCustomerFetch(),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Customer fetched",
+          data: createPaystackCustomer(),
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/customer") &&
+        request.method === "GET" &&
+        !request.url.includes("/customer/"),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Customers retrieved",
+          data: [createPaystackCustomer()],
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/customer/") && request.method === "PUT",
+      handle: (request) =>
+        mockJsonResponse({
+          status: true,
+          message: "Customer updated",
+          data: createPaystackCustomer({
+            first_name: String(request.body.first_name ?? "Updated"),
+          }),
+        }),
+    },
+    {
+      match: (request) => request.url.includes("/transaction/initialize"),
+      handle: (request) =>
+        mockJsonResponse({
+          status: true,
+          message: "Authorization URL created",
+          data: createInitializeTransaction({
+            reference: String(request.body.reference ?? "ref_checkout"),
+          }),
+        }),
+    },
+    {
+      match: (request) => request.url.includes("/transaction/verify/"),
+      handle: (request) => {
+        const reference = decodeURIComponent(
+          request.url.split("/transaction/verify/")[1]?.split("?")[0] ?? ""
+        );
+
+        return mockJsonResponse({
+          status: true,
+          message: "Verification successful",
+          data: createPaystackTransaction({ reference }),
+        });
+      },
+    },
+    {
+      match: (request) =>
+        request.url.includes("/transaction/charge_authorization"),
+      handle: (request) =>
+        mockJsonResponse({
+          status: true,
+          message: "Charge attempted",
+          data: createPaystackTransaction({
+            reference: String(request.body.reference ?? "ref_charge"),
+            amount: Number(request.body.amount ?? 1500),
+          }),
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/plan") &&
+        request.method === "POST" &&
+        !request.url.includes("/plan/"),
+      handle: (request) =>
+        mockJsonResponse({
+          status: true,
+          message: "Plan created",
+          data: createPaystackPlan({
+            name: String(request.body.name ?? "Pro"),
+            plan_code: String(request.body.name ?? "PLN_pro").startsWith("PLN_")
+              ? String(request.body.name)
+              : `PLN_${String(request.body.name ?? "pro").toLowerCase()}`,
+            amount: Number(request.body.amount ?? 800),
+          }),
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/plan/") && request.method === "GET",
+      handle: (request) => {
+        const idOrCode = decodeURIComponent(
+          request.url.split("/plan/")[1]?.split("?")[0] ??
+            DEMO_PAYSTACK_PLAN_CODE
+        );
+
+        return mockJsonResponse({
+          status: true,
+          message: "Plan fetched",
+          data: createPaystackPlan({
+            plan_code: idOrCode.startsWith("PLN_")
+              ? idOrCode
+              : DEMO_PAYSTACK_PLAN_CODE,
+          }),
+        });
+      },
+    },
+    {
+      match: (request) =>
+        request.url.includes("/plan") &&
+        request.method === "GET" &&
+        !request.url.includes("/plan/"),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Plans retrieved",
+          data: [createPaystackPlan()],
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/subscription") &&
+        request.method === "POST" &&
+        !request.url.includes("/subscription/"),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Subscription created",
+          data: createPaystackSubscription(),
+        }),
+    },
+    {
+      match: (request) =>
+        request.url.includes("/subscription/") &&
+        request.method === "GET" &&
+        !request.url.includes("/subscription/disable") &&
+        !request.url.includes("/subscription/enable"),
+      handle: (request) => {
+        const code = decodeURIComponent(
+          request.url.split("/subscription/")[1]?.split("?")[0] ?? ""
+        );
+
+        return mockJsonResponse({
+          status: true,
+          message: "Subscription fetched",
+          data: createPaystackSubscription({ subscription_code: code }),
+        });
+      },
+    },
+    {
+      match: (request) => request.url.includes("/subscription/disable"),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Subscription disabled",
+        }),
+    },
+    {
+      match: (request) => request.url.includes("/subscription/enable"),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Subscription enabled",
+        }),
     },
     {
       match: (request) =>
         request.url.includes("/subscription") &&
         request.method === "GET" &&
         !request.url.includes("/subscription/"),
-      handle: (request) => handleSubscriptionList(request),
-    },
-    {
-      match: (request) =>
-        request.url.includes("/subscription/") && request.method === "GET",
-      handle: (request) => handleSubscriptionFetch(request.url),
+      handle: () =>
+        mockJsonResponse({
+          status: true,
+          message: "Subscriptions retrieved",
+          data: [createPaystackSubscription()],
+        }),
     },
   ];
+
+  const handlers = [...(options.handlers ?? []), ...defaultHandlers];
 
   return vi.fn(
     (input: string | URL | Request, init?: RequestInit): Promise<Response> => {
       const request = parseMockFetchRequest(input, init);
-      const handler = mockFetchHandlers.find((entry) => entry.match(request));
+      const handler = handlers.find((entry) => entry.match(request));
+
       return Promise.resolve(
-        handler ? handler.handle(request) : mockDefaultResponse()
+        handler?.handle(request) ??
+          options.defaultResponse ??
+          mockJsonResponse({ status: true, message: "OK", data: {} })
       );
     }
   ) as typeof fetch;
-};
+}
 
-export const createPaystackClient = (
-  overrides: {
-    fetch?: typeof fetch;
-    secretKey?: string;
-    remoteSubscriptions?: ReturnType<typeof createPaystackSubscription>[];
-  } = {}
-) =>
-  new Paystack({
+export function createPaystackClient(
+  overrides: { fetch?: typeof fetch; secretKey?: string } = {}
+): Paystack {
+  return new Paystack({
     secretKey: overrides.secretKey ?? TEST_SECRET_KEY,
-    fetch:
-      overrides.fetch ??
-      createMockFetch({ remoteSubscriptions: overrides.remoteSubscriptions }),
+    fetch: overrides.fetch ?? createMockFetch(),
   });
+}
 
-export const createPaystackOptions = (
-  paystackClient: Paystack,
-  options: Partial<Omit<PaystackPluginOptions, "paystackClient">> = {}
-): PaystackPluginOptions =>
-  ({
-    paystackClient,
-    createCustomerOnSignUp: false,
-    subscription: {
-      enabled: true,
-      plans: [TEST_PLANS.pro, TEST_PLANS.basic],
-    },
-    ...options,
-  }) as PaystackPluginOptions;
+const WEBHOOK_CUSTOMER = {
+  id: 1,
+  first_name: "Test",
+  last_name: "User",
+  email: "demo+paystack@example.com",
+  customer_code: DEMO_PAYSTACK_CUSTOMER_CODE,
+  phone: null,
+  metadata: { userId: "user_1" },
+} as const;
 
-export const signPaystackWebhook = (body: string, secretKey: string): string =>
-  createHmac("sha512", secretKey).update(body).digest("hex");
+const WEBHOOK_PLAN = {
+  id: 1716,
+  name: "Pro",
+  plan_code: DEMO_PAYSTACK_PLAN_CODE,
+  amount: 800,
+  interval: "monthly",
+  currency: "GHS",
+} as const;
 
-export const createUpgradeRequest = (
-  body: Record<string, unknown>,
-  headers?: Headers | Record<string, string>
-): Request => {
-  const requestHeaders = new Headers({ "Content-Type": "application/json" });
+const WEBHOOK_AUTHORIZATION = {
+  authorization_code: "AUTH_test",
+  bin: "408408",
+  last4: "4081",
+  exp_month: "12",
+  exp_year: "2030",
+  channel: "card",
+  card_type: "visa",
+  bank: "TEST BANK",
+  country_code: "GH",
+  brand: "visa",
+  reusable: true,
+} as const;
 
-  if (headers instanceof Headers) {
-    for (const [key, value] of headers.entries()) {
-      requestHeaders.set(key, value);
-    }
-  } else if (headers) {
-    for (const [key, value] of Object.entries(headers)) {
-      if (value !== undefined) {
-        requestHeaders.set(key, String(value));
-      }
-    }
-  }
-
-  return new Request(
-    "http://localhost:3000/api/auth/paystack/subscription/upgrade",
-    {
-      method: "POST",
-      headers: requestHeaders,
-      body: JSON.stringify(body),
-    }
-  );
-};
-
-export type PaystackAdapter = Parameters<typeof getUserById>[0];
-
-type AuthenticatedUpgradeTestContext = Awaited<
-  ReturnType<typeof getTestInstance>
-> & {
-  headers: Headers;
-  userId: string;
-  adapter: PaystackAdapter;
-};
-
-export const setupAuthenticatedUpgradeTest = async (options: {
-  memory: ReturnType<typeof createMemoryDatabase>;
-  paystackOptions: PaystackPluginOptions;
-  seedSubscription?: (userId: string) => Record<string, unknown>;
-}): Promise<AuthenticatedUpgradeTestContext> => {
-  const instance = await getTestInstance(
-    {
-      database: options.memory,
-      plugins: [paystack(options.paystackOptions)],
-    },
-    { disableTestUser: true }
-  );
-
-  const signUpRes = await instance.client.signUp.email(testUser, {
-    throw: true,
-  });
-  const { headers } = await instance.signInWithUser(
-    testUser.email,
-    testUser.password
-  );
-  const ctx = await instance.auth.$context;
-
-  if (options.seedSubscription) {
-    await ctx.adapter.create({
-      model: "subscription",
-      data: options.seedSubscription(signUpRes.user.id),
-    });
-  }
-
+export function createChargeSuccessWebhookEvent(
+  overrides: {
+    reference?: string;
+    subscription_code?: string;
+    metadata?: Record<string, unknown>;
+    customer?: typeof WEBHOOK_CUSTOMER;
+    plan?: typeof WEBHOOK_PLAN | null;
+  } = {}
+) {
   return {
-    ...instance,
-    headers,
-    userId: signUpRes.user.id,
-    adapter: ctx.adapter as PaystackAdapter,
-  } as unknown as AuthenticatedUpgradeTestContext;
-};
+    event: "charge.success" as const,
+    data: {
+      id: 1001,
+      domain: "test",
+      status: "success" as const,
+      reference: overrides.reference ?? "ref_webhook_1",
+      amount: 1500,
+      message: null,
+      gateway_response: "Successful",
+      paid_at: "2026-01-01T00:00:00.000Z",
+      created_at: "2026-01-01T00:00:00.000Z",
+      channel: "card",
+      currency: "GHS",
+      customer: overrides.customer ?? WEBHOOK_CUSTOMER,
+      plan: overrides.plan === null ? null : (overrides.plan ?? WEBHOOK_PLAN),
+      subscription_code: overrides.subscription_code ?? "SUB_test123",
+      metadata: overrides.metadata ?? { userId: "user_1" },
+    },
+  };
+}
 
-export const test = baseTest.extend<{
-  mockFetch: Mock;
-  paystackClient: Paystack;
-  memory: ReturnType<typeof createMemoryDatabase>;
-  paystackOptions: PaystackPluginOptions;
-}>({
-  mockFetch: async (
-    { task: _task }: { task: unknown },
-    use: (value: Mock) => Promise<void>
-  ) => {
-    const mockFetch = createMockFetch();
-    await use(mockFetch as Mock);
-  },
-  paystackClient: async (
-    { mockFetch },
-    use: (value: Paystack) => Promise<void>
-  ) => {
-    await use(createPaystackClient({ fetch: mockFetch as typeof fetch }));
-  },
-  memory: async (
-    { task: _task }: { task: unknown },
-    use: (value: ReturnType<typeof createMemoryDatabase>) => Promise<void>
-  ) => {
-    await use(createMemoryDatabase());
-  },
-  paystackOptions: async (
-    { paystackClient },
-    use: (value: PaystackPluginOptions) => Promise<void>
-  ) => {
-    await use(createPaystackOptions(paystackClient));
-  },
-});
+export function createSubscriptionCreateWebhookEvent(
+  overrides: {
+    subscription_code?: string;
+    metadata?: Record<string, unknown> | null;
+  } = {}
+) {
+  return {
+    event: "subscription.create" as const,
+    data: {
+      id: 4192,
+      domain: "test",
+      status: "active",
+      subscription_code:
+        overrides.subscription_code ?? DEMO_PAYSTACK_SUBSCRIPTION_CODE,
+      email_token: "email_token_demo",
+      amount: 800,
+      cron_expression: "0 0 * * *",
+      next_payment_date: "2026-02-01T00:00:00.000Z",
+      plan: WEBHOOK_PLAN,
+      authorization: WEBHOOK_AUTHORIZATION,
+      customer: {
+        ...WEBHOOK_CUSTOMER,
+        metadata: overrides.metadata ?? WEBHOOK_CUSTOMER.metadata,
+      },
+    },
+  };
+}

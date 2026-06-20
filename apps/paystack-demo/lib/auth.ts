@@ -1,4 +1,4 @@
-import { paystack } from "@g14o/paystack";
+import { paystack } from "@g14o/paystack-better-auth";
 import { betterAuth } from "better-auth";
 import { nextCookies } from "better-auth/next-js";
 import { sqlite } from "@/lib/db";

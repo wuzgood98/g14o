@@ -1,8 +1,6 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { WebhookVerificationError } from "./client/errors";
-import type { PaystackSubscription } from "./client/responses";
+import type { PaystackSubscription } from "@g14o/paystack";
+import { parseSafeMetadata } from "@g14o/paystack";
 import { PAYSTACK_ERROR_CODES } from "./error-codes";
-import { parseSafeMetadata } from "./metadata";
 import type {
   DbPaystackSubscription,
   DbPaystackWebhookEvent,
@@ -290,56 +288,6 @@ Paystack -> Normalized status mapping:
 - subscription.disable -> cancelled
 - subscription.not_renew -> active with cancelAtPeriodEnd=true
 `.trim();
-
-/**
- * Verifies a Paystack webhook signature.
- * @internal
- */
-export function verifyPaystackWebhookSignature(
-  rawBody: string,
-  signature: string | null | undefined,
-  secret: string
-): void {
-  if (!signature) {
-    throw new WebhookVerificationError(
-      "Missing x-paystack-signature header",
-      "WEBHOOK_MISSING_SIGNATURE"
-    );
-  }
-
-  const hash = createHmac("sha512", secret).update(rawBody).digest("hex");
-
-  const signatureBuffer = Buffer.from(signature);
-  const hashBuffer = Buffer.from(hash);
-
-  if (
-    signatureBuffer.length !== hashBuffer.length ||
-    !timingSafeEqual(signatureBuffer, hashBuffer)
-  ) {
-    throw new WebhookVerificationError(
-      "Invalid webhook signature",
-      "WEBHOOK_INVALID_SIGNATURE"
-    );
-  }
-}
-
-/**
- * Creates a webhook event ID.
- * @internal
- */
-export function createWebhookEventId(
-  eventType: string,
-  data: Record<string, unknown>
-): string {
-  const reference =
-    (typeof data.reference === "string" && data.reference) ||
-    (typeof data.subscription_code === "string" && data.subscription_code) ||
-    (typeof data.id === "number" && String(data.id)) ||
-    (typeof data.id === "string" && data.id) ||
-    JSON.stringify(data);
-
-  return `${eventType}:${reference}`;
-}
 
 /**
  * Determines if a subscription is active or trialing.

@@ -1,9 +1,14 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import type { z } from "zod";
 import {
   type DisableSubscriptionParams,
   disableSubscriptionParamsSchema,
 } from "../validation";
-import { PaystackError } from "./errors";
+import {
+  type PaystackWebhookEvent,
+  parsePaystackWebhookEvent,
+} from "../webhook-events";
+import { PaystackError, WebhookVerificationError } from "./errors";
 import { PaystackHttpClient } from "./http";
 import {
   type PaystackCustomer,
@@ -28,7 +33,16 @@ import type {
   PaystackClient,
   PaystackClientOptions,
 } from "./types";
+import {
+  type ProcessWebhookDeliveryRequestOptions,
+  type ProcessWebhookDeliveryResult,
+  processWebhookDelivery,
+} from "./webhook-delivery";
 
+/**
+ * Parses a Paystack API response envelope.
+ * @internal
+ */
 const parseEnvelope = <T>(schema: z.ZodType<T>, response: unknown): T => {
   const envelope = paystackResponseEnvelopeSchema(schema).safeParse(response);
 
@@ -49,6 +63,10 @@ const parseEnvelope = <T>(schema: z.ZodType<T>, response: unknown): T => {
   return envelope.data.data;
 };
 
+/**
+ * Asserts an object to a record of string keys and unknown values.
+ * @internal
+ */
 const asBody = (value: object): Record<string, unknown> =>
   value as Record<string, unknown>;
 
@@ -250,6 +268,49 @@ export class Paystack implements PaystackClient {
     }) => Promise<PaystackSubscription[]>;
   };
 
+  /**
+   * Webhook verification helpers.
+   */
+  readonly webhook: {
+    /**
+     * Verify `x-paystack-signature` for a raw webhook body.
+     * Uses the client's secretKey. Throws WebhookVerificationError on failure.
+     */
+    verifyPaystackWebhookSignature: (
+      rawBody: string,
+      signature: string | null | undefined
+    ) => void;
+    /**
+     * Verify a Paystack webhook request.
+     * @param request - The request to verify.
+     * @returns The parsed webhook payload from the verified request body.
+     */
+    verifyWebhookRequest: (
+      request: Request | null | undefined
+    ) => Promise<string>;
+    /**
+     * Parse a Paystack webhook payload.
+     * @param rawBody - The raw body of the webhook request.
+     * @returns The parsed webhook payload.
+     */
+    parseWebhookPayload: (rawBody: string) => PaystackWebhookEvent;
+    /**
+     * Verify, parse, and process a Paystack webhook request with deduplication.
+     */
+    processWebhookDelivery: (
+      request: Request | null | undefined,
+      options: ProcessWebhookDeliveryRequestOptions
+    ) => Promise<ProcessWebhookDeliveryResult>;
+    /**
+     * Process a Paystack webhook request.
+     * @param request - The request to process.
+     * @returns The processed webhook payload.
+     */
+    processWebhookRequest: (
+      request: Request | null | undefined
+    ) => Promise<PaystackWebhookEvent>;
+  };
+
   constructor(options: PaystackClientOptions) {
     this.secretKey = options.secretKey;
     this.publicKey = options.publicKey;
@@ -352,8 +413,8 @@ export class Paystack implements PaystackClient {
         const parsed = paystackPlanListSchema.safeParse(response);
         if (!parsed.success) {
           throw new PaystackError("Invalid Paystack API response shape", {
-            code: "PAYSTACK_API_ERROR",
-            paystackMessage: parsed.error.message,
+            code: "PAYSTACK_VALIDATION_ERROR",
+            cause: parsed.error,
           });
         }
         return parsed.data.data;
@@ -422,6 +483,101 @@ export class Paystack implements PaystackClient {
         return parseEnvelope(paystackSubscriptionSchema.array(), response);
       },
     };
+
+    this.webhook = {
+      verifyPaystackWebhookSignature: (rawBody, signature) => {
+        if (!signature) {
+          throw new WebhookVerificationError(
+            "Missing x-paystack-signature header",
+            "WEBHOOK_MISSING_SIGNATURE"
+          );
+        }
+
+        const hash = createHmac("sha512", this.secretKey)
+          .update(rawBody)
+          .digest("hex");
+
+        const signatureBuffer = Buffer.from(signature);
+        const hashBuffer = Buffer.from(hash);
+
+        if (
+          signatureBuffer.length !== hashBuffer.length ||
+          !timingSafeEqual(signatureBuffer, hashBuffer)
+        ) {
+          throw new WebhookVerificationError(
+            "Invalid webhook signature",
+            "WEBHOOK_INVALID_SIGNATURE"
+          );
+        }
+      },
+      verifyWebhookRequest: async (request) => {
+        if (!request?.body) {
+          throw new PaystackError("Invalid request body", {
+            code: "PAYSTACK_VALIDATION_ERROR",
+            cause: new Error("Request body is required"),
+            statusCode: 400,
+          });
+        }
+
+        const signature = request.headers.get("x-paystack-signature");
+        if (!signature) {
+          throw new PaystackError("Webhook signature not found", {
+            code: "PAYSTACK_VALIDATION_ERROR",
+            cause: new Error("Webhook signature is required"),
+            statusCode: 400,
+          });
+        }
+
+        const rawBody = await request.text();
+
+        try {
+          this.webhook.verifyPaystackWebhookSignature(rawBody, signature);
+        } catch (error) {
+          if (error instanceof WebhookVerificationError) {
+            throw new PaystackError("Webhook verification failed", {
+              code: "PAYSTACK_VALIDATION_ERROR",
+              cause: error,
+              statusCode: 400,
+            });
+          }
+          throw error;
+        }
+
+        return rawBody;
+      },
+      parseWebhookPayload: (rawBody) => {
+        let parsedBody: unknown;
+
+        try {
+          parsedBody = JSON.parse(rawBody);
+        } catch (error) {
+          throw new PaystackError("Invalid webhook payload", {
+            code: "PAYSTACK_VALIDATION_ERROR",
+            cause: error,
+            statusCode: 400,
+          });
+        }
+
+        try {
+          return parsePaystackWebhookEvent(parsedBody);
+        } catch (error) {
+          throw new PaystackError("Invalid webhook payload", {
+            code: "PAYSTACK_VALIDATION_ERROR",
+            cause: error,
+            statusCode: 400,
+          });
+        }
+      },
+      processWebhookDelivery: async (request, options) => {
+        const rawBody = await this.webhook.verifyWebhookRequest(request);
+        const event = this.webhook.parseWebhookPayload(rawBody);
+        return processWebhookDelivery({ event, rawBody, ...options });
+      },
+      processWebhookRequest: async (request) => {
+        const rawBody = await this.webhook.verifyWebhookRequest(request);
+        return this.webhook.parseWebhookPayload(rawBody);
+      },
+    };
   }
 }
 
@@ -435,3 +591,14 @@ export type {
   PaystackClient,
   PaystackClientOptions,
 } from "./types";
+export type {
+  ProcessWebhookDeliveryOptions,
+  ProcessWebhookDeliveryRequestOptions,
+  ProcessWebhookDeliveryResult,
+  WebhookDeliveryStore,
+} from "./webhook-delivery";
+// biome-ignore lint/performance/noBarrelFile: re-export for convenience
+export {
+  createWebhookEventId,
+  processWebhookDelivery,
+} from "./webhook-delivery";

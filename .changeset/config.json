@@ -2,7 +2,11 @@
   "$schema": "https://unpkg.com/@changesets/config@3.1.4/schema.json",
   "changelog": "@changesets/cli/changelog",
   "commit": false,
-  "fixed": [["@g14o/core"], ["@g14o/env-core"]],
+  "fixed": [
+    ["@g14o/core"],
+    ["@g14o/env-core"],
+    ["@g14o/paystack", "@g14o/paystack-better-auth"]
+  ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
@@ -14,6 +18,7 @@
     "cache-demo",
     "env-demo",
     "web",
+    "paystack-demo",
     "@workspace/ui",
     "@workspace/typescript-config"
   ]

@@ -344,7 +344,10 @@ export class PaystackHttpClient {
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
       try {
-        await this.onPayloadValidationBeforeSending?.(options.body ?? {});
+        const validatePayload =
+          options.onPayloadValidationBeforeSending ??
+          this.onPayloadValidationBeforeSending;
+        await validatePayload?.(options.body ?? {});
 
         const response = await this.fetchImpl(url, {
           method: options.method,

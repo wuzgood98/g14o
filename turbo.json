@@ -30,7 +30,8 @@
       "dependsOn": ["^typecheck"]
     },
     "test": {
-      "dependsOn": []
+      "dependsOn": ["^build"],
+      "passThroughEnv": ["PAYSTACK_SECRET_KEY"]
     },
     "test:integration": {
       "dependsOn": [],

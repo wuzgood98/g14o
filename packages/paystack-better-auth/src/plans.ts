@@ -1,6 +1,8 @@
-import { SubscriptionError } from "./client/errors";
-import type { Paystack } from "./client/paystack-client";
-import type { PaystackPlan } from "./client/responses";
+import {
+  type Paystack,
+  type PaystackPlan,
+  SubscriptionError,
+} from "@g14o/paystack";
 import type {
   AutoSubscriptionPlan,
   PaystackPlanKey,
