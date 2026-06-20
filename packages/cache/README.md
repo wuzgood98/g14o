@@ -17,7 +17,7 @@ Create an app-owned client in `lib/cache.ts`:
 import { createCache } from "@g14o/cache";
 import { logger } from "@/lib/logger";
 
-export const { withCache, invalidateCache } = createCache({
+export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
   redis: {
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
@@ -64,7 +64,8 @@ export const getUsersCached = withCache(getUsers, {
 ### Parameterized cache with a custom key
 
 ```ts
-import { createListCacheKey, withCache } from "@/lib/cache";
+import { createListCacheKey } from "@g14o/cache";
+import { withCache } from "@/lib/cache";
 
 export const listUsersCached = withCache(listUsers, {
   prefix: "users",
@@ -101,7 +102,7 @@ import { createCache } from "@g14o/cache";
 import { redis } from "@/lib/redis";
 import { logger } from "@/lib/logger";
 
-export const { withCache, invalidateCache } = createCache({ redis, logger });
+export const { withCache, invalidateCache, invalidateCacheKey } = createCache({ redis, logger });
 ```
 
 ### Build vs runtime
