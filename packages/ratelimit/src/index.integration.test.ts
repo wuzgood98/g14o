@@ -53,7 +53,7 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
       const identifier = `g14o-it-rl-${randomUUID()}`;
       const limiter = rateLimit.getRateLimiter("strict");
 
-      for (let i = 0; i < STRICT_TIER_LIMIT; i++) {
+      for (const _ of Array.from({ length: STRICT_TIER_LIMIT })) {
         const result = await limiter.limit(identifier);
         expect(result.success).toBe(true);
       }
@@ -101,7 +101,7 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
 
       const req = mockRequest();
 
-      for (let i = 0; i < STRICT_TIER_LIMIT; i++) {
+      for (const _ of Array.from({ length: STRICT_TIER_LIMIT })) {
         const res = await limited(req);
         expect(res.status).toBe(200);
       }
