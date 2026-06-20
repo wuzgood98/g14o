@@ -5,7 +5,8 @@
   "fixed": [
     ["@g14o/core"],
     ["@g14o/env-core"],
-    ["@g14o/paystack", "@g14o/paystack-better-auth"]
+    ["@g14o/paystack"],
+    ["@g14o/paystack-better-auth"]
   ],
   "linked": [],
   "access": "public",
