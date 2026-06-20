@@ -4,11 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const corePkgPath = join(root, "packages/core/package.json");
-const shimPaths = [
-  "packages/cache/package.json",
-  "packages/ratelimit/package.json",
-  "packages/utils/package.json",
-];
+const shimPaths = ["packages/utils/package.json"];
 
 const corePkg = JSON.parse(readFileSync(corePkgPath, "utf8"));
 const coreVersion = corePkg.version;

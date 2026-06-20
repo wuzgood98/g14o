@@ -1,3 +1,7 @@
 # @g14o/ratelimit
 
-This package is not published. See [@g14o/core CHANGELOG](../core/CHANGELOG.md).
+## 0.1.0
+
+### Minor Changes
+
+- Initial release of `@g14o/ratelimit` — framework-agnostic rate limiting using Web `Request`/`Response`, Upstash Redis backends, and configurable tiers.

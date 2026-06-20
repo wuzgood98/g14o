@@ -71,25 +71,25 @@ const shimPackages = [
     distFile: "dist/utils.js",
     exports: ["parseNumber", "stringifyParams"],
   },
+];
+
+const standalonePackages = [
   {
     filter: "@g14o/cache",
     importPath: "@g14o/cache",
-    distFile: "dist/index.js",
-    exports: ["createCache", "withCache"],
+    distFile: "dist/index.mjs",
+    exports: ["createCache", "withCache", "createCacheKey"],
   },
   {
     filter: "@g14o/ratelimit",
     importPath: "@g14o/ratelimit",
-    distFile: "dist/index.js",
-    exports: ["createRateLimit", "checkRateLimit"],
-    typesOnlyInNode: true,
+    distFile: "dist/index.mjs",
+    exports: ["createRateLimit", "checkRateLimit", "parseDurationToMs"],
   },
 ];
 
 const shimToCore = {
   "@g14o/utils": "@g14o/core",
-  "@g14o/cache": "@g14o/core/cache",
-  "@g14o/ratelimit": "@g14o/core/ratelimit",
 };
 
 const packDir = mkdtempSync(join(tmpdir(), "g14o-pack-"));
@@ -99,6 +99,7 @@ try {
   const filters = [
     "@g14o/core",
     envCoreSmoke.filter,
+    ...standalonePackages.map((p) => p.filter),
     ...shimPackages.map((p) => p.filter),
   ];
   for (const filter of filters) {
@@ -281,6 +282,48 @@ try {
     console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
   }
 
+  for (const { importPath, distFile, exports: names } of standalonePackages) {
+    const pkgName = importPath.split("/")[1];
+    const pkgRoot = join(consumerDir, "node_modules", "@g14o", pkgName);
+    const entryPath = join(pkgRoot, distFile);
+
+    if (!existsSync(entryPath)) {
+      throw new Error(`${importPath}: missing packed entry ${distFile}`);
+    }
+
+    const packedPkg = JSON.parse(
+      readFileSync(join(pkgRoot, "package.json"), "utf8")
+    );
+
+    if (packedPkg.dependencies?.["@g14o/core"]) {
+      throw new Error(
+        `${importPath}: expected no @g14o/core runtime dependency (got ${JSON.stringify(packedPkg.dependencies)})`
+      );
+    }
+
+    const rootExport = packedPkg.exports?.["."];
+    const importTarget =
+      typeof rootExport === "string"
+        ? rootExport
+        : (rootExport?.default ?? rootExport?.import);
+    if (!importTarget?.includes("dist")) {
+      throw new Error(
+        `${importPath}: packed export must point at dist (got ${JSON.stringify(rootExport)})`
+      );
+    }
+
+    const mod = await import(pathToFileURL(entryPath).href);
+    for (const name of names) {
+      if (typeof mod[name] !== "function") {
+        throw new Error(
+          `${importPath}: expected function export "${name}" in packed tarball`
+        );
+      }
+    }
+
+    console.log(`${importPath}: standalone smoke OK (${names.join(", ")})`);
+  }
+
   for (const {
     importPath,
     distFile,
@@ -300,7 +343,9 @@ try {
     );
     const rootExport = packedPkg.exports?.["."];
     const importTarget =
-      typeof rootExport === "string" ? rootExport : rootExport?.import;
+      typeof rootExport === "string"
+        ? rootExport
+        : (rootExport?.default ?? rootExport?.import);
     if (!importTarget?.includes("dist")) {
       throw new Error(
         `${importPath}: packed export must point at dist (got ${JSON.stringify(rootExport)})`

@@ -5,6 +5,8 @@
   "fixed": [
     ["@g14o/core"],
     ["@g14o/env-core"],
+    ["@g14o/cache"],
+    ["@g14o/ratelimit"],
     ["@g14o/paystack"],
     ["@g14o/paystack-better-auth"]
   ],
@@ -14,8 +16,6 @@
   "updateInternalDependencies": "patch",
   "ignore": [
     "@g14o/utils",
-    "@g14o/cache",
-    "@g14o/ratelimit",
     "cache-demo",
     "env-demo",
     "web",

@@ -169,22 +169,30 @@ The same option applies to `createRateLimit()`. For low-level checks, see `isNex
 
 ## Migration from separate packages
 
-If you previously installed `@g14o/utils`, `@g14o/cache`, and `@g14o/ratelimit`:
+You can install cache and rate limiting **standalone** or bundled in `@g14o/core`:
+
+| Package | Install | Import |
+|---------|---------|--------|
+| Cache only | `pnpm add @g14o/cache @upstash/redis` | `@g14o/cache` |
+| Rate limit only | `pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit` | `@g14o/ratelimit` (Web `Request`/`Response`) |
+| All-in-one | `pnpm add @g14o/core @upstash/redis @upstash/ratelimit next` | `@g14o/core`, `/cache`, `/ratelimit` |
+
+If you previously used deprecated shims and want the bundled package:
 
 ```bash
 pnpm remove @g14o/utils @g14o/cache @g14o/ratelimit
 pnpm add @g14o/core
 ```
 
-| Old import | New import |
-|------------|------------|
+| Old import | Bundled import |
+|------------|----------------|
 | `@g14o/utils` | `@g14o/core` |
 | `@g14o/utils/types` | `@g14o/core/types` |
 | `@g14o/utils/config` | `@g14o/core/config` |
-| `@g14o/cache` | `@g14o/core/cache` |
-| `@g14o/ratelimit` | `@g14o/core/ratelimit` |
+| `@g14o/cache` | `@g14o/core/cache` or keep `@g14o/cache` |
+| `@g14o/ratelimit` | `@g14o/core/ratelimit` or keep `@g14o/ratelimit` |
 
-The old package names remain available as deprecated shims for one release cycle.
+`@g14o/utils` remains an unpublished deprecated shim in the monorepo.
 
 ## Examples
 
