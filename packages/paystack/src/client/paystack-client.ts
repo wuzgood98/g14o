@@ -81,15 +81,11 @@ const asBody = (value: object): Record<string, unknown> =>
  */
 export class Paystack implements PaystackClient {
   /**
-   * Secret key used for API auth and webhook signature verification.
-   * @required
-   */
-  readonly secretKey: string;
-  /**
    * Optional public key for client-side integrations.
    * @default undefined
    */
   readonly publicKey: string | undefined;
+  readonly #secretKey: string;
   private readonly http: PaystackHttpClient;
 
   /**
@@ -312,7 +308,7 @@ export class Paystack implements PaystackClient {
   };
 
   constructor(options: PaystackClientOptions) {
-    this.secretKey = options.secretKey;
+    this.#secretKey = options.secretKey;
     this.publicKey = options.publicKey;
     this.http = new PaystackHttpClient({
       secretKey: options.secretKey,
@@ -493,7 +489,7 @@ export class Paystack implements PaystackClient {
           );
         }
 
-        const hash = createHmac("sha512", this.secretKey)
+        const hash = createHmac("sha512", this.#secretKey)
           .update(rawBody)
           .digest("hex");
 

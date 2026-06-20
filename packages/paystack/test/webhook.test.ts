@@ -278,8 +278,7 @@ describe("paystack.webhook.processWebhookDelivery", () => {
     const request = createWebhookRequest(payload);
     const handler = vi.fn(async () => {});
     const store = {
-      shouldProcess: vi.fn(async () => false),
-      persist: vi.fn(async () => {}),
+      claim: vi.fn(async () => "duplicate" as const),
       markProcessed: vi.fn(async () => {}),
       markFailed: vi.fn(async () => {}),
     };
@@ -294,8 +293,7 @@ describe("paystack.webhook.processWebhookDelivery", () => {
     const payload = createChargeSuccessWebhookEvent({ reference: "ref_fail" });
     const request = createWebhookRequest(payload);
     const store = {
-      shouldProcess: vi.fn(async () => true),
-      persist: vi.fn(async () => {}),
+      claim: vi.fn(async () => "claimed" as const),
       markProcessed: vi.fn(async () => {}),
       markFailed: vi.fn(async () => {}),
     };
@@ -324,8 +322,7 @@ describe("paystack.webhook.processWebhookDelivery", () => {
     });
     const request = createWebhookRequest(payload);
     const store = {
-      shouldProcess: vi.fn(async () => true),
-      persist: vi.fn(async () => {}),
+      claim: vi.fn(async () => "claimed" as const),
       markProcessed: vi.fn(async () => {}),
       markFailed: vi.fn(async () => {}),
     };
@@ -336,8 +333,7 @@ describe("paystack.webhook.processWebhookDelivery", () => {
       store,
     });
 
-    expect(store.shouldProcess).not.toHaveBeenCalled();
-    expect(store.persist).not.toHaveBeenCalled();
+    expect(store.claim).not.toHaveBeenCalled();
     expect(store.markProcessed).not.toHaveBeenCalled();
   });
 });

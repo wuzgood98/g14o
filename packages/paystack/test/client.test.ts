@@ -390,13 +390,13 @@ describe("paystack.subscriptions", () => {
 });
 
 describe("Paystack client options", () => {
-  it("exposes configured secret and public keys", () => {
+  it("does not expose the secret key on the client instance", () => {
     const paystack = new Paystack({
       secretKey: TEST_SECRET_KEY,
       publicKey: "pk_test_public",
     });
 
-    expect(paystack.secretKey).toBe(TEST_SECRET_KEY);
+    expect("secretKey" in paystack).toBe(false);
     expect(paystack.publicKey).toBe("pk_test_public");
   });
 });

@@ -1,10 +1,12 @@
 import type { Mock } from "vitest";
 import { describe, expect } from "vitest";
+import { getSubscriptionRecord } from "../src/subscription-sync";
 import {
   createDemoRemoteTestSubscriptions,
   createMockFetch,
   createPaystackClient,
   createPaystackOptions,
+  createSubscriptionActionRequest,
   createUpgradeRequest,
   DEMO_PAYSTACK_CUSTOMER_CODE,
   DEMO_PAYSTACK_CUSTOMER_ID,
@@ -64,24 +66,6 @@ function createSubscriptionListRequest(
   });
 }
 
-function createSubscriptionActionRequest(
-  action: "cancel" | "resume",
-  headers: Headers,
-  body: Record<string, string> = {}
-): Request {
-  return new Request(
-    `http://localhost:3000/api/auth/paystack/subscription/${action}`,
-    {
-      method: "POST",
-      headers: new Headers({
-        ...Object.fromEntries(headers.entries()),
-        "Content-Type": "application/json",
-      }),
-      body: JSON.stringify(body),
-    }
-  );
-}
-
 const demoRemoteSubscriptions = createDemoRemoteTestSubscriptions();
 
 const remoteSubscriptionPaystackOptions = createPaystackOptions(
@@ -89,6 +73,39 @@ const remoteSubscriptionPaystackOptions = createPaystackOptions(
     remoteSubscriptions: demoRemoteSubscriptions,
   })
 );
+
+describe("getSubscriptionRecord ownership", () => {
+  test("returns null when subscriptionCode belongs to another user", async ({
+    memory,
+  }) => {
+    const { adapter, userId } = await setupAuthenticatedUpgradeTest({
+      memory,
+      paystackOptions: createPaystackOptions(createPaystackClient()),
+      seedSubscription: () => ({
+        userId: "other_user",
+        referenceId: "other_user",
+        provider: "paystack",
+        subscriptionCode: "SUB_other",
+        customerCode: "CUS_other",
+        customerId: 2,
+        planCode: "PLN_basic",
+        planName: "basic",
+        emailToken: "email_token_other",
+        status: "active",
+        currentPeriodStart: new Date("2026-01-01T00:00:00.000Z"),
+        currentPeriodEnd: null,
+        cancelAtPeriodEnd: false,
+      }),
+    });
+
+    const record = await getSubscriptionRecord(adapter, {
+      userId,
+      subscriptionCode: "SUB_other",
+    });
+
+    expect(record).toBeNull();
+  });
+});
 
 describe("subscription reconciliation", () => {
   test("list reconciles both demo customer subscriptions into the local database", async ({
@@ -158,9 +175,7 @@ describe("subscription reconciliation", () => {
     };
     expect(json.subscriptionCode).toBe(DEMO_PAYSTACK_SUBSCRIPTION_CODES[0]);
     expect(json.userId).toBe(userId);
-    expect(json.emailToken).toBe(
-      `email_token_${DEMO_PAYSTACK_SUBSCRIPTION_CODES[0]}`
-    );
+    expect(json).not.toHaveProperty("emailToken");
   });
 
   test("cancel reconciles on miss and disables the remote subscription", async ({

@@ -388,6 +388,23 @@ export const createUpgradeRequest = (
   );
 };
 
+export const createSubscriptionActionRequest = (
+  action: "cancel" | "resume",
+  headers: Headers,
+  body: Record<string, string> = {}
+): Request =>
+  new Request(
+    `http://localhost:3000/api/auth/paystack/subscription/${action}`,
+    {
+      method: "POST",
+      headers: new Headers({
+        ...Object.fromEntries(headers.entries()),
+        "Content-Type": "application/json",
+      }),
+      body: JSON.stringify(body),
+    }
+  );
+
 export type PaystackAdapter = Parameters<typeof getUserById>[0];
 
 type AuthenticatedUpgradeTestContext = Awaited<

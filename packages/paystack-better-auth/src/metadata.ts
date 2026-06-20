@@ -1,8 +1,19 @@
 const UNSAFE_METADATA_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
+/** Keys that must only be set server-side, never from client metadata. */
+export const RESERVED_METADATA_KEYS = new Set([
+  ...UNSAFE_METADATA_KEYS,
+  "userId",
+  "referenceId",
+  "planName",
+  "supersedeSubscriptionCode",
+  "callbackUrl",
+  "cancel_action",
+]);
+
 /**
  * Merge metadata objects, giving `internalFields` final priority.
- * Drops reserved keys that could mutate the target's prototype chain.
+ * Drops reserved keys from user sources and prototype-poison keys.
  */
 function mergeMetadata<Internal extends Record<string, unknown>>(
   internalFields: Internal,
@@ -16,7 +27,7 @@ function mergeMetadata<Internal extends Record<string, unknown>>(
     }
 
     for (const [key, value] of Object.entries(source)) {
-      if (UNSAFE_METADATA_KEYS.has(key)) {
+      if (RESERVED_METADATA_KEYS.has(key)) {
         continue;
       }
       merged[key] = value;

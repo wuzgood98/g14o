@@ -12,6 +12,7 @@ import {
   createMockFetch,
   createPaystackClient,
   createPaystackOptions,
+  setupAuthenticatedUpgradeTest,
   signPaystackWebhook,
   TEST_SECRET_KEY,
   test,
@@ -448,5 +449,64 @@ describe("paystack webhook", () => {
     expect(
       (subscriptions[0] as { subscriptionCode?: string }).subscriptionCode
     ).toBe("SUB_test123");
+  });
+
+  test("prefers customer-code lookup over conflicting metadata userId", async ({
+    memory,
+    paystackOptions,
+  }) => {
+    const { auth, userId, adapter } = await setupAuthenticatedUpgradeTest({
+      memory,
+      paystackOptions,
+    });
+
+    await adapter.update({
+      model: "user",
+      where: [{ field: "id", value: userId }],
+      update: {
+        paystackCustomerCode: "CUS_test123",
+      },
+    });
+
+    const payload = createChargeSuccessPayload({
+      reference: "ref_metadata_conflict",
+      metadata: { userId: "user_victim" },
+      customer: {
+        id: 1,
+        first_name: "Linked",
+        last_name: "User",
+        email: "linked@example.com",
+        customer_code: "CUS_test123",
+        phone: null,
+        metadata: { userId: "user_victim" },
+      },
+    });
+    const rawBody = JSON.stringify(payload);
+    const signature = signPaystackWebhook(rawBody, TEST_SECRET_KEY);
+
+    const response = await auth.handler(
+      new Request("http://localhost:3000/api/auth/paystack/webhook", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-paystack-signature": signature,
+        },
+        body: rawBody,
+      })
+    );
+
+    expect(response.status).toBe(200);
+
+    const subscriptions = await adapter.findMany({
+      model: "subscription",
+      where: [{ field: "userId", value: userId }],
+    });
+    expect(subscriptions.length).toBeGreaterThan(0);
+
+    const victimSubscriptions = await adapter.findMany({
+      model: "subscription",
+      where: [{ field: "userId", value: "user_victim" }],
+    });
+    expect(victimSubscriptions).toHaveLength(0);
   });
 });

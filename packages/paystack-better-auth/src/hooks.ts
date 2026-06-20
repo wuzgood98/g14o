@@ -198,16 +198,22 @@ const parseCustomerMetadataFromCustomer = (
 ): Record<string, unknown> | undefined =>
   parseSafeMetadata(customer.metadata ?? undefined);
 
-const resolveUserId = (
+const resolveUserId = async (
   adapter: Adapter,
   metadata: Record<string, unknown> | undefined,
   customerCode?: string | undefined
 ): Promise<string | null> => {
-  if (typeof metadata?.userId === "string" && metadata.userId) {
-    return Promise.resolve(metadata.userId);
+  const customerUserId = await findUserIdByCustomerCode(adapter, customerCode);
+
+  if (customerUserId) {
+    return customerUserId;
   }
 
-  return findUserIdByCustomerCode(adapter, customerCode);
+  if (typeof metadata?.userId === "string" && metadata.userId) {
+    return metadata.userId;
+  }
+
+  return null;
 };
 
 const findExistingSubscription = async (
@@ -545,9 +551,45 @@ export const handlePaystackWebhookEvent = async (options: {
 export const createAdapterWebhookStore = (
   adapter: GenericEndpointContext["context"]["adapter"]
 ): WebhookDeliveryStore => ({
-  shouldProcess: (eventId) => shouldProcessWebhook(adapter, eventId),
-  persist: async (input) => {
-    await persistWebhookEvent(adapter, input);
+  claim: async (input) => {
+    const existing = await findWebhookEvent(adapter, input.eventId);
+
+    if (existing) {
+      const record = asDbWebhookEvent(existing);
+
+      if (record.status === "processed") {
+        return "duplicate";
+      }
+
+      if (record.status === "failed") {
+        await reprocessWebhookEvent(adapter, input.eventId);
+        return "claimed";
+      }
+
+      return "duplicate";
+    }
+
+    try {
+      await persistWebhookEvent(adapter, input);
+      return "claimed";
+    } catch {
+      const raced = await findWebhookEvent(adapter, input.eventId);
+
+      if (!raced) {
+        throw new Error(
+          `Failed to claim webhook event ${input.eventId} after duplicate insert race`
+        );
+      }
+
+      const record = asDbWebhookEvent(raced);
+
+      if (record.status === "failed") {
+        await reprocessWebhookEvent(adapter, input.eventId);
+        return "claimed";
+      }
+
+      return "duplicate";
+    }
   },
   markProcessed: async (eventId) => {
     await markWebhookProcessed(adapter, eventId);

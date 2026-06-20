@@ -28,7 +28,10 @@ export async function getSubscriptionRecord(
   if (options.subscriptionCode) {
     const record = await adapter.findOne({
       model: "subscription",
-      where: [{ field: "subscriptionCode", value: options.subscriptionCode }],
+      where: [
+        { field: "subscriptionCode", value: options.subscriptionCode },
+        { field: "userId", value: options.userId },
+      ],
     });
 
     return record ? asDbSubscription(record) : null;
@@ -63,7 +66,10 @@ async function listAllSubscriptionsForCustomer(
   const paystackClient = pluginContext.options.paystackClient;
   const subscriptions: PaystackSubscription[] = [];
   let page = options.page ?? 1;
-  const pageSize = options.perPage ?? SUBSCRIPTION_LIST_PAGE_SIZE;
+  const pageSize =
+    options.perPage && options.perPage > 0
+      ? options.perPage
+      : SUBSCRIPTION_LIST_PAGE_SIZE;
 
   while (true) {
     const batch = await paystackClient.subscriptions.list({
@@ -121,13 +127,20 @@ export async function reconcileSubscriptionsForUser(options: {
     | undefined;
 }): Promise<PaystackSubscriptionRecord[]> {
   try {
-    const customer =
-      options.query?.customer ??
-      (await resolvePaystackCustomerId({
-        adapter: options.adapter,
-        paystackClient: options.pluginContext.options.paystackClient,
-        userId: options.userId,
-      }));
+    const resolvedCustomer = await resolvePaystackCustomerId({
+      adapter: options.adapter,
+      paystackClient: options.pluginContext.options.paystackClient,
+      userId: options.userId,
+    });
+
+    const requestedCustomer = options.query?.customer;
+    if (requestedCustomer != null && requestedCustomer !== resolvedCustomer) {
+      throw new PaystackError("Customer ID does not match authenticated user", {
+        code: "PAYSTACK_VALIDATION_ERROR",
+      });
+    }
+
+    const customer = resolvedCustomer;
 
     const subscriptions = await listAllSubscriptionsForCustomer(
       options.pluginContext,

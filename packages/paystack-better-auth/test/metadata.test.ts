@@ -56,6 +56,20 @@ describe("metadata guards", () => {
     });
   });
 
+  it("strips reserved keys from user metadata when no internal fields are set", () => {
+    const merged = checkoutMetadata.set(
+      {},
+      {
+        userId: "user_attacker",
+        referenceId: "ref_attacker",
+        planName: "pro",
+        source: "checkout",
+      }
+    );
+
+    expect(merged).toEqual({ source: "checkout" });
+  });
+
   it("stores and reads supersedeSubscriptionCode in subscription metadata", () => {
     const merged = subscriptionMetadata.set(
       {

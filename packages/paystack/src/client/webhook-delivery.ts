@@ -4,6 +4,15 @@ import { PaystackError } from "./errors";
 /** Persistence port for webhook deduplication and delivery status tracking. */
 export interface WebhookDeliveryStore {
   /**
+   * Atomically claims a webhook delivery for processing.
+   * Returns `duplicate` when the event was already processed or is in-flight.
+   */
+  claim: (input: {
+    eventId: string;
+    payload: string;
+    type: string;
+  }) => Promise<"claimed" | "duplicate">;
+  /**
    * Marks a webhook delivery as failed.
    */
   markFailed: (eventId: string, errorMessage: string) => Promise<void>;
@@ -11,18 +20,6 @@ export interface WebhookDeliveryStore {
    * Marks a webhook delivery as processed.
    */
   markProcessed: (eventId: string) => Promise<void>;
-  /**
-   * Persists a webhook delivery.
-   */
-  persist: (input: {
-    eventId: string;
-    payload: string;
-    type: string;
-  }) => Promise<void>;
-  /**
-   * Checks if a webhook delivery should be processed.
-   */
-  shouldProcess: (eventId: string) => Promise<boolean>;
 }
 
 /**
@@ -114,17 +111,15 @@ export async function processWebhookDelivery(
   const eventId = createWebhookEventId(event);
 
   if (!disablePersistence && store) {
-    const shouldProcess = await store.shouldProcess(eventId);
-
-    if (!shouldProcess) {
-      return { duplicate: true };
-    }
-
-    await store.persist({
+    const claimResult = await store.claim({
       eventId,
       type: event.event,
       payload: rawBody,
     });
+
+    if (claimResult === "duplicate") {
+      return { duplicate: true };
+    }
   }
 
   try {

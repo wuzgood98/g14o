@@ -121,6 +121,16 @@ export const paystack = <O extends PaystackPluginOptions>(options: O) => {
         window: 60,
       },
       {
+        pathMatcher: (path) => path === "/paystack/charge-authorization",
+        max: 10,
+        window: 60,
+      },
+      {
+        pathMatcher: (path) => path.startsWith("/paystack/customer"),
+        max: 20,
+        window: 60,
+      },
+      {
         pathMatcher: (path) => path === "/paystack/webhook",
         max: 300,
         window: 60,

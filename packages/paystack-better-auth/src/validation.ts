@@ -93,23 +93,6 @@ const subscriptionPlanSchemaImpl = z.union([
  */
 const paystackPluginOptionsSchemaImpl = z
   .object({
-    /** The secret key to use for authentication. */
-    secretKey: z
-      .string()
-      .meta({
-        description:
-          "The secret key to use for authentication. Used for server-side requests (Eg: 'sk_test_1234567890')",
-      })
-      .min(1)
-      .optional(),
-    /** The public key to use for authentication. */
-    publicKey: z
-      .string()
-      .meta({
-        description:
-          "The public key to use for authentication. Used for client-side requests (Eg: 'pk_test_1234567890')",
-      })
-      .optional(),
     /** The Paystack client to use for authentication. */
     paystackClient: z
       .unknown()
@@ -135,22 +118,10 @@ const paystackPluginOptionsSchemaImpl = z
       .default(false),
   })
   .superRefine((value, ctx) => {
-    const hasSecretKey = Boolean(value.secretKey);
-    const hasClient = value.paystackClient !== undefined;
-
-    if (hasSecretKey && hasClient) {
+    if (value.paystackClient === undefined) {
       ctx.addIssue({
         code: "custom",
-        message:
-          "Provide either secretKey or paystackClient to the paystack plugin, not both",
-      });
-    }
-
-    if (!(hasSecretKey || hasClient)) {
-      ctx.addIssue({
-        code: "custom",
-        message:
-          "Either secretKey or paystackClient must be provided to the paystack plugin",
+        message: "paystackClient must be provided to the paystack plugin",
       });
     }
   });
@@ -455,17 +426,6 @@ const listActiveSubscriptionsBodySchemaImpl = z.object({
  */
 const chargeAuthorizationBodySchemaImpl = z.object({
   /**
-   * The user ID to charge.
-   * @default undefined
-   */
-  userId: z
-    .string()
-    .meta({
-      description:
-        "The user ID to charge. Used to identify the user in the database.",
-    })
-    .optional(),
-  /**
    * The amount to charge.
    * @required
    */
@@ -512,19 +472,7 @@ const chargeAuthorizationBodySchemaImpl = z.object({
 /**
  * The schema for the customer action body.
  */
-const customerActionBodySchemaImpl = z.object({
-  /**
-   * The user ID to perform the action on.
-   * @default undefined
-   */
-  userId: z
-    .string()
-    .meta({
-      description:
-        "The user ID to perform the action on. Used to identify the user in the database.",
-    })
-    .optional(),
-});
+const customerActionBodySchemaImpl = z.object({});
 
 /**
  * The schema for the Paystack webhook payload.

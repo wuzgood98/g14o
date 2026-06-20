@@ -8,6 +8,10 @@ import {
 import type { GenericEndpointContext } from "better-auth";
 import { createAuthEndpoint, getSessionFromCtx } from "better-auth/api";
 import {
+  assertSubscriptionOwnership,
+  toPublicSubscription,
+} from "./authorization";
+import {
   createCustomerForUser,
   getCustomerByUserId,
   syncCustomerForUser,
@@ -92,12 +96,7 @@ function resolveUpgradeFromExistingRecord(
     return { upgraded: false };
   }
 
-  if (existingRecord.userId !== userId) {
-    throw APIError.from(
-      "NOT_FOUND",
-      PAYSTACK_ERROR_CODES.SUBSCRIPTION_NOT_FOUND
-    );
-  }
+  assertSubscriptionOwnership(existingRecord, userId);
 
   if (!isLiveSubscription(existingRecord.status)) {
     return { upgraded: false };
@@ -237,7 +236,7 @@ export const createPaystackCustomer = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await createCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -256,12 +255,11 @@ export const getPaystackCustomer = (_pluginContext: PluginContext) =>
     "/paystack/customer/get",
     {
       method: "GET",
-      query: customerActionBodySchema.partial(),
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.query.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await getCustomerByUserId(ctx.context.adapter, userId);
 
       if (!customer) {
@@ -295,7 +293,7 @@ export const syncPaystackCustomer = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const customer = await syncCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -536,7 +534,7 @@ export const cancelSubscription = (pluginContext: PluginContext) =>
         },
       });
 
-      return ctx.json(asDbSubscription(updated));
+      return ctx.json(toPublicSubscription(asDbSubscription(updated)));
     }
   );
 
@@ -601,7 +599,7 @@ export const resumeSubscription = (pluginContext: PluginContext) =>
         },
       });
 
-      return ctx.json(asDbSubscription(updated));
+      return ctx.json(toPublicSubscription(asDbSubscription(updated)));
     }
   );
 
@@ -643,7 +641,7 @@ export const getSubscription = (pluginContext: PluginContext) =>
         );
       }
 
-      return ctx.json(record);
+      return ctx.json(toPublicSubscription(record));
     }
   );
 
@@ -669,19 +667,33 @@ export const listActiveSubscriptions = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      await reconcileSubscriptionsForUser({
-        adapter: ctx.context.adapter,
-        pluginContext,
-        userId: session.user.id,
-        query: ctx.query,
-      });
+      try {
+        await reconcileSubscriptionsForUser({
+          adapter: ctx.context.adapter,
+          pluginContext,
+          userId: session.user.id,
+          query: ctx.query,
+        });
+      } catch (error) {
+        if (
+          error instanceof PaystackError &&
+          error.code === "PAYSTACK_VALIDATION_ERROR"
+        ) {
+          throw APIError.from(
+            "BAD_REQUEST",
+            PAYSTACK_ERROR_CODES.INVALID_REQUEST_BODY
+          );
+        }
+
+        throw error;
+      }
       const records =
         await ctx.context.adapter.findMany<DbPaystackSubscription>({
           model: "subscription",
           where: [{ field: "userId", value: session.user.id }],
         });
 
-      return ctx.json(records);
+      return ctx.json(records.map(toPublicSubscription));
     }
   );
 
@@ -704,7 +716,7 @@ export const chargeAuthorization = (pluginContext: PluginContext) =>
     },
     async (ctx) => {
       const session = requireSession(ctx);
-      const userId = ctx.body.userId ?? session.user.id;
+      const userId = session.user.id;
       const result = await chargeCustomer({
         paystackClient: pluginContext.options.paystackClient,
         adapter: ctx.context.adapter,
@@ -741,12 +753,6 @@ export const paystackWebhook = (
     },
     async (ctx) => {
       const paystackClient = pluginContext.options.paystackClient;
-      if (!paystackClient.secretKey) {
-        throw APIError.from(
-          "INTERNAL_SERVER_ERROR",
-          PAYSTACK_ERROR_CODES.WEBHOOK_SECRET_NOT_FOUND
-        );
-      }
 
       try {
         const result = await paystackClient.webhook.processWebhookDelivery(

@@ -125,6 +125,16 @@ describe("validation schemas", () => {
     expect(result.success).toBe(true);
   });
 
+  it("rejects secretKey-only plugin options", () => {
+    const result = paystackPluginOptionsSchema.safeParse({
+      secretKey: "sk_test",
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toContain("paystackClient");
+    }
+  });
+
   it("normalizes plan names", () => {
     expect(normalizePlanName(" Pro ")).toBe("pro");
   });
@@ -137,17 +147,11 @@ describe("resolvePluginContext", () => {
     );
   });
 
-  it("resolves secretKey path with internal client", () => {
-    const context = resolvePluginContext({
-      paystackClient: new Paystack({ secretKey: "sk_test" }),
-    });
-    expect(context.options.paystackClient.secretKey).toBe("sk_test");
-  });
-
-  it("resolves paystackClient path with derived secretKey", () => {
-    const paystackClient = new Paystack({ secretKey: "sk_test_custom" });
+  it("resolves paystackClient path", () => {
+    const paystackClient = new Paystack({ secretKey: "sk_test" });
     const context = resolvePluginContext({ paystackClient });
     expect(context.options.paystackClient).toBe(paystackClient);
+    expect("secretKey" in context.options.paystackClient).toBe(false);
   });
 });
 
@@ -160,5 +164,35 @@ describe("paystack plugin", () => {
     });
 
     expect(auth).toBeDefined();
+  });
+
+  it("registers rate limits for sensitive paystack routes", () => {
+    const plugin = paystack({
+      paystackClient: new Paystack({ secretKey: "sk_test" }),
+      subscription: { enabled: true, plans: [] },
+    });
+
+    expect(plugin.rateLimit).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          max: 10,
+          pathMatcher: expect.any(Function),
+        }),
+        expect.objectContaining({
+          max: 20,
+          pathMatcher: expect.any(Function),
+        }),
+      ])
+    );
+
+    const chargeLimit = plugin.rateLimit?.find((entry) =>
+      entry.pathMatcher("/paystack/charge-authorization")
+    );
+    const customerLimit = plugin.rateLimit?.find((entry) =>
+      entry.pathMatcher("/paystack/customer/create")
+    );
+
+    expect(chargeLimit?.max).toBe(10);
+    expect(customerLimit?.max).toBe(20);
   });
 });
