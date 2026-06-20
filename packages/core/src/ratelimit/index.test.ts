@@ -13,6 +13,7 @@ const INVALID_DURATION_PATTERN = /Invalid rate limit window/;
 const INVALID_LIMIT_PATTERN = /limit must be a positive number/;
 const INVALID_WINDOW_POSITIVE_PATTERN = /window must be a positive duration/;
 const INVALID_PREFIX_PATTERN = /prefix must be a non-empty string/;
+const CRLF_PATTERN = /[\r\n]/;
 
 function mockRequest(headers: Record<string, string | null> = {}): NextRequest {
   return {
@@ -55,6 +56,45 @@ describe("createRateLimit (factory API)", () => {
       expect(result.ok).toBe(true);
       if (result.ok) {
         expect(result.remaining).toBe(999_999);
+      }
+    });
+
+    it("strips CR/LF from req.url and identifier in log messages", async () => {
+      const logger = {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+      };
+      const limited = createRateLimit({ env: "test", logger });
+
+      try {
+        const req = {
+          url: "http://localhost/api%0Ainjected%0Dline",
+          headers: {
+            get: () => null,
+          },
+        } as unknown as NextRequest;
+        const maliciousIdentifier = "client\r\nINJECTED";
+
+        await limited.checkRateLimit(req, {
+          tier: "strict",
+          identifierFn: async () => maliciousIdentifier,
+        });
+
+        const logMessages = [
+          ...logger.info.mock.calls,
+          ...logger.warn.mock.calls,
+          ...logger.error.mock.calls,
+        ]
+          .flat()
+          .filter((arg): arg is string => typeof arg === "string");
+
+        expect(logMessages.length).toBeGreaterThan(0);
+        for (const message of logMessages) {
+          expect(message).not.toMatch(CRLF_PATTERN);
+        }
+      } finally {
+        limited.reset();
       }
     });
 

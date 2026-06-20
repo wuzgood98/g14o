@@ -24,6 +24,10 @@ import {
 } from "./internals";
 import type { Duration } from "./parse-duration";
 
+function sanitizeLogValue(value: string): string {
+  return value.replace(/[\r\n]/g, "");
+}
+
 /** Fields you can override for a single rate-limit tier. Unset fields use factory defaults. */
 export interface RateLimitTierConfig {
   /** Max requests allowed within `window`. */
@@ -250,10 +254,11 @@ export function createRateLimit(
   ): Promise<RateLimitCheckResult> => {
     const { tier = "moderate", identifierFn, skipRateLimit } = rateLimitOptions;
     const { logger } = runtime;
+    const logUrl = sanitizeLogValue(req.url);
 
     try {
       if (skipRateLimit && (await skipRateLimit(req))) {
-        logger.info(`Rate limit skipped for request: ${req.url}`);
+        logger.info(`Rate limit skipped for request: ${logUrl}`);
         return {
           ok: true,
           remaining: 999_999,
@@ -265,6 +270,7 @@ export function createRateLimit(
       const identifier = identifierFn
         ? await identifierFn(req)
         : getDefaultIdentifier(req);
+      const logIdentifier = sanitizeLogValue(identifier);
 
       const ratelimit = getRateLimiter(tier);
 
@@ -277,7 +283,7 @@ export function createRateLimit(
 
       if (!success) {
         logger.warn(
-          `Rate limit exceeded for ${identifier} (tier: ${tier}): ${req.url}`
+          `Rate limit exceeded for ${logIdentifier} (tier: ${tier}): ${logUrl}`
         );
         return {
           ok: false,
@@ -290,7 +296,7 @@ export function createRateLimit(
       }
 
       logger.info(
-        `Rate limit check passed for ${identifier}: ${remaining}/${limit} remaining: ${req.url}`
+        `Rate limit check passed for ${logIdentifier}: ${remaining}/${limit} remaining: ${logUrl}`
       );
       return {
         ok: true,
@@ -299,7 +305,7 @@ export function createRateLimit(
         reset: resetAt,
       };
     } catch (error) {
-      logger.error(error, `Rate limit check error: ${req.url}`);
+      logger.error(error, `Rate limit check error: ${logUrl}`);
       return {
         ok: true,
         remaining: 0,
