@@ -1,5 +1,3 @@
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createRateLimit,
@@ -15,13 +13,14 @@ const INVALID_WINDOW_POSITIVE_PATTERN = /window must be a positive duration/;
 const INVALID_PREFIX_PATTERN = /prefix must be a non-empty string/;
 const CRLF_PATTERN = /[\r\n]/;
 
-function mockRequest(headers: Record<string, string | null> = {}): NextRequest {
-  return {
-    url: "http://localhost/api",
-    headers: {
-      get: (name: string) => headers[name.toLowerCase()] ?? null,
-    },
-  } as unknown as NextRequest;
+function mockRequest(headers: Record<string, string | null> = {}): Request {
+  const requestHeaders = new Headers();
+  for (const [name, value] of Object.entries(headers)) {
+    if (value !== null) {
+      requestHeaders.set(name, value);
+    }
+  }
+  return new Request("http://localhost/api", { headers: requestHeaders });
 }
 
 describe("createRateLimit (factory API)", () => {
@@ -68,12 +67,7 @@ describe("createRateLimit (factory API)", () => {
       const limited = createRateLimit({ env: "test", logger });
 
       try {
-        const req = {
-          url: "http://localhost/api%0Ainjected%0Dline",
-          headers: {
-            get: () => null,
-          },
-        } as unknown as NextRequest;
+        const req = new Request("http://localhost/api%0Ainjected%0Dline");
         const maliciousIdentifier = "client\r\nINJECTED";
 
         await limited.checkRateLimit(req, {
@@ -190,8 +184,8 @@ describe("createRateLimit (factory API)", () => {
 
   describe("withRateLimit", () => {
     it("returns 429 when limit exceeded", async () => {
-      const handler = vi.fn(async (_req: NextRequest) =>
-        NextResponse.json({ ok: true })
+      const handler = vi.fn(async (_req: Request) =>
+        Response.json({ ok: true })
       );
       const limited = rateLimit.withRateLimit(handler, {
         tier: "strict",

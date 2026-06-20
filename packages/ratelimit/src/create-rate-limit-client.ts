@@ -2,8 +2,6 @@
 
 import { Ratelimit } from "@upstash/ratelimit";
 import type { Redis } from "@upstash/redis";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
 import {
   type InMemoryEnvOptions,
   isInMemoryEnv,
@@ -12,7 +10,7 @@ import {
   type RedisConfig,
   resolveEnvName,
   resolveRedisClient,
-} from "../config";
+} from "./config";
 import {
   getDefaultIdentifier,
   InMemoryRateLimiter,
@@ -80,7 +78,7 @@ export interface RateLimitClient {
    * @returns The result of the rate limit check.
    */
   checkRateLimit: (
-    req: NextRequest,
+    req: Request,
     options?: RateLimitOptions
   ) => Promise<RateLimitCheckResult>;
   /** Get the rate limiter for a given tier.
@@ -96,7 +94,7 @@ export interface RateLimitClient {
    * @returns The wrapped handler.
    */
   withRateLimit: <
-    T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
+    T extends (req: Request, ...args: any[]) => Promise<Response>,
   >(
     handler: T,
     options?: RateLimitOptions
@@ -108,10 +106,10 @@ export interface RateLimitClient {
    * @returns The wrapped handler.
    */
   withUserRateLimit: <
-    T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
+    T extends (req: Request, ...args: any[]) => Promise<Response>,
   >(
     handler: T,
-    getUserId: (req: NextRequest) => Promise<string | null>,
+    getUserId: (req: Request) => Promise<string | null>,
     options?: Omit<RateLimitOptions, "identifierFn">
   ) => T;
 }
@@ -145,7 +143,7 @@ class UpstashRateLimiter implements RateLimiterAdapter {
 
 interface RateLimitRuntime {
   envName: string;
-  inMemoryDuringNextBuild: boolean;
+  inMemoryDuringBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
   tiers?: RateLimitTiersOverride;
@@ -156,12 +154,12 @@ function createRateLimitRuntime(
 ): RateLimitRuntime {
   const envName = resolveEnvName(options.env);
   const logger = options.logger ?? noopLogger;
-  const inMemoryDuringNextBuild = options.inMemoryDuringNextBuild ?? true;
+  const inMemoryDuringBuild = options.inMemoryDuringBuild ?? true;
   let redis: Redis | null | undefined;
 
   return {
     envName,
-    inMemoryDuringNextBuild,
+    inMemoryDuringBuild,
     logger,
     tiers: options.tiers,
     resolveRedis: () => {
@@ -176,7 +174,7 @@ function createRateLimitRuntime(
 const RETRY_AFTER_DELAY = 1000;
 
 /**
- * Creates a rate limit client with bound methods for Next.js route handlers.
+ * Creates a rate limit client with bound methods for `Request`/`Response` handlers.
  *
  * @param options - Redis credentials or client, logger, environment, and optional `tiers` overrides.
  */
@@ -225,7 +223,7 @@ export function createRateLimit(
 
     if (
       isInMemoryEnv(runtime.envName, {
-        inMemoryDuringNextBuild: runtime.inMemoryDuringNextBuild,
+        inMemoryDuringBuild: runtime.inMemoryDuringBuild,
       })
     ) {
       logger.info(`Using in-memory rate limiter (tier: ${tier})`);
@@ -251,7 +249,7 @@ export function createRateLimit(
    * @returns The result of the rate limit check.
    */
   const checkRateLimit = async (
-    req: NextRequest,
+    req: Request,
     rateLimitOptions: RateLimitOptions = {}
   ): Promise<RateLimitCheckResult> => {
     const { tier = "moderate", identifierFn, skipRateLimit } = rateLimitOptions;
@@ -323,12 +321,12 @@ export function createRateLimit(
    * @returns The wrapped handler.
    */
   const withRateLimit = <
-    T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
+    T extends (req: Request, ...args: any[]) => Promise<Response>,
   >(
     handler: T,
     rateLimitOptions: RateLimitOptions = {}
   ): T =>
-    (async (req: NextRequest, ...args: any[]): Promise<NextResponse> => {
+    (async (req: Request, ...args: any[]): Promise<Response> => {
       const rateLimitResult = await checkRateLimit(req, rateLimitOptions);
 
       const headers = {
@@ -342,7 +340,7 @@ export function createRateLimit(
           0,
           Math.ceil((rateLimitResult.reset - Date.now()) / RETRY_AFTER_DELAY)
         );
-        return NextResponse.json(
+        return Response.json(
           {
             error: "Too many requests",
             retryAfter: retryAfterSeconds,
@@ -374,21 +372,20 @@ export function createRateLimit(
    *
    * @example
    * ```ts
-   * import { NextResponse } from "next/server";
    * import { withUserRateLimit } from "@/lib/ratelimit";
    *
    * export const POST = withUserRateLimit(
-   *   (req) => NextResponse.json({ message: "Hello, world!" }),
+   *   (req) => Response.json({ message: "Hello, world!" }),
    *   async (req) => req.headers.get("x-user-id"),
    *   { tier: "moderate" }
    * );
    * ```
    */
   const withUserRateLimit = <
-    T extends (req: NextRequest, ...args: any[]) => Promise<NextResponse>,
+    T extends (req: Request, ...args: any[]) => Promise<Response>,
   >(
     handler: T,
-    getUserId: (req: NextRequest) => Promise<string | null>,
+    getUserId: (req: Request) => Promise<string | null>,
     rateLimitOptions: Omit<RateLimitOptions, "identifierFn"> = {}
   ): T =>
     withRateLimit(handler, {

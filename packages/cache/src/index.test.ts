@@ -126,7 +126,7 @@ describe("createCache (factory API)", () => {
       vi.unstubAllEnvs();
     });
 
-    it("uses Redis during Next production build when inMemoryDuringNextBuild is false", () => {
+    it("uses Redis during production build when inMemoryDuringBuild is false", () => {
       vi.stubEnv("NEXT_PHASE", "phase-production-build");
       const mockRedis = {
         get: vi.fn(),
@@ -137,7 +137,7 @@ describe("createCache (factory API)", () => {
       } as unknown as import("@upstash/redis").Redis;
       const productionCache = createCache({
         env: "production",
-        inMemoryDuringNextBuild: false,
+        inMemoryDuringBuild: false,
         redis: mockRedis,
       });
       productionCache.getCache();

@@ -9,8 +9,7 @@ import {
   type RedisConfig,
   resolveEnvName,
   resolveRedisClient,
-} from "../config";
-import type { Result } from "../types";
+} from "./config";
 import {
   CACHE_TTL,
   type CacheAdapter,
@@ -20,6 +19,7 @@ import {
   InMemoryCache,
   RedisCache,
 } from "./internals";
+import type { Result } from "./types";
 
 /** TTL overrides for one environment bucket (values in **seconds**). */
 export interface CacheEnvironmentTtlOverride {
@@ -105,7 +105,7 @@ export interface CacheClient {
 
 interface CacheRuntime {
   envName: string;
-  inMemoryDuringNextBuild: boolean;
+  inMemoryDuringBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
   ttl?: CacheTtlOverride;
@@ -114,12 +114,12 @@ interface CacheRuntime {
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
   const envName = resolveEnvName(options.env);
   const logger = options.logger ?? noopLogger;
-  const inMemoryDuringNextBuild = options.inMemoryDuringNextBuild ?? true;
+  const inMemoryDuringBuild = options.inMemoryDuringBuild ?? true;
   let redis: Redis | null | undefined;
 
   return {
     envName,
-    inMemoryDuringNextBuild,
+    inMemoryDuringBuild,
     logger,
     ttl: options.ttl,
     resolveRedis: () => {
@@ -134,7 +134,7 @@ function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
 function createAdapterForRuntime(runtime: CacheRuntime): CacheAdapter {
   if (
     isInMemoryEnv(runtime.envName, {
-      inMemoryDuringNextBuild: runtime.inMemoryDuringNextBuild,
+      inMemoryDuringBuild: runtime.inMemoryDuringBuild,
     })
   ) {
     runtime.logger.info("Using in-memory cache (build/development mode)");

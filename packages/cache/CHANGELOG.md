@@ -1,3 +1,7 @@
 # @g14o/cache
 
-This package is not published. See [@g14o/core CHANGELOG](../core/CHANGELOG.md).
+## 0.1.0
+
+### Minor Changes
+
+- Initial release of `@g14o/cache` — Redis-backed caching with factory API (`createCache`), in-memory dev/build fallbacks, and cache key helpers.

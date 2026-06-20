@@ -1,4 +1,3 @@
-import type { NextRequest } from "next/server";
 import { type Duration, parseDurationToMs } from "./parse-duration";
 
 type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
@@ -115,8 +114,8 @@ export interface RateLimiterAdapter {
 }
 
 export interface RateLimitOptions {
-  identifierFn?: (req: NextRequest) => string | Promise<string>;
-  skipRateLimit?: (req: NextRequest) => boolean | Promise<boolean>;
+  identifierFn?: (req: Request) => string | Promise<string>;
+  skipRateLimit?: (req: Request) => boolean | Promise<boolean>;
   tier?: RateLimitTier;
 }
 
@@ -181,11 +180,18 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
     valid.push(now);
     this.hits.set(identifier, valid);
 
+    let oldest = valid[0] ?? now;
+    for (const timestamp of valid) {
+      if (timestamp < oldest) {
+        oldest = timestamp;
+      }
+    }
+
     return Promise.resolve({
       success: true,
       limit: this.maxRequests,
       remaining: this.maxRequests - valid.length,
-      reset: now + this.windowMs,
+      reset: oldest + this.windowMs,
     });
   }
 
@@ -195,7 +201,7 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
   }
 }
 
-export function getDefaultIdentifier(req: NextRequest): string {
+export function getDefaultIdentifier(req: Request): string {
   const forwarded = req.headers.get("x-forwarded-for");
   const realIp = req.headers.get("x-real-ip");
   const cfConnectingIp = req.headers.get("cf-connecting-ip");

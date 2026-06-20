@@ -2,7 +2,7 @@
  * Core utility functions for `@g14o/core`.
  *
  * Configuration helpers are re-exported from `./config`; shared types from `./types`.
- * See those modules for full documentation of `configureUtils`, `Result`, and pagination types.
+ * See those modules for full documentation of `Result` and pagination types.
  */
 
 import type { Result } from "./types";

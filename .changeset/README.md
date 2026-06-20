@@ -4,7 +4,7 @@ We use [Changesets](https://github.com/changesets/changesets) to manage versions
 
 ## Contributors
 
-When your PR changes user-facing behavior in `@g14o/core` or `@g14o/env-core`, run:
+When your PR changes user-facing behavior in a published package, run:
 
 ```bash
 pnpm changeset
@@ -12,14 +12,25 @@ pnpm changeset
 
 Describe the change and choose patch, minor, or major. Commit the generated `.changeset/*.md` file with your PR.
 
-**`@g14o/core`** and **`@g14o/env-core`** are versioned and published (separate fixed groups in [`.changeset/config.json`](config.json)). Shim packages (`@g14o/utils`, `@g14o/cache`, `@g14o/ratelimit`) are listed in `ignore`.
+Published packages (separate fixed groups in [`.changeset/config.json`](config.json)):
+
+- `@g14o/core`
+- `@g14o/env-core`
+- `@g14o/cache`
+- `@g14o/ratelimit`
+- `@g14o/paystack`
+- `@g14o/paystack-better-auth`
 
 ## Maintainers
 
 ```bash
-pnpm version-packages        # bump versioned packages, update CHANGELOGs, sync shim ranges, refresh pnpm-lock.yaml
+pnpm version-packages        # bump versioned packages, update CHANGELOGs, refresh pnpm-lock.yaml
 pnpm release:publish:core    # publish @g14o/core to npm
 pnpm release:publish:env     # publish @g14o/env-core to npm
+pnpm release:publish:cache   # publish @g14o/cache to npm
+pnpm release:publish:ratelimit # publish @g14o/ratelimit to npm
+pnpm release:publish:paystack # publish @g14o/paystack to npm
+pnpm release:publish:paystack-better-auth # publish @g14o/paystack-better-auth to npm
 ```
 
 See [CONTRIBUTING.md](../CONTRIBUTING.md) for git tags, GitHub releases, and the full release flow.
