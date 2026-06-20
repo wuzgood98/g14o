@@ -180,11 +180,18 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
     valid.push(now);
     this.hits.set(identifier, valid);
 
+    let oldest = valid[0] ?? now;
+    for (const timestamp of valid) {
+      if (timestamp < oldest) {
+        oldest = timestamp;
+      }
+    }
+
     return Promise.resolve({
       success: true,
       limit: this.maxRequests,
       remaining: this.maxRequests - valid.length,
-      reset: now + this.windowMs,
+      reset: oldest + this.windowMs,
     });
   }
 
