@@ -75,6 +75,67 @@ When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` 
 - Pre-commit runs `lint-staged` → `ultracite fix` via [`.husky/pre-commit`](.husky/pre-commit).
 - Follow the conventions in [`AGENTS.md`](AGENTS.md) (TypeScript, React, Ultracite/Biome rules).
 
+## Commit messages
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for commit titles:
+
+```
+<type>(<scope>): <short description>
+```
+
+- **type** — required, lowercase
+- **scope** — optional; package or area (e.g. `cache`, `ratelimit`, `ci`, `docs`, `paystack`)
+- **description** — imperative mood, lowercase start, no trailing period
+
+### Types
+
+| Type | When to use |
+|------|-------------|
+| `feat` | New user-facing behavior or API |
+| `fix` | Bug fix |
+| `docs` | Documentation-only changes |
+| `chore` | Maintenance, releases, tooling, deps (no product logic change) |
+| `refactor` | Internal restructuring without behavior change |
+| `test` | Add or update tests only |
+| `ci` | CI/CD workflow changes |
+| `perf` | Performance improvement |
+| `build` | Build tooling or bundler config |
+
+### Examples
+
+```text
+feat(cache): add invalidateCacheKey helper
+fix(ratelimit): correct reset time calculation in InMemoryRateLimiter
+docs(contributing): document commit message conventions
+chore(cache/ratelimit): initial release of @g14o/cache v0.1.0 and @g14o/ratelimit
+refactor(ratelimit): simplify loop syntax in integration tests
+test(cache): add integration tests for Redis backend
+ci: add integration tests for cache and ratelimit packages
+chore(docs): update README with new publish commands
+```
+
+### Branch names
+
+PR branches must use a type prefix matching commit types:
+
+```
+<type>/<short-kebab-description>
+```
+
+Examples: `feat/cache-invalidate-key`, `fix/ratelimit-reset-time`, `docs/contributing-commit-conventions`
+
+Exceptions: `dependabot/*` and `renovate/*` bot branches. Direct pushes to `main` are unaffected.
+
+### Enforced
+
+| Rule | How enforced |
+|------|--------------|
+| Commit message format | Husky [`commit-msg`](.husky/commit-msg) hook → commitlint |
+| PR / squash-merge title | GitHub Actions [`amannn/action-semantic-pull-request`](.github/workflows/ci.yml) |
+| Branch naming | GitHub Actions branch name check on pull requests |
+
+Changeset files are committed manually with your PR ([`.changeset/config.json`](.changeset/config.json) keeps `"commit": false`). Releases remain [changeset-driven](#changesets); commit titles do not generate changelogs automatically.
+
 ## Changesets
 
 User-facing changes to **`@g14o/core`** or **`@g14o/env-core`** require a changeset. Those packages are versioned and published (see [`.changeset/config.json`](.changeset/config.json)).
@@ -86,6 +147,7 @@ Maintainers run `pnpm version-packages` and `pnpm release:publish:core` or `pnpm
 
 ## Pull requests
 
+- Use conventional commit titles for PR commits (and squash-merge titles when applicable). See [Commit messages](#commit-messages).
 - Keep PRs focused; include tests for behavior changes in `packages/core`.
 - Note if your change affects Next.js build vs runtime cache or rate-limit behavior.
 - Do not commit `.only` or `.skip` in tests.
@@ -111,8 +173,24 @@ git push origin main --follow-tags
 gh release create '@g14o/env-core@<env-version>' \
   --title '@g14o/env-core v<env-version>' \
   --notes-file packages/env-core/CHANGELOG.md
+
+# @g14o/cache (skip if not versioned this cycle)
+pnpm release:publish:cache
+git tag '@g14o/cache@<cache-version>'   # from packages/cache/package.json
+git push origin main --follow-tags
+gh release create '@g14o/cache@<cache-version>' \
+  --title '@g14o/cache v<cache-version>' \
+  --notes-file packages/cache/CHANGELOG.md
+
+# @g14o/ratelimit (skip if not versioned this cycle)
+pnpm release:publish:ratelimit
+git tag '@g14o/ratelimit@<ratelimit-version>'   # from packages/ratelimit/package.json
+git push origin main --follow-tags
+gh release create '@g14o/ratelimit@<ratelimit-version>' \
+  --title '@g14o/ratelimit v<ratelimit-version>' \
+  --notes-file packages/ratelimit/CHANGELOG.md
 ```
 
-Read `<core-version>` and `<env-version>` from each package’s `package.json` after `pnpm version-packages`. Only run the core or env block when that package was bumped in the changeset release (do not re-tag unchanged versions).
+Read `<core-version>`, `<env-version>`, `<cache-version>`, and `<ratelimit-version>` from each package’s `package.json` after `pnpm version-packages`. Only run the core, env, cache, or ratelimit block when that package was bumped in the changeset release (do not re-tag unchanged versions).
 
 Commit `packages/{cache,ratelimit,utils}/package.json` and `pnpm-lock.yaml` when the release changes shim `@g14o/core` specifiers.
