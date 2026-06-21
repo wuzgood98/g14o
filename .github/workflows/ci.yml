@@ -23,15 +23,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch name
+        env:
+          BRANCH_NAME: ${{ github.head_ref }}
         run: |
-          BRANCH="${{ github.head_ref }}"
-          if [[ "$BRANCH" =~ ^(dependabot|renovate)/ ]]; then exit 0; fi
-          if [[ ! "$BRANCH" =~ ^(feat|fix|docs|chore|refactor|test|ci|perf|build)/.+ ]]; then
+          if [[ "$BRANCH_NAME" =~ ^(dependabot|renovate)/ ]]; then exit 0; fi
+          if [[ ! "$BRANCH_NAME" =~ ^(feat|fix|docs|chore|refactor|test|ci|perf|build)/.+ ]]; then
             echo "::error::Branch must use prefix: feat/, fix/, docs/, chore/, etc."
             exit 1
           fi
 
-      - uses: amannn/action-semantic-pull-request@v5
+      - uses: amannn/action-semantic-pull-request@2d952a1bf90a6a7ab8f0293dc86f5fdf9acb1915
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
