@@ -19,19 +19,31 @@ import { PACKAGE_VERSION } from "./version";
  * });
  * ```
  */
-export const paystackClient = () =>
+export const paystackClient = <
+  O extends {
+    subscription: boolean;
+  },
+>(
+  _options?: O | undefined
+) =>
   ({
     id: "paystack-client",
     version: PACKAGE_VERSION,
     $ERROR_CODES: PAYSTACK_ERROR_CODES,
     $InferServerPlugin: {} as ReturnType<
-      typeof paystack<{
-        subscription: {
-          enabled: true;
-          plans: SubscriptionPlan[];
-        };
-        paystackClient: Paystack;
-      }>
+      typeof paystack<
+        O["subscription"] extends true
+          ? {
+              paystackClient: Paystack;
+              subscription: {
+                enabled: true;
+                plans: SubscriptionPlan[];
+              };
+            }
+          : {
+              paystackClient: Paystack;
+            }
+      >
     >,
     pathMethods: {
       "/paystack/create-checkout-session": "POST",

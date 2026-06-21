@@ -2,7 +2,7 @@ import { createAuthClient } from "better-auth/client";
 import { paystackClient } from "../src/client";
 
 const authClient = createAuthClient({
-  plugins: [paystackClient()],
+  plugins: [paystackClient({ subscription: true })],
 });
 
 authClient.paystack.createCheckoutSession({
