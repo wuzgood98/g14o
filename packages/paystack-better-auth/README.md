@@ -65,7 +65,11 @@ import { createAuthClient } from "better-auth/client";
 import { paystackClient } from "@g14o/paystack-better-auth/client";
 
 export const authClient = createAuthClient({
-  plugins: [paystackClient()],
+  plugins: [
+    paystackClient({
+      subscription: true // enable subscription
+    })
+  ],
 });
 ```
 
@@ -89,8 +93,8 @@ const { data, error } = await authClient.paystack.subscription.upgrade({
   plan: "pro",
   annual: true,
   subscriptionCode: "SUB_existing",
-  successUrl: "https://app.example.com/dashboard",
-  cancelUrl: "https://app.example.com/pricing",
+  callbackUrl: "https://app.example.com/payment/callback",
+  cancelActionUrl: "https://app.example.com/pricing",
 });
 
 await authClient.paystack.subscription.cancel();
