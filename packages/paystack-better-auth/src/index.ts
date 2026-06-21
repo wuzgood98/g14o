@@ -14,7 +14,7 @@ import {
   paystackWebhook,
   resumeSubscription,
   syncPaystackCustomer,
-  upgrade,
+  upgradeSubscription,
 } from "./routes";
 import { getSchema } from "./schema";
 import type { PaystackPluginOptions } from "./types";
@@ -38,7 +38,7 @@ export const paystack = <O extends PaystackPluginOptions>(options: O) => {
       : undefined;
 
   const subscriptionEndpoints = {
-    upgradeSubscription: upgrade(pluginContext, planRegistry),
+    upgradeSubscription: upgradeSubscription(pluginContext, planRegistry),
     cancelSubscription: cancelSubscription(pluginContext),
     resumeSubscription: resumeSubscription(pluginContext),
     getSubscription: getSubscription(pluginContext),
@@ -71,12 +71,11 @@ export const paystack = <O extends PaystackPluginOptions>(options: O) => {
                   try {
                     await createCustomerForUser({
                       paystackClient: pluginContext.options.paystackClient,
-                      adapter: hookCtx.context.adapter,
+                      ctx: hookCtx,
                       userId: user.id,
                       getCustomerCreateParams:
                         pluginContext.options.getCustomerCreateParams,
                       onCustomerCreate: pluginContext.options.onCustomerCreate,
-                      authCtx: hookCtx,
                     });
                   } catch (error) {
                     ctx.logger.error(
@@ -110,13 +109,12 @@ export const paystack = <O extends PaystackPluginOptions>(options: O) => {
     },
     rateLimit: [
       {
-        pathMatcher: (path) => path.startsWith("/paystack/checkout"),
+        pathMatcher: (path) => path === "/paystack/create-checkout-session",
         max: 30,
         window: 60,
       },
       {
-        pathMatcher: (path) =>
-          path.startsWith("/paystack/subscription/upgrade"),
+        pathMatcher: (path) => path.startsWith("/paystack/subscription"),
         max: 20,
         window: 60,
       },
@@ -139,12 +137,8 @@ export const paystack = <O extends PaystackPluginOptions>(options: O) => {
   } satisfies BetterAuthPlugin;
 };
 
-/** Type of the {@link paystack} plugin factory. */
 export type PaystackPlugin<O extends PaystackPluginOptions> = ReturnType<
   typeof paystack<O>
 >;
 
-export type { RawError } from "./error-codes";
-export { PAYSTACK_ERROR_CODES } from "./error-codes";
-export type PaystackErrorCodes = typeof PAYSTACK_ERROR_CODES;
 export type * from "./types";

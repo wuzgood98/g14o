@@ -9,6 +9,8 @@ const planIntervalSchemaImpl = z.enum([
   "biannually",
 ]);
 
+const currencySchemaImpl = z.enum(["GHS", "NGN", "ZAR", "KES", "USD", "XOF"]);
+
 /**
  * The schema for the subscription plan.
  */
@@ -33,12 +35,9 @@ const autoSubscriptionPlanSchemaImpl = z.object({
     })
     .min(1),
   /** The currency of the plan (Eg: 'GHS', 'NGN') */
-  currency: z
-    .string()
-    .meta({
-      description: "The currency of the plan (Eg: 'GHS', 'NGN')",
-    })
-    .length(3),
+  currency: currencySchemaImpl.meta({
+    description: "The currency of the plan (Eg: 'GHS', 'NGN')",
+  }),
   /** The annual discounted amount of the plan in the smallest currency unit (Eg: '1000' for GHS 1.00) */
   annualDiscountedAmount: z
     .string()
@@ -153,7 +152,7 @@ const checkoutSessionBodySchemaImpl = z.object({
    * The currency to charge in. (Eg: 'GHS', 'NGN', 'ZAR', 'KES', 'USD', 'XOF')
    * @required
    */
-  currency: z.enum(["GHS", "NGN", "ZAR", "KES", "USD", "XOF"]).meta({
+  currency: currencySchemaImpl.meta({
     description:
       "The currency to charge in. Used for the checkout session (Eg: 'GHS', 'NGN', 'ZAR', 'KES', 'USD', 'XOF')",
   }),
@@ -434,17 +433,13 @@ const chargeAuthorizationBodySchemaImpl = z.object({
       "The amount to charge in the smallest currency unit (Eg: 100 for $1.00)",
   }),
   /**
-   * The currency to charge in. Used for the charge authorization (Eg: 'GHS', 'NGN')
-   * @default undefined
+   * The currency to charge in. Used for the charge authorization (Eg: 'GHS', 'NGN', 'ZAR', 'KES', 'USD', 'XOF')
+   * @required
    */
-  currency: z
-    .string()
-    .length(3)
-    .meta({
-      description:
-        "The currency to charge in. Used for the charge authorization (Eg: 'GHS', 'NGN')",
-    })
-    .optional(),
+  currency: currencySchemaImpl.meta({
+    description:
+      "The currency to charge in. Used for the charge authorization (Eg: 'GHS', 'NGN', 'ZAR', 'KES', 'USD', 'XOF')",
+  }),
   /**
    * The reference ID for the charge authorization.
    * @default undefined

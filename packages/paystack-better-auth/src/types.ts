@@ -31,13 +31,40 @@ export type PlanInterval =
   | "quarterly"
   | "biannually";
 
+/** Supported currencies for subscription plans. */
+export type Currency = "GHS" | "NGN" | "ZAR" | "KES" | "USD" | "XOF";
+
 /** Auto-created subscription plan configured in plugin options. */
 export interface AutoSubscriptionPlan {
+  /**
+   * The amount of the plan in the smallest currency unit (Eg: '100' for GHS 1.00)
+   * @required
+   */
   amount: string;
+  /**
+   * The annual discounted amount of the plan in the smallest currency unit (Eg: '1000' for GHS 1.00)
+   * @default undefined
+   */
   annualDiscountedAmount?: string | undefined;
-  currency: string;
+  /**
+   * The currency of the plan (Eg: 'GHS', 'NGN', 'ZAR', 'KES', 'USD', 'XOF')
+   * @required
+   */
+  currency: Currency;
+  /**
+   * The description of the plan
+   * @default undefined
+   */
   description?: string | undefined;
+  /**
+   * The interval of the plan (Eg: 'monthly', 'annually')
+   * @required
+   */
   interval: PlanInterval;
+  /**
+   * The name of the plan (Eg: 'basic', 'pro')
+   * @required
+   */
   name: string;
 }
 
@@ -68,7 +95,7 @@ export interface ResolvedPlan {
   amount: string;
   annualDiscountedAmount?: string | undefined;
   annualDiscountedPlanCode?: string | undefined;
-  currency: string;
+  currency: Currency;
   description?: string | undefined;
   interval: PlanInterval;
   name: string;
@@ -317,99 +344,6 @@ export interface PaystackPluginOptions {
     | undefined;
 }
 
-/** Result of initializing a hosted checkout session. */
-export interface CheckoutSessionResult {
-  /**
-   * The authorization URL to redirect to
-   * @required
-   */
-  authorizationUrl: string;
-  /**
-   * The reference to attach to the charge
-   * @required
-   */
-  reference: string;
-}
-
-/** Result of starting or upgrading a subscription checkout. */
-export interface UpgradeSubscriptionResult {
-  /**
-   * The authorization URL to redirect to
-   * @required
-   */
-  authorizationUrl: string;
-  /**
-   * Whether the response is a redirect
-   * @required
-   */
-  disableRedirect: boolean;
-  /**
-   * The plan to upgrade to
-   * @required
-   */
-  plan: string;
-  /**
-   * The reference to attach to the charge
-   * @required
-   */
-  reference: string;
-  /**
-   * Whether the upgrade was successful
-   * @required
-   */
-  upgraded: boolean;
-}
-
-/**
- * Returned instead of a JSON payload when the server issues a hosted-page redirect.
- */
-export interface RedirectResult {
-  /**
-   * Whether the response is a redirect
-   * @required
-   */
-  redirect: true;
-  /**
-   * The URL to redirect to after the checkout session is created
-   * @required
-   */
-  url: string;
-}
-
-/** Rejects object-literal keys not declared on `Base` while preserving `T` for inference. */
-export type Exactly<Base, T extends Base> = Base &
-  Record<Exclude<keyof T, keyof Base>, never>;
-
-/**
- * Resolves whether the server returns JSON or a redirect response.
- */
-export type EffectiveDisableRedirect<
-  GlobalDisable extends boolean,
-  Input extends { disableRedirect?: boolean | undefined },
-> = Input extends { disableRedirect: true }
-  ? true
-  : Input extends { disableRedirect: false }
-    ? false
-    : GlobalDisable extends true
-      ? true
-      : false;
-
-export type CheckoutSessionData<
-  GlobalDisable extends boolean,
-  Input extends { disableRedirect?: boolean | undefined },
-> =
-  EffectiveDisableRedirect<GlobalDisable, Input> extends true
-    ? CheckoutSessionResult
-    : RedirectResult;
-
-export type UpgradeSubscriptionData<
-  GlobalDisable extends boolean,
-  Input extends { disableRedirect?: boolean | undefined },
-> =
-  EffectiveDisableRedirect<GlobalDisable, Input> extends true
-    ? UpgradeSubscriptionResult
-    : RedirectResult;
-
 /** Parameters for server-side authorization charges. */
 export interface ChargeCustomerParams {
   /**
@@ -505,94 +439,4 @@ export interface DbPaystackWebhookEvent {
   processedAt?: Date | string | null;
   status: string;
   type: string;
-}
-
-/** Options for the Paystack Better Auth client plugin. */
-export interface PaystackClientPluginOptions {
-  /**
-   * Disable redirect after checkout session creation.
-   * @default false
-   */
-  disableRedirect?: boolean | undefined;
-}
-
-/**
- * Base input for checkout session.
- */
-export interface BaseSessionInput {
-  /**
-   * The URL to redirect to after the checkout session.
-   * @default undefined
-   */
-  callbackUrl?: string | undefined;
-  /**
-   * The URL to redirect to after cancelling the authorization process.
-   * @default undefined
-   */
-  cancelActionUrl?: string | undefined;
-  /**
-   * The channels to use for the checkout session.
-   * @default ["card", "mobile_money"]
-   */
-  channels?:
-    | ("card" | "bank" | "mobile_money" | "bank_transfer" | "apple_pay")[]
-    | undefined;
-
-  /**
-   * Disable redirect after checkout session creation.
-   * @default false
-   */
-  disableRedirect?: boolean | undefined;
-  /**
-   * The metadata to attach to the checkout session.
-   * @default undefined
-   */
-  metadata?: Record<string, unknown> | undefined;
-  /**
-   * The reference ID for the checkout session.
-   * @default undefined
-   */
-  reference?: string | undefined;
-}
-
-/**
- * Input for checkout session.
- */
-export interface CheckoutSessionInput extends BaseSessionInput {
-  /**
-   * The amount to charge in the subunit of the currency (Eg: 100 for GHS1.00)
-   * @required
-   */
-  amount: number;
-  /**
-   * The currency to charge in.
-   * @required
-   */
-  currency: "GHS" | "NGN" | "ZAR" | "KES" | "USD" | "XOF";
-  /**
-   * The email to charge.
-   * @default undefined
-   */
-  email?: string | undefined;
-}
-
-/**
- * Input for upgrade subscription.
- */
-export interface UpgradeSubscriptionInput extends BaseSessionInput {
-  /**
-   * If annual plan should be applied.
-   * @default undefined
-   */
-  annual?: boolean | undefined;
-  /**
-   * The plan to upgrade to. (Eg: 'basic', 'pro')
-   * @required
-   */
-  plan: string;
-  /**
-   * Subscription code to upgrade to.
-   * @default undefined
-   */
-  subscriptionCode?: string | undefined;
 }

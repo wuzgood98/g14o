@@ -181,13 +181,13 @@ describe("paystack authorization", () => {
     });
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createSubscriptionListRequest(headers, {
@@ -197,7 +197,7 @@ describe("paystack authorization", () => {
 
     expect(response.status).toBe(400);
 
-    const records = await adapter.findMany({
+    const records = await context.context.adapter.findMany({
       model: "subscription",
       where: [{ field: "userId", value: userId }],
     });

@@ -62,17 +62,17 @@ export const auth = betterAuth({
 ```ts
 // lib/auth-client.ts
 import { createAuthClient } from "better-auth/client";
-import { paystackClientPlugin } from "@g14o/paystack-better-auth/client";
+import { paystackClient } from "@g14o/paystack-better-auth/client";
 
 export const authClient = createAuthClient({
-  plugins: [paystackClientPlugin()],
+  plugins: [paystackClient()],
 });
 ```
 
 ## Checkout (one-time payments)
 
 ```ts
-const { data, error } = await authClient.subscription.createCheckoutSession({
+const { data, error } = await authClient.paystack.createCheckoutSession({
   amount: 1500,
   currency: "GHS",
   callbackUrl: "https://app.example.com/payment/callback",
@@ -85,7 +85,7 @@ const { data, error } = await authClient.subscription.createCheckoutSession({
 When a plan entry includes `planCode`, the plugin fetches billing details from Paystack instead of creating a plan. Pass `annual: true` on upgrade to use `annualDiscountedPlanCode`.
 
 ```ts
-const { data, error } = await authClient.subscription.upgrade({
+const { data, error } = await authClient.paystack.subscription.upgrade({
   plan: "pro",
   annual: true,
   subscriptionCode: "SUB_existing",
@@ -93,21 +93,21 @@ const { data, error } = await authClient.subscription.upgrade({
   cancelUrl: "https://app.example.com/pricing",
 });
 
-await authClient.subscription.cancel();
-await authClient.subscription.resume();
-await authClient.subscription.getSubscription();
-await authClient.subscription.list();
+await authClient.paystack.subscription.cancel();
+await authClient.paystack.subscription.resume();
+await authClient.paystack.subscription.get();
+await authClient.paystack.subscription.list();
 ```
 
 ### Server-side subscription API
 
 | Server | Client equivalent |
 |--------|-------------------|
-| `auth.api.upgradeSubscription` | `authClient.subscription.upgrade` |
-| `auth.api.cancelSubscription` | `authClient.subscription.cancel` |
-| `auth.api.resumeSubscription` | `authClient.subscription.resume` |
-| `auth.api.getSubscription` | `authClient.subscription.getSubscription` |
-| `auth.api.listSubscriptions` | `authClient.subscription.list` |
+| `auth.api.upgradeSubscription` | `authClient.paystack.subscription.upgrade` |
+| `auth.api.cancelSubscription` | `authClient.paystack.subscription.cancel` |
+| `auth.api.resumeSubscription` | `authClient.paystack.subscription.resume` |
+| `auth.api.getSubscription` | `authClient.paystack.subscription.get` |
+| `auth.api.listSubscriptions` | `authClient.paystack.subscription.list` |
 
 ## Webhooks
 

@@ -1,7 +1,5 @@
 import { defineErrorCodes } from "@better-auth/core/utils/error-codes";
 
-export type { RawError } from "@better-auth/core/utils/error-codes";
-
 export const PAYSTACK_ERROR_CODES = defineErrorCodes({
   UNAUTHORIZED: "Unauthorized access",
   EMAIL_REQUIRED: "Email is required for anonymous checkout",

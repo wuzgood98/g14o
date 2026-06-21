@@ -1,3 +1,4 @@
+import { createAuthEndpoint } from "@better-auth/core/api";
 import { APIError } from "@better-auth/core/error";
 import {
   CheckoutError,
@@ -5,8 +6,8 @@ import {
   PaystackError,
   SubscriptionError,
 } from "@g14o/paystack";
-import type { GenericEndpointContext } from "better-auth";
-import { createAuthEndpoint, getSessionFromCtx } from "better-auth/api";
+import type { GenericEndpointContext, User } from "better-auth";
+import { getSessionFromCtx } from "better-auth/api";
 import {
   assertSubscriptionOwnership,
   toPublicSubscription,
@@ -45,14 +46,12 @@ import {
   upgradeBodySchema,
 } from "./validation";
 
-type Adapter = GenericEndpointContext["context"]["adapter"];
-
 /**
  * Require a session to be present in the context.
  * @internal
  */
-function requireSession(ctx: Pick<GenericEndpointContext, "context">) {
-  const session = ctx.context.session;
+async function requireSession(ctx: GenericEndpointContext) {
+  const session = await getSessionFromCtx<User>(ctx);
   if (!session) {
     throw APIError.from("UNAUTHORIZED", PAYSTACK_ERROR_CODES.UNAUTHORIZED);
   }
@@ -131,7 +130,7 @@ async function ensurePaystackCustomer(
   pluginContext: PluginContext,
   userId: string
 ) {
-  const existing = await getCustomerByUserId(ctx.context.adapter, userId);
+  const existing = await getCustomerByUserId(ctx, userId);
 
   if (existing) {
     return existing;
@@ -139,11 +138,10 @@ async function ensurePaystackCustomer(
 
   return createCustomerForUser({
     paystackClient: pluginContext.options.paystackClient,
-    adapter: ctx.context.adapter,
+    ctx,
     userId,
     getCustomerCreateParams: pluginContext.options.getCustomerCreateParams,
     onCustomerCreate: pluginContext.options.onCustomerCreate,
-    authCtx: ctx,
   });
 }
 
@@ -153,11 +151,11 @@ async function ensurePaystackCustomer(
  */
 async function chargeCustomer(options: {
   paystackClient: Paystack;
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   params: ChargeCustomerParams;
 }): Promise<ChargeCustomerResult> {
   const paystackCustomer = await getCustomerByUserId(
-    options.adapter,
+    options.ctx,
     options.params.userId
   );
 
@@ -235,15 +233,14 @@ export const createPaystackCustomer = (pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const customer = await createCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
-        adapter: ctx.context.adapter,
+        ctx,
         userId,
         getCustomerCreateParams: pluginContext.options.getCustomerCreateParams,
         onCustomerCreate: pluginContext.options.onCustomerCreate,
-        authCtx: ctx,
       });
 
       return ctx.json(customer);
@@ -258,9 +255,9 @@ export const getPaystackCustomer = (_pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
-      const customer = await getCustomerByUserId(ctx.context.adapter, userId);
+      const customer = await getCustomerByUserId(ctx, userId);
 
       if (!customer) {
         throw APIError.from(
@@ -292,11 +289,11 @@ export const syncPaystackCustomer = (pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const customer = await syncCustomerForUser({
         paystackClient: pluginContext.options.paystackClient,
-        adapter: ctx.context.adapter,
+        ctx,
         userId,
       });
 
@@ -306,7 +303,7 @@ export const syncPaystackCustomer = (pluginContext: PluginContext) =>
 
 /**
  * ### Endpoint
- * POST `/paystack/checkout/create-session`
+ * POST `/paystack/create-checkout-session`
  *
  * ### API Methods
  *
@@ -314,17 +311,17 @@ export const syncPaystackCustomer = (pluginContext: PluginContext) =>
  * `auth.api.createCheckoutSession`
  *
  * **client**
- * `authClient.subscription.createCheckoutSession`
+ * `authClient.paystack.createCheckoutSession`
  */
 export const createCheckoutSession = (pluginContext: PluginContext) =>
   createAuthEndpoint(
-    "/paystack/checkout/create-session",
+    "/paystack/create-checkout-session",
     {
       method: "POST",
       body: checkoutSessionBodySchema,
     },
     async (ctx) => {
-      const session = await getSessionFromCtx(ctx);
+      const session = await getSessionFromCtx<User>(ctx);
       const userId = session?.user.id;
       const email =
         ctx.body.email ??
@@ -364,14 +361,14 @@ export const createCheckoutSession = (pluginContext: PluginContext) =>
           metadata,
         });
 
-      if (ctx.body.disableRedirect) {
-        return ctx.json({
-          authorizationUrl: initialized.authorization_url,
-          reference: initialized.reference,
-        });
+      if (!ctx.body.disableRedirect) {
+        throw ctx.redirect(getAbsoluteUrl(ctx, initialized.authorization_url));
       }
 
-      throw ctx.redirect(getAbsoluteUrl(ctx, initialized.authorization_url));
+      return ctx.json({
+        authorizationUrl: initialized.authorization_url,
+        reference: initialized.reference,
+      });
     }
   );
 
@@ -385,9 +382,9 @@ export const createCheckoutSession = (pluginContext: PluginContext) =>
  * `auth.api.upgradeSubscription`
  *
  * **client**
- * `authClient.subscription.upgrade`
+ * `authClient.paystack.subscription.upgrade`
  */
-export const upgrade = (
+export const upgradeSubscription = (
   pluginContext: PluginContext,
   planRegistry: PlanRegistry | undefined
 ) =>
@@ -406,7 +403,7 @@ export const upgrade = (
         );
       }
 
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const referenceId = getReferenceId(userId, ctx.body.reference);
       const customer = await ensurePaystackCustomer(ctx, pluginContext, userId);
@@ -417,7 +414,7 @@ export const upgrade = (
       );
 
       const existingRecord = await getSubscriptionRecordWithReconcile({
-        adapter: ctx.context.adapter,
+        ctx,
         pluginContext,
         userId,
         reference: ctx.body.reference,
@@ -459,17 +456,17 @@ export const upgrade = (
           metadata,
         });
 
-      if (ctx.body.disableRedirect) {
-        return ctx.json({
-          authorizationUrl: initialized.authorization_url,
-          reference: initialized.reference,
-          plan: plan.normalizedName,
-          upgraded,
-          disableRedirect: ctx.body.disableRedirect,
-        });
+      if (!ctx.body.disableRedirect) {
+        throw ctx.redirect(getAbsoluteUrl(ctx, initialized.authorization_url));
       }
 
-      throw ctx.redirect(getAbsoluteUrl(ctx, initialized.authorization_url));
+      return ctx.json({
+        authorizationUrl: initialized.authorization_url,
+        reference: initialized.reference,
+        plan: plan.normalizedName,
+        upgraded,
+        disableRedirect: ctx.body.disableRedirect,
+      });
     }
   );
 
@@ -483,7 +480,7 @@ export const upgrade = (
  * `auth.api.cancelSubscription`
  *
  * **client**
- * `authClient.subscription.cancel`
+ * `authClient.paystack.subscription.cancel`
  */
 export const cancelSubscription = (pluginContext: PluginContext) =>
   createAuthEndpoint(
@@ -494,10 +491,10 @@ export const cancelSubscription = (pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const record = await getSubscriptionRecordWithReconcile({
-        adapter: ctx.context.adapter,
+        ctx,
         pluginContext,
         userId,
         reference: ctx.body.reference,
@@ -548,7 +545,7 @@ export const cancelSubscription = (pluginContext: PluginContext) =>
  * `auth.api.resumeSubscription`
  *
  * **client**
- * `authClient.subscription.resume`
+ * `authClient.paystack.subscription.resume`
  */
 export const resumeSubscription = (pluginContext: PluginContext) =>
   createAuthEndpoint(
@@ -559,10 +556,10 @@ export const resumeSubscription = (pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const record = await getSubscriptionRecordWithReconcile({
-        adapter: ctx.context.adapter,
+        ctx,
         pluginContext,
         userId,
         reference: ctx.body.reference,
@@ -613,25 +610,25 @@ export const resumeSubscription = (pluginContext: PluginContext) =>
  * `auth.api.getSubscription`
  *
  * **client**
- * `authClient.subscription.getSubscription`
+ * `authClient.paystack.subscription.get`
  */
 export const getSubscription = (pluginContext: PluginContext) =>
   createAuthEndpoint(
     "/paystack/subscription/get",
     {
       method: "GET",
-      query: subscriptionActionBodySchema.partial(),
+      query: subscriptionActionBodySchema.partial().optional(),
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const record = await getSubscriptionRecordWithReconcile({
-        adapter: ctx.context.adapter,
+        ctx,
         pluginContext,
         userId,
-        reference: ctx.query.reference,
-        subscriptionCode: ctx.query.subscriptionCode,
+        reference: ctx.query?.reference,
+        subscriptionCode: ctx.query?.subscriptionCode,
       });
 
       if (!record) {
@@ -655,21 +652,21 @@ export const getSubscription = (pluginContext: PluginContext) =>
  * `auth.api.listSubscriptions`
  *
  * **client**
- * `authClient.subscription.list`
+ * `authClient.paystack.subscription.list`
  */
 export const listActiveSubscriptions = (pluginContext: PluginContext) =>
   createAuthEndpoint(
     "/paystack/subscription/list",
     {
       method: "GET",
-      query: listActiveSubscriptionsBodySchema,
+      query: listActiveSubscriptionsBodySchema.optional(),
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       try {
         await reconcileSubscriptionsForUser({
-          adapter: ctx.context.adapter,
+          ctx,
           pluginContext,
           userId: session.user.id,
           query: ctx.query,
@@ -715,11 +712,11 @@ export const chargeAuthorization = (pluginContext: PluginContext) =>
       use: [paystackSessionMiddleware],
     },
     async (ctx) => {
-      const session = requireSession(ctx);
+      const session = await requireSession(ctx);
       const userId = session.user.id;
       const result = await chargeCustomer({
         paystackClient: pluginContext.options.paystackClient,
-        adapter: ctx.context.adapter,
+        ctx,
         params: {
           userId,
           amount: ctx.body.amount,

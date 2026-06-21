@@ -5,6 +5,7 @@ import {
 } from "@g14o/paystack";
 import type {
   AutoSubscriptionPlan,
+  Currency,
   PaystackPlanKey,
   PlanInterval,
   PrecreatedSubscriptionPlan,
@@ -112,7 +113,7 @@ const mapSubscriptionPlanToResolved = (
       planCode: plan.planCode,
       annualDiscountedPlanCode: plan.annualDiscountedPlanCode,
       amount: "",
-      currency: "",
+      currency: "GHS",
       interval: "monthly",
     };
   }
@@ -142,7 +143,7 @@ const hydrateResolvedPlanFromPaystack = (
   }
 
   plan.amount = String(remote.amount);
-  plan.currency = remote.currency;
+  plan.currency = remote.currency as Currency;
   plan.interval = remote.interval as PlanInterval;
 
   if (remote.description) {

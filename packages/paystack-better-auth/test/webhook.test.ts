@@ -455,12 +455,12 @@ describe("paystack webhook", () => {
     memory,
     paystackOptions,
   }) => {
-    const { auth, userId, adapter } = await setupAuthenticatedUpgradeTest({
+    const { auth, userId, context } = await setupAuthenticatedUpgradeTest({
       memory,
       paystackOptions,
     });
 
-    await adapter.update({
+    await context.context.adapter.update({
       model: "user",
       where: [{ field: "id", value: userId }],
       update: {
@@ -497,13 +497,13 @@ describe("paystack webhook", () => {
 
     expect(response.status).toBe(200);
 
-    const subscriptions = await adapter.findMany({
+    const subscriptions = await context.context.adapter.findMany({
       model: "subscription",
       where: [{ field: "userId", value: userId }],
     });
     expect(subscriptions.length).toBeGreaterThan(0);
 
-    const victimSubscriptions = await adapter.findMany({
+    const victimSubscriptions = await context.context.adapter.findMany({
       model: "subscription",
       where: [{ field: "userId", value: "user_victim" }],
     });
