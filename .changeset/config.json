@@ -17,7 +17,6 @@
   "ignore": [
     "cache-demo",
     "env-demo",
-    "web",
     "paystack-demo",
     "@workspace/ui",
     "@workspace/typescript-config"
