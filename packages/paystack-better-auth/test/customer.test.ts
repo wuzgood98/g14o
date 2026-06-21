@@ -1,9 +1,14 @@
 import { getTestInstance } from "better-auth/test";
 import { describe, expect } from "vitest";
-import { paystackClientPlugin } from "../src/client";
+import { paystackClient as paystackClientPlugin } from "../src/client";
 import { getCustomerByUserId } from "../src/customer";
 import { paystack } from "../src/index";
-import { createPaystackOptions, test, testUser } from "./_fixtures";
+import {
+  createPaystackOptions,
+  test,
+  testUser,
+  wrapPaystackContext,
+} from "./_fixtures";
 
 describe("paystack customer", () => {
   test("should create a customer on sign up", async ({
@@ -35,7 +40,7 @@ describe("paystack customer", () => {
     });
 
     const customer = await getCustomerByUserId(
-      ctx.adapter as Parameters<typeof getCustomerByUserId>[0],
+      wrapPaystackContext(ctx),
       userRes.user.id
     );
 

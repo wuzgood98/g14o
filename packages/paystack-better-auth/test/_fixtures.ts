@@ -33,13 +33,13 @@ export const TEST_PLANS = {
     name: "pro",
     interval: "monthly" as const,
     amount: "800",
-    currency: "GHS",
+    currency: "GHS" as const,
   },
   basic: {
     name: "basic",
     interval: "monthly" as const,
     amount: "500",
-    currency: "GHS",
+    currency: "GHS" as const,
   },
 };
 
@@ -405,14 +405,18 @@ export const createSubscriptionActionRequest = (
     }
   );
 
-export type PaystackAdapter = Parameters<typeof getUserById>[0];
+export type PaystackContext = Parameters<typeof getUserById>[0];
+
+/** Wraps `auth.$context` for functions expecting `GenericEndpointContext`. */
+export const wrapPaystackContext = (ctx: unknown): PaystackContext =>
+  ({ context: ctx }) as PaystackContext;
 
 type AuthenticatedUpgradeTestContext = Awaited<
   ReturnType<typeof getTestInstance>
 > & {
   headers: Headers;
   userId: string;
-  adapter: PaystackAdapter;
+  context: PaystackContext;
 };
 
 export const setupAuthenticatedUpgradeTest = async (options: {
@@ -448,7 +452,7 @@ export const setupAuthenticatedUpgradeTest = async (options: {
     ...instance,
     headers,
     userId: signUpRes.user.id,
-    adapter: ctx.adapter as PaystackAdapter,
+    context: wrapPaystackContext(ctx),
   } as unknown as AuthenticatedUpgradeTestContext;
 };
 

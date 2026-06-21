@@ -4,15 +4,7 @@ import { getTestInstance } from "better-auth/test";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { PAYSTACK_ERROR_CODES } from "../src/error-codes";
 import { type PaystackPlugin, paystack } from "../src/index";
-import type {
-  CheckoutSessionData,
-  CheckoutSessionResult,
-  PaystackPluginOptions,
-  RedirectResult,
-  SubscriptionPlan,
-  UpgradeSubscriptionData,
-  UpgradeSubscriptionResult,
-} from "../src/types";
+import type { PaystackPluginOptions, SubscriptionPlan } from "../src/types";
 import { normalizePlanName, resolvePluginContext } from "../src/utils";
 import { paystackPluginOptionsSchema } from "../src/validation";
 import { test } from "./_fixtures";
@@ -52,40 +44,6 @@ describe("paystack type", () => {
     expectTypeOf<MyAuth["api"]["resumeSubscription"]>().toBeFunction();
     expectTypeOf<MyAuth["api"]["getSubscription"]>().toBeFunction();
     expectTypeOf<MyAuth["api"]["listActiveSubscriptions"]>().toBeFunction();
-  });
-});
-
-describe("client plugin return types", () => {
-  it("narrows checkout return type when disableRedirect is true", () => {
-    type Data = CheckoutSessionData<
-      false,
-      { amount: number; currency: "GHS"; disableRedirect: true }
-    >;
-    expectTypeOf<Data>().toEqualTypeOf<CheckoutSessionResult>();
-  });
-
-  it("returns redirect result when disableRedirect is omitted", () => {
-    type Data = CheckoutSessionData<
-      false,
-      { amount: number; currency: "GHS"; disableRedirect?: undefined }
-    >;
-    expectTypeOf<Data>().toEqualTypeOf<RedirectResult>();
-  });
-
-  it("narrows upgrade return type when disableRedirect is true", () => {
-    type Data = UpgradeSubscriptionData<
-      false,
-      { plan: string; disableRedirect: true }
-    >;
-    expectTypeOf<Data>().toEqualTypeOf<UpgradeSubscriptionResult>();
-  });
-
-  it("returns redirect result for upgrade when disableRedirect is omitted", () => {
-    type Data = UpgradeSubscriptionData<
-      false,
-      { plan: string; disableRedirect?: undefined }
-    >;
-    expectTypeOf<Data>().toEqualTypeOf<RedirectResult>();
   });
 });
 

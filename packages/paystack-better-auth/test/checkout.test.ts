@@ -15,7 +15,7 @@ describe("paystack checkout", () => {
 
     const response = await auth.handler(
       new Request(
-        "http://localhost:3000/api/auth/paystack/checkout/create-session",
+        "http://localhost:3000/api/auth/paystack/create-checkout-session",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -50,7 +50,7 @@ describe("paystack checkout", () => {
 
     const response = await auth.handler(
       new Request(
-        "http://localhost:3000/api/auth/paystack/checkout/create-session",
+        "http://localhost:3000/api/auth/paystack/create-checkout-session",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

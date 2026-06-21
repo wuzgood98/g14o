@@ -78,7 +78,7 @@ describe("getSubscriptionRecord ownership", () => {
   test("returns null when subscriptionCode belongs to another user", async ({
     memory,
   }) => {
-    const { adapter, userId } = await setupAuthenticatedUpgradeTest({
+    const { context, userId } = await setupAuthenticatedUpgradeTest({
       memory,
       paystackOptions: createPaystackOptions(createPaystackClient()),
       seedSubscription: () => ({
@@ -98,7 +98,7 @@ describe("getSubscriptionRecord ownership", () => {
       }),
     });
 
-    const record = await getSubscriptionRecord(adapter, {
+    const record = await getSubscriptionRecord(context, {
       userId,
       subscriptionCode: "SUB_other",
     });
@@ -116,13 +116,13 @@ describe("subscription reconciliation", () => {
     });
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createSubscriptionListRequest("list", headers)
@@ -153,13 +153,13 @@ describe("subscription reconciliation", () => {
   test("getSubscription reconciles on miss for a specific demo subscription", async ({
     memory,
   }) => {
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions: remoteSubscriptionPaystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createSubscriptionListRequest("get", headers, {
@@ -186,13 +186,13 @@ describe("subscription reconciliation", () => {
     });
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createSubscriptionActionRequest("cancel", headers, {
@@ -218,13 +218,13 @@ describe("subscription reconciliation", () => {
     });
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createSubscriptionActionRequest("resume", headers, {
@@ -250,13 +250,13 @@ describe("subscription reconciliation", () => {
     });
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { auth, headers, userId, adapter } =
+    const { auth, headers, userId, context } =
       await setupAuthenticatedUpgradeTest({
         memory,
         paystackOptions,
       });
 
-    await seedPaystackCustomer(adapter, userId);
+    await seedPaystackCustomer(context.context.adapter, userId);
 
     const response = await auth.handler(
       createUpgradeRequest(upgradeBody, headers)

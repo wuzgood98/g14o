@@ -9,8 +9,6 @@ import type {
 } from "./types";
 import { asDbSubscription } from "./utils";
 
-type Adapter = GenericEndpointContext["context"]["adapter"];
-
 const SUBSCRIPTION_LIST_PAGE_SIZE = 100;
 
 /**
@@ -18,7 +16,7 @@ const SUBSCRIPTION_LIST_PAGE_SIZE = 100;
  * @internal
  */
 export async function getSubscriptionRecord(
-  adapter: Adapter,
+  ctx: GenericEndpointContext,
   options: {
     userId: string;
     reference?: string | undefined;
@@ -26,7 +24,7 @@ export async function getSubscriptionRecord(
   }
 ): Promise<DbPaystackSubscription | null> {
   if (options.subscriptionCode) {
-    const record = await adapter.findOne({
+    const record = await ctx.context.adapter.findOne({
       model: "subscription",
       where: [
         { field: "subscriptionCode", value: options.subscriptionCode },
@@ -39,7 +37,7 @@ export async function getSubscriptionRecord(
 
   const referenceId = options.reference ?? options.userId;
 
-  const record = await adapter.findOne({
+  const record = await ctx.context.adapter.findOne({
     model: "subscription",
     where: [
       { field: "userId", value: options.userId },
@@ -114,7 +112,7 @@ async function resolveSubscriptionForUpsert(
  * @internal
  */
 export async function reconcileSubscriptionsForUser(options: {
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   pluginContext: PluginContext;
   userId: string;
   query?:
@@ -128,7 +126,7 @@ export async function reconcileSubscriptionsForUser(options: {
 }): Promise<PaystackSubscriptionRecord[]> {
   try {
     const resolvedCustomer = await resolvePaystackCustomerId({
-      adapter: options.adapter,
+      ctx: options.ctx,
       paystackClient: options.pluginContext.options.paystackClient,
       userId: options.userId,
     });
@@ -161,7 +159,7 @@ export async function reconcileSubscriptionsForUser(options: {
       );
 
       const record = await upsertSubscription({
-        adapter: options.adapter,
+        adapter: options.ctx.context.adapter,
         userId: options.userId,
         referenceId: options.userId,
         paystackSubscription,
@@ -188,7 +186,7 @@ export async function reconcileSubscriptionsForUser(options: {
  * @internal
  */
 export async function getSubscriptionRecordWithReconcile(options: {
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   pluginContext: PluginContext;
   userId: string;
   reference?: string | undefined;
@@ -202,7 +200,7 @@ export async function getSubscriptionRecordWithReconcile(options: {
       }
     | undefined;
 }): Promise<DbPaystackSubscription | null> {
-  let record = await getSubscriptionRecord(options.adapter, {
+  let record = await getSubscriptionRecord(options.ctx, {
     userId: options.userId,
     reference: options.reference,
     subscriptionCode: options.subscriptionCode,
@@ -210,13 +208,13 @@ export async function getSubscriptionRecordWithReconcile(options: {
 
   if (!record) {
     await reconcileSubscriptionsForUser({
-      adapter: options.adapter,
+      ctx: options.ctx,
       pluginContext: options.pluginContext,
       userId: options.userId,
       query: options.query,
     });
 
-    record = await getSubscriptionRecord(options.adapter, {
+    record = await getSubscriptionRecord(options.ctx, {
       userId: options.userId,
       reference: options.reference,
       subscriptionCode: options.subscriptionCode,

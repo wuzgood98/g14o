@@ -133,7 +133,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.createCheckoutSession", async () => {
-            const res = await authClient.subscription.createCheckoutSession({
+            const res = await authClient.paystack.createCheckoutSession({
               email: "demo@example.com",
               amount: 500,
               currency: "GHS",
@@ -159,7 +159,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.upgrade", async () => {
-            const res = await authClient.subscription.upgrade({
+            const res = await authClient.paystack.subscription.upgrade({
               plan: "pro",
               annual: false,
               callbackUrl: `${env.NEXT_PUBLIC_APP_URL}/`,
@@ -179,7 +179,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.upgrade", async () => {
-            const res = await authClient.subscription.upgrade({
+            const res = await authClient.paystack.subscription.upgrade({
               plan: "basic",
               callbackUrl: `${env.NEXT_PUBLIC_APP_URL}/`,
               cancelActionUrl: `${env.NEXT_PUBLIC_APP_URL}/`,
@@ -198,7 +198,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.upgrade", async () => {
-            const res = await authClient.subscription.upgrade({
+            const res = await authClient.paystack.subscription.upgrade({
               plan: "basic",
               annual: true,
               callbackUrl: `${env.NEXT_PUBLIC_APP_URL}/`,
@@ -218,7 +218,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.list", async () => {
-            const res = await authClient.subscription.list();
+            const res = await authClient.paystack.subscription.list();
             return res;
           })
         }
@@ -230,8 +230,8 @@ export function ApiRunnerPanel() {
       <button
         disabled={loading}
         onClick={() =>
-          run("subscription.getSubscription", async () => {
-            const res = await authClient.subscription.getSubscription();
+          run("subscription.get", async () => {
+            const res = await authClient.paystack.subscription.get();
             return res;
           })
         }
@@ -244,7 +244,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.cancel", async () => {
-            const res = await authClient.subscription.cancel();
+            const res = await authClient.paystack.subscription.cancel();
             return res;
           })
         }
@@ -257,7 +257,7 @@ export function ApiRunnerPanel() {
         disabled={loading}
         onClick={() =>
           run("subscription.resume", async () => {
-            const res = await authClient.subscription.resume();
+            const res = await authClient.paystack.subscription.resume();
             return res;
           })
         }

@@ -18,12 +18,12 @@ describe("resolvePaystackCustomerId", () => {
     const mockFetch = createMockFetch();
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { userId, adapter } = await setupAuthenticatedUpgradeTest({
+    const { userId, context } = await setupAuthenticatedUpgradeTest({
       memory,
       paystackOptions,
     });
 
-    await adapter.update({
+    await context.context.adapter.update({
       model: "user",
       where: [{ field: "id", value: userId }],
       update: {
@@ -33,7 +33,7 @@ describe("resolvePaystackCustomerId", () => {
     });
 
     const customerId = await resolvePaystackCustomerId({
-      adapter,
+      ctx: context,
       paystackClient,
       userId,
     });
@@ -48,12 +48,12 @@ describe("resolvePaystackCustomerId", () => {
     const mockFetch = createMockFetch();
     const paystackClient = createPaystackClient({ fetch: mockFetch });
     const paystackOptions = createPaystackOptions(paystackClient);
-    const { userId, adapter } = await setupAuthenticatedUpgradeTest({
+    const { userId, context } = await setupAuthenticatedUpgradeTest({
       memory,
       paystackOptions,
     });
 
-    await adapter.update({
+    await context.context.adapter.update({
       model: "user",
       where: [{ field: "id", value: userId }],
       update: {
@@ -62,14 +62,14 @@ describe("resolvePaystackCustomerId", () => {
     });
 
     const customerId = await resolvePaystackCustomerId({
-      adapter,
+      ctx: context,
       paystackClient,
       userId,
     });
 
     expect(customerId).toBe(DEMO_PAYSTACK_CUSTOMER_ID);
 
-    const user = await getUserById(adapter, userId);
+    const user = await getUserById(context, userId);
     expect(user?.paystackCustomerId).toBe(DEMO_PAYSTACK_CUSTOMER_ID);
 
     const fetchCall = (mockFetch as Mock).mock.calls.find(([url]) =>

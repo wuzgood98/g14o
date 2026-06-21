@@ -9,8 +9,6 @@ import { customerMetadata } from "./metadata";
 import type { PaystackCustomerRecord } from "./types";
 import { splitUserName } from "./utils";
 
-type Adapter = GenericEndpointContext["context"]["adapter"];
-
 interface PaystackUser {
   email: string;
   id: string;
@@ -47,10 +45,10 @@ const mapCustomerFromUser = (user: {
 });
 
 export const getCustomerByUserId = async (
-  adapter: Adapter,
+  ctx: GenericEndpointContext,
   userId: string
 ): Promise<PaystackCustomerRecord | null> => {
-  const user = await getUserById(adapter, userId);
+  const user = await getUserById(ctx, userId);
 
   if (!user?.email || typeof user.paystackCustomerCode !== "string") {
     return null;
@@ -67,10 +65,10 @@ export const getCustomerByUserId = async (
 };
 
 export const getUserById = async (
-  adapter: Adapter,
+  ctx: GenericEndpointContext,
   userId: string
 ): Promise<PaystackUser | null> => {
-  const user = await adapter.findOne({
+  const user = await ctx.context.adapter.findOne({
     model: "user",
     where: [{ field: "id", value: userId }],
   });
@@ -79,11 +77,11 @@ export const getUserById = async (
 };
 
 export const resolvePaystackCustomerId = async (options: {
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   paystackClient: Paystack;
   userId: string;
 }): Promise<number> => {
-  const user = await getUserById(options.adapter, options.userId);
+  const user = await getUserById(options.ctx, options.userId);
 
   if (!user?.email || typeof user.paystackCustomerCode !== "string") {
     throw new CustomerSyncError(
@@ -101,7 +99,7 @@ export const resolvePaystackCustomerId = async (options: {
       user.paystackCustomerCode
     );
 
-    await options.adapter.update({
+    await options.ctx.context.adapter.update({
       model: "user",
       where: [{ field: "id", value: user.id }],
       update: {
@@ -126,8 +124,7 @@ export const resolvePaystackCustomerId = async (options: {
 };
 
 export interface CreateCustomerOptions {
-  adapter: Adapter;
-  authCtx?: GenericEndpointContext;
+  ctx: GenericEndpointContext;
   getCustomerCreateParams?: (
     user: {
       id: string;
@@ -170,13 +167,13 @@ export interface CreateCustomerOptions {
 export const createCustomerForUser = async (
   options: CreateCustomerOptions
 ): Promise<PaystackCustomerRecord> => {
-  const existing = await getCustomerByUserId(options.adapter, options.userId);
+  const existing = await getCustomerByUserId(options.ctx, options.userId);
 
   if (existing) {
     return existing;
   }
 
-  const user = await getUserById(options.adapter, options.userId);
+  const user = await getUserById(options.ctx, options.userId);
 
   if (!user?.email) {
     throw new CustomerSyncError(
@@ -186,10 +183,9 @@ export const createCustomerForUser = async (
   }
 
   const nameParts = splitUserName(user.name);
-  const customParams =
-    options.getCustomerCreateParams && options.authCtx
-      ? await options.getCustomerCreateParams(user, options.authCtx)
-      : {};
+  const customParams = options.getCustomerCreateParams
+    ? await options.getCustomerCreateParams(user, options.ctx)
+    : {};
 
   const metadata = customerMetadata.set(
     { userId: user.id },
@@ -205,7 +201,7 @@ export const createCustomerForUser = async (
       metadata,
     });
 
-    await options.adapter.update({
+    await options.ctx.context.adapter.update({
       model: "user",
       where: [{ field: "id", value: user.id }],
       update: {
@@ -214,8 +210,8 @@ export const createCustomerForUser = async (
       },
     });
 
-    if (options.onCustomerCreate && options.authCtx) {
-      await options.onCustomerCreate({ customer, user }, options.authCtx);
+    if (options.onCustomerCreate) {
+      await options.onCustomerCreate({ customer, user }, options.ctx);
     }
 
     return mapCustomerFromUser({
@@ -238,10 +234,10 @@ export const createCustomerForUser = async (
 
 export const syncCustomerForUser = async (options: {
   paystackClient: Paystack;
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   userId: string;
 }): Promise<PaystackCustomerRecord> => {
-  const user = await getUserById(options.adapter, options.userId);
+  const user = await getUserById(options.ctx, options.userId);
 
   if (!user?.email || typeof user.paystackCustomerCode !== "string") {
     throw new CustomerSyncError(
@@ -261,7 +257,7 @@ export const syncCustomerForUser = async (options: {
     const shouldUpdateId = user.paystackCustomerId !== customerId;
 
     if (shouldUpdateCode || shouldUpdateId) {
-      await options.adapter.update({
+      await options.ctx.context.adapter.update({
         model: "user",
         where: [{ field: "id", value: user.id }],
         update: {
