@@ -1,8 +1,8 @@
 /** biome-ignore-all lint/performance/noBarrelFile: published package entry */
-export type { OnInvalidAccessHandler } from "./client-guard.js";
-export { createEnv } from "./create-env.js";
-export { InvalidEnvironmentVariablesError } from "./errors.js";
-export type { StandardSchemaV1 } from "./standard-schema.js";
+export type { OnInvalidAccessHandler } from "./client-guard";
+export { createEnv } from "./create-env";
+export { InvalidEnvironmentVariablesError } from "./errors";
+export type { StandardSchemaV1 } from "./standard-schema";
 export type {
   AssertValidClientPrefix,
   CreateEnvOptions,
@@ -16,4 +16,4 @@ export type {
   SchemaShape,
   Simplify,
   StrictRuntimeEnv,
-} from "./types.js";
+} from "./types";

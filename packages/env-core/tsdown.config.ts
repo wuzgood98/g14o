@@ -1,21 +1,18 @@
 import { defineConfig } from "tsdown";
 
 export default defineConfig({
-  format: "esm",
+  deps: {
+    onlyBundle: false,
+  },
+  format: ["esm"],
   dts: {
     sourcemap: false,
     tsconfig: "tsconfig.build.json",
+    incremental: true,
   },
-  sourcemap: false,
   treeshake: true,
   minify: true,
-  target: false,
-  fixedExtension: false,
-  entry: {
-    index: "src/index.ts",
-  },
+  sourcemap: false,
   clean: true,
-  deps: {
-    skipNodeModulesBundle: true,
-  },
+  entry: ["./src/index.ts"],
 });

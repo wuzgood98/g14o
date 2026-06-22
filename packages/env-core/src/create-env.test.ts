@@ -2,8 +2,8 @@ import { type } from "arktype";
 import { pipe, string, url } from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { createEnv } from "./create-env.js";
-import { InvalidEnvironmentVariablesError } from "./errors.js";
+import { createEnv } from "./create-env";
+import { InvalidEnvironmentVariablesError } from "./errors";
 
 const RUNTIME_ENV_STRICT_MISSING = /runtimeEnvStrict is missing required keys/;
 const CLIENT_PREFIX_REQUIRED = /must start with "NEXT_PUBLIC_"/;

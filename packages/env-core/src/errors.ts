@@ -1,4 +1,4 @@
-import type { StandardSchemaV1 } from "./standard-schema.js";
+import type { StandardSchemaV1 } from "./standard-schema";
 
 export class InvalidEnvironmentVariablesError extends Error {
   readonly issues: readonly string[];

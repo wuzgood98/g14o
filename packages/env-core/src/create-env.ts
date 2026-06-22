@@ -1,9 +1,6 @@
-import { guardEnv } from "./client-guard.js";
-import {
-  assertStrictRuntimeKeys,
-  pickRuntimeValues,
-} from "./pick-runtime-env.js";
-import { assertClientPrefix, assertNoOverlappingKeys } from "./prefix.js";
+import { guardEnv } from "./client-guard";
+import { assertStrictRuntimeKeys, pickRuntimeValues } from "./pick-runtime-env";
+import { assertClientPrefix, assertNoOverlappingKeys } from "./prefix";
 import type {
   AssertValidClientPrefix,
   CreateEnvOptions,
@@ -12,8 +9,8 @@ import type {
   ResolvedCreateEnvOptions,
   RuntimeEnvInput,
   SchemaShape,
-} from "./types.js";
-import { validateShape } from "./validate.js";
+} from "./types";
+import { validateShape } from "./validate";
 
 function resolveIsServer(isServer: boolean | undefined): boolean {
   if (isServer !== undefined) {
