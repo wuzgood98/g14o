@@ -55,7 +55,7 @@ const coreSubpaths = [
 const envCoreSmoke = {
   filter: "@g14o/env-core",
   importPath: "@g14o/env-core",
-  distFile: "dist/index.js",
+  distFile: "dist/index.mjs",
   exports: ["createEnv"],
 };
 
