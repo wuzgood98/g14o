@@ -55,7 +55,7 @@ const coreSubpaths = [
 const envCoreSmoke = {
   filter: "@g14o/env-core",
   importPath: "@g14o/env-core",
-  distFile: "dist/index.js",
+  distFile: "dist/index.mjs",
   exports: ["createEnv"],
 };
 
@@ -228,8 +228,10 @@ try {
       );
     }
     const importTarget =
-      typeof rootExport === "string" ? rootExport : rootExport?.import;
-    if (!importTarget?.startsWith("./dist")) {
+      typeof rootExport === "string"
+        ? rootExport
+        : (rootExport?.default ?? rootExport?.import);
+    if (!importTarget?.includes("dist")) {
       throw new Error(
         `${importPath}: packed export "." must point at dist (got ${JSON.stringify(rootExport)})`
       );

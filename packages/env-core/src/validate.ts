@@ -1,9 +1,6 @@
-import {
-  formatSchemaIssue,
-  InvalidEnvironmentVariablesError,
-} from "./errors.js";
-import type { StandardSchemaV1 } from "./standard-schema.js";
-import type { SchemaShape } from "./types.js";
+import { formatSchemaIssue, InvalidEnvironmentVariablesError } from "./errors";
+import type { StandardSchemaV1 } from "./standard-schema";
+import type { SchemaShape } from "./types";
 
 interface PendingValidation {
   key: string;

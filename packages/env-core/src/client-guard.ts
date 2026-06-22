@@ -1,4 +1,4 @@
-import { createServerAccessError } from "./errors.js";
+import { createServerAccessError } from "./errors";
 
 export type OnInvalidAccessHandler = (variable: string) => void;
 

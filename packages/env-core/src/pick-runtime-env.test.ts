@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  assertStrictRuntimeKeys,
-  pickRuntimeValues,
-} from "./pick-runtime-env.js";
+import { assertStrictRuntimeKeys, pickRuntimeValues } from "./pick-runtime-env";
 
 const RUNTIME_ENV_STRICT_MISSING = /runtimeEnvStrict is missing required keys/;
 

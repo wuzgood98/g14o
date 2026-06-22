@@ -1,4 +1,4 @@
-import type { RuntimeEnvInput } from "./types.js";
+import type { RuntimeEnvInput } from "./types";
 
 export function pickRuntimeValues(
   keys: readonly string[],

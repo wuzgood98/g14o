@@ -1,5 +1,5 @@
-import type { OnInvalidAccessHandler } from "./client-guard.js";
-import type { StandardSchemaV1 } from "./standard-schema.js";
+import type { OnInvalidAccessHandler } from "./client-guard";
+import type { StandardSchemaV1 } from "./standard-schema";
 
 /**
  * Record mapping environment variable names to
