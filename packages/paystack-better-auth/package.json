@@ -1,6 +1,6 @@
 {
   "name": "@g14o/paystack-better-auth",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Paystack billing plugin for Better Auth — subscriptions, checkout, webhooks, and customer management.",
   "type": "module",
   "sideEffects": false,
