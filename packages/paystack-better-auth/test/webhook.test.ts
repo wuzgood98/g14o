@@ -515,7 +515,7 @@ describe("paystack webhook", () => {
 
 describe("one-time checkout webhooks", () => {
   const postWebhook = (
-    auth: Awaited<ReturnType<typeof getTestInstance>>["auth"],
+    auth: { handler: (request: Request) => Response | Promise<Response> },
     payload: PaystackWebhookEvent
   ) => {
     const rawBody = JSON.stringify(payload);
