@@ -1,6 +1,6 @@
 # @g14o/paystack-better-auth
 
-## Unreleased
+## 0.3.0
 
 ### Minor Changes
 
