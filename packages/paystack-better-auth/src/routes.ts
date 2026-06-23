@@ -759,8 +759,8 @@ export const paystackWebhook = (
             store: createAdapterWebhookStore(ctx.context.adapter),
             handler: (event) =>
               handlePaystackWebhookEvent({
+                ctx,
                 event,
-                adapter: ctx.context.adapter,
                 pluginContext,
                 planRegistry,
               }),

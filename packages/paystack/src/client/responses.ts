@@ -23,6 +23,8 @@ const paystackReusableField = z
   .transform((value) => Boolean(value))
   .optional();
 
+const paystackOpaqueRecord = z.record(z.string(), z.unknown());
+
 export function paystackResponseEnvelopeSchema<T extends z.ZodType>(
   dataSchema: T
 ): z.ZodObject<{
@@ -49,11 +51,12 @@ const paystackAuthorizationSchemaImpl = z.object({
   exp_year: z.string().optional(),
   channel: z.string().optional(),
   card_type: z.string().optional(),
-  bank: z.string().optional(),
+  bank: z.string().nullable().optional(),
   country_code: z.string().optional(),
   brand: z.string().optional(),
   reusable: paystackReusableField,
-  signature: z.string().optional(),
+  signature: z.string().nullable().optional(),
+  account_name: z.string().nullable().optional(),
 });
 
 const paystackCustomerSchemaImpl = z.object({
@@ -65,6 +68,20 @@ const paystackCustomerSchemaImpl = z.object({
   phone: z.string().nullable().optional(),
   metadata: paystackMetadataField,
   risk_action: z.string().optional(),
+  domain: z.string().optional(),
+  integration: z.number().optional(),
+  identified: z.boolean().optional(),
+  identifications: z.unknown().nullable().optional(),
+  dedicated_account: z.unknown().nullable().optional(),
+  international_format_phone: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  created_at: z.string().optional(),
+  updated_at: z.string().optional(),
+  transactions: z.array(z.unknown()).optional(),
+  subscriptions: z.array(z.unknown()).optional(),
+  total_transactions: z.number().optional(),
+  total_transaction_value: z.array(z.unknown()).optional(),
   authorizations: z
     .array(paystackAuthorizationSchemaImpl)
     .optional()
@@ -82,6 +99,14 @@ const paystackPlanSchemaImpl = z.object({
   send_sms: z.boolean().optional(),
   currency: z.string(),
   invoice_limit: z.number().optional(),
+  domain: z.string().optional(),
+  integration: z.number().optional(),
+  hosted_page: z.boolean().optional(),
+  hosted_page_url: z.string().nullable().optional(),
+  hosted_page_summary: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+  updatedAt: z.string().optional(),
+  subscriptions: z.array(z.unknown()).optional(),
 });
 
 const paystackTransactionSchemaImpl = z.object({
@@ -91,11 +116,28 @@ const paystackTransactionSchemaImpl = z.object({
   reference: z.string(),
   amount: z.number(),
   message: z.string().nullable().optional(),
-  gateway_response: z.string().optional(),
+  gateway_response: z.string().nullable().optional(),
   paid_at: z.string().nullable().optional(),
   created_at: z.string().optional(),
   channel: z.string().optional(),
   currency: z.string(),
+  receipt_number: z.string().nullable().optional(),
+  ip_address: z.string().nullable().optional(),
+  fees: z.number().nullable().optional(),
+  fees_split: z.unknown().nullable().optional(),
+  order_id: z.string().nullable().optional(),
+  pos_transaction_data: z.unknown().nullable().optional(),
+  source: z.unknown().nullable().optional(),
+  fees_breakdown: z.unknown().nullable().optional(),
+  connect: z.unknown().nullable().optional(),
+  transaction_date: z.string().optional(),
+  paidAt: z.string().optional(),
+  createdAt: z.string().optional(),
+  requested_amount: z.number().optional(),
+  log: z.union([paystackOpaqueRecord, z.null()]).optional(),
+  split: paystackOpaqueRecord.optional(),
+  subaccount: paystackOpaqueRecord.optional(),
+  plan_object: paystackOpaqueRecord.optional(),
   authorization: paystackAuthorizationSchemaImpl.optional(),
   customer: paystackCustomerSchemaImpl.optional(),
   metadata: paystackMetadataField,
@@ -109,12 +151,18 @@ const paystackSubscriptionSchemaImpl = z.object({
   subscription_code: z.string(),
   email_token: z.string().optional(),
   amount: z.number(),
+  integration: z.number().optional(),
+  start: z.number().optional(),
+  quantity: z.number().optional(),
   cron_expression: z.string().optional(),
   next_payment_date: z.string().nullable().optional(),
   open_invoice: z.string().nullable().optional(),
+  easy_cron_id: z.union([z.string(), z.null()]).optional(),
   createdAt: z.string().optional(),
-  plan: paystackPlanSchemaImpl.optional(),
-  customer: paystackCustomerSchemaImpl.optional(),
+  updatedAt: z.string().optional(),
+  invoices: z.array(z.unknown()).optional(),
+  plan: z.union([z.number(), paystackPlanSchemaImpl]).optional(),
+  customer: z.union([z.number(), paystackCustomerSchemaImpl]).optional(),
   authorization: paystackAuthorizationSchemaImpl.optional(),
 });
 
@@ -141,7 +189,13 @@ const paystackPlanListSchemaImpl = paystackResponseEnvelopeSchema(
 const paystackCustomerListSchemaImpl = paystackResponseEnvelopeSchema(
   z.array(paystackCustomerSchemaImpl)
 ).extend({
-  meta: paystackListMetaSchemaImpl.optional(),
+  meta: z
+    .object({
+      next: z.string().nullable().optional(),
+      previous: z.string().nullable().optional(),
+      perPage: z.number(),
+    })
+    .optional(),
 });
 
 /** Paystack customer resource. */

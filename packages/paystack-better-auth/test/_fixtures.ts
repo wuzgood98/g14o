@@ -57,6 +57,7 @@ export const createMemoryDatabase = (
     verification?: unknown[];
     subscription?: unknown[];
     webhookEvent?: unknown[];
+    payment?: unknown[];
   } = {}
 ) =>
   memoryAdapter({
@@ -66,6 +67,7 @@ export const createMemoryDatabase = (
     verification: seed.verification ?? [],
     subscription: seed.subscription ?? [],
     webhookEvent: seed.webhookEvent ?? [],
+    payment: seed.payment ?? [],
   });
 
 interface MockFetchRequest {

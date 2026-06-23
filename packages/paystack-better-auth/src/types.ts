@@ -1,4 +1,5 @@
 import type {
+  ChargeSuccessData,
   Paystack,
   PaystackCustomer,
   PaystackEventName,
@@ -6,7 +7,7 @@ import type {
   PaystackWebhookEvent,
 } from "@g14o/paystack";
 import type { GenericEndpointContext, InferOptionSchema } from "better-auth";
-import type { subscriptions, user, webhookEvents } from "./schema";
+import type { payments, subscriptions, user, webhookEvents } from "./schema";
 
 /** Billing provider identifier stored on plugin records. */
 export type BillingProvider = "paystack";
@@ -185,6 +186,45 @@ export type {
   SubscriptionNotRenewData,
 } from "@g14o/paystack";
 
+/** Paystack one-time payment record stored in the plugin database. */
+export interface PaystackPaymentRecord {
+  amount: number;
+  channel?: string | undefined;
+  currency: string;
+  customerCode: string;
+  customerId: number;
+  id: string;
+  metadata?: Record<string, unknown> | undefined;
+  paidAt: Date;
+  provider: BillingProvider;
+  reference: string;
+  referenceId?: string | undefined;
+  status: NormalizedPaymentStatus;
+  transactionId: number;
+  userId?: string | undefined;
+}
+
+/** Context passed to {@link PaystackCheckoutOptions.onCheckoutComplete}. */
+export interface CheckoutCompleteContext {
+  amount: number;
+  channel: string;
+  currency: string;
+  customer: ChargeSuccessData["customer"];
+  event: Extract<PaystackWebhookEvent, { event: "charge.success" }>;
+  metadata?: Record<string, unknown> | undefined;
+  paidAt: string;
+  payment?: PaystackPaymentRecord | undefined;
+  reference: string;
+  referenceId?: string | undefined;
+  userId?: string | undefined;
+}
+
+/** One-time checkout configuration and lifecycle hooks. */
+export interface PaystackCheckoutOptions {
+  /** Fires after a successful one-time checkout payment (`charge.success` without subscription). */
+  onCheckoutComplete?: (ctx: CheckoutCompleteContext) => Promise<void> | void;
+}
+
 /** Subscription billing configuration and lifecycle hooks. */
 export interface PaystackSubscriptionOptions {
   /** Enable subscription billing.
@@ -247,10 +287,20 @@ export interface PaystackSubscriptionOptions {
  */
 export interface PaystackPluginOptions {
   /**
+   * One-time checkout lifecycle hooks.
+   * @default undefined
+   */
+  checkout?: PaystackCheckoutOptions | undefined;
+  /**
    * Create a Paystack customer automatically when a user signs up.
    * @default undefined (optional)
    */
   createCustomerOnSignUp?: boolean | undefined;
+  /**
+   * Skip persisting one-time payment records to the database (useful for tests).
+   * @default undefined (optional)
+   */
+  disablePaymentPersistence?: boolean | undefined;
   /**
    * Skip persisting webhook payloads to the database (useful for tests).
    * @default undefined (optional)
@@ -327,7 +377,10 @@ export interface PaystackPluginOptions {
    */
   schema?:
     | InferOptionSchema<
-        typeof user & typeof subscriptions & typeof webhookEvents
+        typeof user &
+          typeof subscriptions &
+          typeof payments &
+          typeof webhookEvents
       >
     | undefined;
   /**
@@ -402,7 +455,9 @@ export interface PluginContext {
   options: Required<
     Pick<
       PaystackPluginOptions,
-      "createCustomerOnSignUp" | "disableWebhookPersistence"
+      | "createCustomerOnSignUp"
+      | "disablePaymentPersistence"
+      | "disableWebhookPersistence"
     >
   > &
     PaystackPluginOptions;
@@ -439,4 +494,22 @@ export interface DbPaystackWebhookEvent {
   processedAt?: Date | string | null;
   status: string;
   type: string;
+}
+
+/** Paystack one-time payment record stored in the plugin database. */
+export interface DbPaystackPayment {
+  amount: number;
+  channel?: string | null;
+  currency: string;
+  customerCode: string;
+  customerId: number;
+  id: string;
+  metadata?: string | null;
+  paidAt: Date | string;
+  provider: string;
+  reference: string;
+  referenceId?: string | null;
+  status: string;
+  transactionId: number;
+  userId?: string | null;
 }

@@ -115,6 +115,14 @@ const paystackPluginOptionsSchemaImpl = z
           "Whether to disable webhook persistence. If true, webhook payloads will not be persisted to the database.",
       })
       .default(false),
+    /** Disable one-time payment persistence. */
+    disablePaymentPersistence: z
+      .boolean()
+      .meta({
+        description:
+          "Whether to disable one-time payment persistence. If true, payment records will not be persisted to the database.",
+      })
+      .default(false),
   })
   .superRefine((value, ctx) => {
     if (value.paystackClient === undefined) {

@@ -117,6 +117,207 @@ export function createInitializeTransaction(
   };
 }
 
+/** Doc-shaped transaction verify payload (response-schema.ts). */
+export function createDocShapedVerifyTransaction(
+  reference = "re4lyvq3s3"
+): Record<string, unknown> {
+  return {
+    id: 4_099_260_516,
+    domain: "test",
+    status: "success",
+    reference,
+    receipt_number: null,
+    amount: 40_333,
+    message: null,
+    gateway_response: "Successful",
+    paid_at: "2024-08-22T09:15:02.000Z",
+    created_at: "2024-08-22T09:14:24.000Z",
+    channel: "card",
+    currency: "NGN",
+    ip_address: "197.210.54.33",
+    metadata: "",
+    log: {
+      start_time: 1_724_318_098,
+      time_spent: 4,
+      attempts: 1,
+      errors: 0,
+      success: true,
+      mobile: false,
+      input: [],
+      history: [],
+    },
+    fees: 10_283,
+    fees_split: null,
+    authorization: {
+      authorization_code: "AUTH_uh8bcl3zbn",
+      bin: "408408",
+      last4: "4081",
+      exp_month: "12",
+      exp_year: "2030",
+      channel: "card",
+      card_type: "visa ",
+      bank: "TEST BANK",
+      country_code: "NG",
+      brand: "visa",
+      reusable: true,
+      signature: null,
+      account_name: null,
+    },
+    customer: {
+      id: 181_873_746,
+      first_name: null,
+      last_name: null,
+      email: "demo@test.com",
+      customer_code: "CUS_1rkzaqsv4rrhqo6",
+      phone: null,
+      metadata: null,
+      risk_action: "default",
+      international_format_phone: null,
+    },
+    plan: null,
+    split: {},
+    order_id: null,
+    paidAt: "2024-08-22T09:15:02.000Z",
+    createdAt: "2024-08-22T09:14:24.000Z",
+    requested_amount: 30_050,
+    pos_transaction_data: null,
+    source: null,
+    fees_breakdown: null,
+    connect: null,
+    transaction_date: "2024-08-22T09:14:24.000Z",
+    plan_object: {},
+    subaccount: {},
+  };
+}
+
+/** Doc-shaped charge authorization payload (response-schema.ts). */
+export function createDocShapedChargeAuthorizationTransaction(
+  reference = "0m7frfnr47ezyxl"
+): Record<string, unknown> {
+  return {
+    amount: 35_247,
+    currency: "NGN",
+    transaction_date: "2024-08-22T10:53:49.000Z",
+    status: "success",
+    reference,
+    domain: "test",
+    metadata: "",
+    gateway_response: "Approved",
+    message: null,
+    channel: "card",
+    ip_address: null,
+    log: null,
+    fees: 10_247,
+    authorization: {
+      authorization_code: "AUTH_uh8bcl3zbn",
+      bin: "408408",
+      last4: "4081",
+      exp_month: "12",
+      exp_year: "2030",
+      channel: "card",
+      card_type: "visa ",
+      bank: "TEST BANK",
+      country_code: "NG",
+      brand: "visa",
+      reusable: true,
+      signature: null,
+      account_name: null,
+    },
+    customer: {
+      id: 181_873_746,
+      first_name: null,
+      last_name: null,
+      email: "demo@test.com",
+      customer_code: "CUS_1rkzaqsv4rrhqo6",
+      phone: null,
+      metadata: null,
+      risk_action: "default",
+      international_format_phone: null,
+    },
+    plan: null,
+    id: 4_099_490_251,
+  };
+}
+
+/** Doc-shaped subscription create payload (response-schema.ts). */
+export function createDocShapedCreateSubscription(): Record<string, unknown> {
+  return {
+    customer: 1173,
+    plan: 28,
+    integration: 100_032,
+    domain: "test",
+    start: 1_459_296_064,
+    status: "active",
+    quantity: 1,
+    amount: 50_000,
+    authorization: {
+      authorization_code: "AUTH_6tmt288t0o",
+      bin: "408408",
+      last4: "4081",
+      exp_month: "12",
+      exp_year: "2020",
+      channel: "card",
+      card_type: "visa visa",
+      bank: "TEST BANK",
+      country_code: "NG",
+      brand: "visa",
+      reusable: true,
+      signature: "SIG_uSYN4fv1adlAuoij8QXh",
+      account_name: "BoJack Horseman",
+    },
+    subscription_code: "SUB_vsyqdmlzble3uii",
+    email_token: "d7gofp6yppn3qz7",
+    id: 9,
+    createdAt: "2016-03-30T00:01:04.687Z",
+    updatedAt: "2016-03-30T00:01:04.687Z",
+  };
+}
+
+/** Doc-shaped customer fetch payload (response-schema.ts). */
+export function createDocShapedFetchCustomer(): Record<string, unknown> {
+  return {
+    transactions: [],
+    subscriptions: [],
+    authorizations: [
+      {
+        authorization_code: "AUTH_ekk8t49ogj",
+        bin: "408408",
+        last4: "4081",
+        exp_month: "12",
+        exp_year: "2030",
+        channel: "card",
+        card_type: "visa ",
+        bank: "TEST BANK",
+        country_code: "NG",
+        brand: "visa",
+        reusable: true,
+        signature: "SIG_yEXu7dLBeqG0kU7g95Ke",
+        account_name: null,
+      },
+    ],
+    first_name: null,
+    last_name: null,
+    email: "dom@gmail.com",
+    phone: null,
+    metadata: null,
+    domain: "test",
+    customer_code: "CUS_c6wqvwmvwopw4ms",
+    risk_action: "default",
+    id: 90_758_908,
+    integration: 463_433,
+    createdAt: "2022-08-15T13:46:39.000Z",
+    updatedAt: "2022-08-15T13:46:39.000Z",
+    created_at: "2022-08-15T13:46:39.000Z",
+    updated_at: "2022-08-15T13:46:39.000Z",
+    total_transactions: 0,
+    total_transaction_value: [],
+    dedicated_account: null,
+    identified: false,
+    identifications: null,
+    international_format_phone: null,
+  };
+}
+
 export function mockJsonResponse(payload: {
   status: boolean;
   message: string;

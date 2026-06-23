@@ -89,6 +89,72 @@ export const subscriptions = {
   },
 } satisfies BetterAuthPluginDBSchema;
 
+export const payments = {
+  payment: {
+    fields: {
+      reference: {
+        type: "string",
+        required: true,
+        unique: true,
+      },
+      transactionId: {
+        type: "number",
+        required: true,
+      },
+      userId: {
+        type: "string",
+        required: false,
+        references: {
+          model: "user",
+          field: "id",
+          onDelete: "cascade",
+        },
+      },
+      referenceId: {
+        type: "string",
+        required: false,
+      },
+      provider: {
+        type: "string",
+        required: true,
+        defaultValue: "paystack",
+      },
+      customerCode: {
+        type: "string",
+        required: true,
+      },
+      customerId: {
+        type: "number",
+        required: true,
+      },
+      amount: {
+        type: "number",
+        required: true,
+      },
+      currency: {
+        type: "string",
+        required: true,
+      },
+      status: {
+        type: "string",
+        required: true,
+      },
+      channel: {
+        type: "string",
+        required: false,
+      },
+      paidAt: {
+        type: "date",
+        required: true,
+      },
+      metadata: {
+        type: "string",
+        required: false,
+      },
+    },
+  },
+} satisfies BetterAuthPluginDBSchema;
+
 export const webhookEvents = {
   webhookEvent: {
     fields: {
@@ -124,6 +190,7 @@ export const webhookEvents = {
 
 type GetSchemaResult<O extends PaystackPluginOptions> = typeof user &
   (O["subscription"] extends { enabled: true } ? typeof subscriptions : {}) &
+  (O["disablePaymentPersistence"] extends true ? {} : typeof payments) &
   (O["disableWebhookPersistence"] extends true ? {} : typeof webhookEvents);
 
 export const getSchema = <O extends PaystackPluginOptions>(
@@ -149,12 +216,28 @@ export const getSchema = <O extends PaystackPluginOptions>(
     };
   }
 
+  if (!options.disablePaymentPersistence) {
+    baseSchema = {
+      ...baseSchema,
+      ...payments,
+    };
+  }
+
   if (
     options.schema &&
     !options.subscription?.enabled &&
     "subscription" in options.schema
   ) {
     const { subscription: _subscription, ...restSchema } = options.schema;
+    return mergeSchema(baseSchema, restSchema) as GetSchemaResult<O>;
+  }
+
+  if (
+    options.schema &&
+    options.disablePaymentPersistence &&
+    "payment" in options.schema
+  ) {
+    const { payment: _payment, ...restSchema } = options.schema;
     return mergeSchema(baseSchema, restSchema) as GetSchemaResult<O>;
   }
 

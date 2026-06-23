@@ -142,6 +142,42 @@ export function createChargeSuccessPayload(
   };
 }
 
+export function createOneTimeChargeSuccessPayload(
+  overrides: Partial<ChargeSuccessData> = {}
+): Extract<PaystackWebhookEvent, { event: "charge.success" }> {
+  const base = defaultChargeSuccessData();
+  const data: ChargeSuccessData = {
+    id: base.id,
+    domain: base.domain,
+    status: base.status,
+    reference: base.reference,
+    amount: base.amount,
+    message: base.message,
+    gateway_response: base.gateway_response,
+    paid_at: base.paid_at,
+    created_at: base.created_at,
+    channel: base.channel,
+    currency: base.currency,
+    customer: {
+      ...base.customer,
+      ...(overrides.customer ?? {}),
+    },
+    plan: null,
+    metadata: { userId: "user_1", orderId: "order_1" },
+    ...overrides,
+  };
+
+  const { subscription_code, ...rest } = data;
+
+  return {
+    event: "charge.success",
+    data: {
+      ...rest,
+      plan: rest.plan ?? null,
+    },
+  };
+}
+
 export function createSubscriptionCreatePayload(
   overrides: Partial<
     Extract<PaystackWebhookEvent, { event: "subscription.create" }>["data"]
