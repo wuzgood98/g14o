@@ -110,6 +110,11 @@ export const subscriptionMetadata = {
 };
 
 export const checkoutMetadata = {
+  keys: {
+    userId: "userId",
+    referenceId: "referenceId",
+  } as const,
+
   set(
     internalFields: {
       userId?: string | undefined;
@@ -122,5 +127,19 @@ export const checkoutMetadata = {
       internalFields as Record<string, unknown>,
       userMetadata
     );
+  },
+
+  get(metadata: Record<string, unknown> | null | undefined): {
+    referenceId: string | undefined;
+    userId: string | undefined;
+  } {
+    return {
+      userId:
+        typeof metadata?.userId === "string" ? metadata.userId : undefined,
+      referenceId:
+        typeof metadata?.referenceId === "string"
+          ? metadata.referenceId
+          : undefined,
+    };
   },
 };

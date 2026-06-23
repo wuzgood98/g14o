@@ -2,9 +2,12 @@ import type { PaystackSubscription } from "@g14o/paystack";
 import { parseSafeMetadata } from "@g14o/paystack";
 import { PAYSTACK_ERROR_CODES } from "./error-codes";
 import type {
+  DbPaystackPayment,
   DbPaystackSubscription,
   DbPaystackWebhookEvent,
+  NormalizedPaymentStatus,
   NormalizedSubscriptionStatus,
+  PaystackPaymentRecord,
   PaystackPluginOptions,
   PluginContext,
 } from "./types";
@@ -23,6 +26,14 @@ export function asDbSubscription(record: unknown): DbPaystackSubscription {
  */
 export function asDbWebhookEvent(record: unknown): DbPaystackWebhookEvent {
   return record as DbPaystackWebhookEvent;
+}
+
+/**
+ * Converts a record to a Paystack payment record.
+ * @internal
+ */
+export function asDbPayment(record: unknown): DbPaystackPayment {
+  return record as DbPaystackPayment;
 }
 
 /**
@@ -114,6 +125,23 @@ interface DbWebhookEventInsert {
   type: string;
 }
 
+interface DbPaymentInsert {
+  amount: number;
+  channel: string | undefined;
+  currency: string;
+  customerCode: string;
+  customerId: number;
+  id?: string;
+  metadata: string | undefined;
+  paidAt: Date;
+  provider: "paystack";
+  reference: string;
+  referenceId: string | undefined;
+  status: string;
+  transactionId: number;
+  userId: string | undefined;
+}
+
 export const toDbSubscription = (input: {
   id?: string;
   userId: string;
@@ -145,6 +173,56 @@ export const toDbSubscription = (input: {
   currentPeriodEnd: input.currentPeriodEnd,
   cancelAtPeriodEnd: input.cancelAtPeriodEnd,
   metadata: serializeMetadata(input.metadata),
+});
+
+export const toDbPayment = (input: {
+  id?: string;
+  reference: string;
+  transactionId: number;
+  userId?: string | undefined;
+  referenceId?: string | undefined;
+  customerCode: string;
+  customerId: number;
+  amount: number;
+  currency: string;
+  status: NormalizedPaymentStatus;
+  channel?: string | undefined;
+  paidAt: Date;
+  metadata?: Record<string, unknown>;
+}): DbPaymentInsert => ({
+  ...(input.id ? { id: input.id } : {}),
+  reference: input.reference,
+  transactionId: input.transactionId,
+  userId: input.userId,
+  referenceId: input.referenceId,
+  provider: "paystack",
+  customerCode: input.customerCode,
+  customerId: input.customerId,
+  amount: input.amount,
+  currency: input.currency,
+  status: input.status,
+  channel: input.channel,
+  paidAt: input.paidAt,
+  metadata: serializeMetadata(input.metadata),
+});
+
+export const mapPaymentRecord = (
+  record: DbPaystackPayment
+): PaystackPaymentRecord => ({
+  id: record.id,
+  reference: record.reference,
+  transactionId: record.transactionId,
+  userId: record.userId ?? undefined,
+  referenceId: record.referenceId ?? undefined,
+  provider: "paystack",
+  customerCode: record.customerCode,
+  customerId: record.customerId,
+  amount: record.amount,
+  currency: record.currency,
+  status: record.status as NormalizedPaymentStatus,
+  channel: record.channel ?? undefined,
+  paidAt: new Date(record.paidAt),
+  metadata: parseMetadata(record.metadata),
 });
 
 /**
@@ -324,6 +402,7 @@ export const resolvePluginContext = (
       ...options,
       paystackClient: options.paystackClient,
       createCustomerOnSignUp: options.createCustomerOnSignUp ?? false,
+      disablePaymentPersistence: options.disablePaymentPersistence ?? false,
       disableWebhookPersistence: options.disableWebhookPersistence ?? false,
     },
   };

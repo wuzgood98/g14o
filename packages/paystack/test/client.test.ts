@@ -3,6 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import { PaystackError } from "../src/client/errors";
 import { Paystack } from "../src/client/paystack-client";
 import {
+  createDocShapedChargeAuthorizationTransaction,
+  createDocShapedCreateSubscription,
+  createDocShapedFetchCustomer,
+  createDocShapedVerifyTransaction,
   createMockFetch,
   createPaystackClient,
   createPaystackTransaction,
@@ -96,6 +100,24 @@ describe("paystack.customers", () => {
       paystack.customers.create({ email: "new@example.com" })
     ).rejects.toMatchObject({ code: "PAYSTACK_VALIDATION_ERROR" });
   });
+
+  it("parses doc-shaped customer fetch responses with nullable fields", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockJsonResponse({
+        status: true,
+        message: "Customer retrieved",
+        data: createDocShapedFetchCustomer(),
+      })
+    );
+    const paystack = createPaystackClient({ fetch: fetchMock });
+
+    const result = await paystack.customers.fetch("CUS_c6wqvwmvwopw4ms");
+
+    expect(result.customer_code).toBe("CUS_c6wqvwmvwopw4ms");
+    expect(result.international_format_phone).toBeNull();
+    expect(result.identifications).toBeNull();
+    expect(result.authorizations[0]?.account_name).toBeNull();
+  });
 });
 
 describe("paystack.transactions", () => {
@@ -145,6 +167,25 @@ describe("paystack.transactions", () => {
     expect(result.status).toBe("success");
   });
 
+  it("parses doc-shaped verify responses with null authorization signature", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockJsonResponse({
+        status: true,
+        message: "Verification successful",
+        data: createDocShapedVerifyTransaction("ref_doc_verify"),
+      })
+    );
+    const paystack = createPaystackClient({ fetch: fetchMock });
+
+    const result = await paystack.transactions.verify("ref_doc_verify");
+
+    expect(result.reference).toBe("ref_doc_verify");
+    expect(result.receipt_number).toBeNull();
+    expect(result.plan).toBeNull();
+    expect(result.authorization?.signature).toBeNull();
+    expect(result.authorization?.account_name).toBeNull();
+  });
+
   it("charges an authorization", async () => {
     const fetchMock = createMockFetch();
     const paystack = createPaystackClient({ fetch: fetchMock });
@@ -166,6 +207,29 @@ describe("paystack.transactions", () => {
       reference: "ref_charge_1",
     });
     expect(result.reference).toBe("ref_charge_1");
+  });
+
+  it("parses doc-shaped charge authorization responses with null log", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockJsonResponse({
+        status: true,
+        message: "Charge attempted",
+        data: createDocShapedChargeAuthorizationTransaction("ref_doc_charge"),
+      })
+    );
+    const paystack = createPaystackClient({ fetch: fetchMock });
+
+    const result = await paystack.transactions.chargeAuthorization({
+      email: "demo@test.com",
+      amount: 35_247,
+      authorization_code: "AUTH_uh8bcl3zbn",
+      reference: "ref_doc_charge",
+    });
+
+    expect(result.reference).toBe("ref_doc_charge");
+    expect(result.log).toBeNull();
+    expect(result.ip_address).toBeNull();
+    expect(result.authorization?.signature).toBeNull();
   });
 
   it("throws API error when Paystack returns status false", async () => {
@@ -270,6 +334,28 @@ describe("paystack.subscriptions", () => {
     expect(call?.method).toBe("POST");
     expect(call?.url).toContain("/subscription");
     expect(result.subscription_code).toBe(DEMO_PAYSTACK_SUBSCRIPTION_CODE);
+  });
+
+  it("parses doc-shaped subscription create responses with numeric customer", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockJsonResponse({
+        status: true,
+        message: "Subscription successfully created",
+        data: createDocShapedCreateSubscription(),
+      })
+    );
+    const paystack = createPaystackClient({ fetch: fetchMock });
+
+    const result = await paystack.subscriptions.create({
+      customer: DEMO_PAYSTACK_CUSTOMER_CODE,
+      plan: DEMO_PAYSTACK_PLAN_CODE,
+      authorization: "AUTH_test",
+    });
+
+    expect(result.subscription_code).toBe("SUB_vsyqdmlzble3uii");
+    expect(result.customer).toBe(1173);
+    expect(result.plan).toBe(28);
+    expect(result.start).toBe(1_459_296_064);
   });
 
   it("fetches a subscription by code", async () => {

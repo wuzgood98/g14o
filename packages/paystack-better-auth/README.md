@@ -84,6 +84,21 @@ const { data, error } = await authClient.paystack.createCheckoutSession({
 });
 ```
 
+Fulfill one-time orders on the server via `checkout.onCheckoutComplete` when Paystack sends `charge.success` (no `transactions.verify` call needed):
+
+```ts
+paystack({
+  paystackClient,
+  checkout: {
+    onCheckoutComplete: async ({ reference, amount, metadata, payment }) => {
+      // mark order paid, grant access, send receipt, etc.
+    },
+  },
+});
+```
+
+Set `disablePaymentPersistence: true` to skip the `payment` table while still using `onCheckoutComplete`.
+
 ## Subscriptions
 
 When a plan entry includes `planCode`, the plugin fetches billing details from Paystack instead of creating a plan. Pass `annual: true` on upgrade to use `annualDiscountedPlanCode`.
@@ -134,7 +149,8 @@ npx auth@latest generate
 Tables added:
 
 - `user` field: `paystackCustomerCode` and `paystackCustomerId`
-- `subscription` (includes `emailToken` for cancel/resume)
+- `subscription` (includes `emailToken` for cancel/resume; when `subscription.enabled`)
+- `payment` (one-time checkout records; omit when `disablePaymentPersistence: true`)
 - `webhookEvent` (included by default; omit when `disableWebhookPersistence: true`)
 
 ## License

@@ -1,5 +1,12 @@
 # @g14o/paystack-better-auth
 
+## Unreleased
+
+### Minor Changes
+
+- Add one-time checkout webhook handling for `charge.success` via `checkout.onCheckoutComplete`.
+- Add optional `payment` table for one-time checkout persistence (`disablePaymentPersistence: true` to omit).
+
 ## 0.2.0
 
 ### Minor Changes

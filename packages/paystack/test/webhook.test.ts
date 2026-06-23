@@ -107,6 +107,34 @@ describe("paystack.webhook.parseWebhookPayload", () => {
     ).toEqual(payload);
   });
 
+  it("parses charge.success payloads with null optional fields", () => {
+    const base = createChargeSuccessWebhookEvent({
+      reference: "ref_null_optionals",
+      plan: null,
+    });
+    const payload = {
+      ...base,
+      data: {
+        ...base.data,
+        ip_address: null,
+        fees: null,
+        subscription_code: null,
+        authorization: null,
+        customer: {
+          ...base.data.customer,
+          phone: null,
+          risk_action: null,
+          international_format_phone: null,
+          metadata: null,
+        },
+      },
+    };
+
+    expect(
+      paystack.webhook.parseWebhookPayload(JSON.stringify(payload))
+    ).toEqual(payload);
+  });
+
   it("rejects invalid payloads", () => {
     expect(() =>
       paystack.webhook.parseWebhookPayload(

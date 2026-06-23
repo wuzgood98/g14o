@@ -1,7 +1,9 @@
 import {
   type ChargeSuccessData,
   type InvoiceData,
+  type PaystackCustomer,
   type PaystackEventName,
+  type PaystackPlan,
   type PaystackSubscription,
   type PaystackWebhookEvent,
   parseSafeMetadata,
@@ -9,21 +11,26 @@ import {
   type WebhookDeliveryStore,
 } from "@g14o/paystack";
 import type { GenericEndpointContext } from "better-auth";
-import { subscriptionMetadata } from "./metadata";
+import { checkoutMetadata, subscriptionMetadata } from "./metadata";
 import type { PlanRegistry } from "./plans";
 import type {
+  CheckoutCompleteContext,
+  PaystackPaymentRecord,
   PaystackSubscriptionRecord,
   PluginContext,
   ResolvedPlan,
 } from "./types";
 import {
+  asDbPayment,
   asDbSubscription,
   asDbWebhookEvent,
+  mapPaymentRecord,
   mapPaystackSubscriptionStatus,
   mapWebhookEventToStatus,
   parseMetadata,
   parseSubscriptionPeriod,
   shouldCancelAtPeriodEnd,
+  toDbPayment,
   toDbSubscription,
   toDbWebhookEvent,
 } from "./utils";
@@ -31,7 +38,7 @@ import {
 type Adapter = GenericEndpointContext["context"]["adapter"];
 
 interface WebhookHandlerContext {
-  adapter: Adapter;
+  ctx: GenericEndpointContext;
   planRegistry?: PlanRegistry | undefined;
   pluginContext: PluginContext;
 }
@@ -76,6 +83,34 @@ const getReferenceIdFromMetadata = (
   return typeof reference === "string" ? reference : fallbackUserId;
 };
 
+const resolveCustomer = (
+  customer: PaystackCustomer | number | undefined | null
+): PaystackCustomer | undefined => {
+  if (customer === undefined || customer === null) {
+    return;
+  }
+
+  if (typeof customer === "number") {
+    return;
+  }
+
+  return customer;
+};
+
+const resolvePlan = (
+  plan: PaystackPlan | number | undefined | null
+): PaystackPlan | undefined => {
+  if (plan === undefined || plan === null) {
+    return;
+  }
+
+  if (typeof plan === "number") {
+    return;
+  }
+
+  return plan;
+};
+
 export const upsertSubscription = async (options: {
   adapter: Adapter;
   userId: string;
@@ -108,20 +143,20 @@ export const upsertSubscription = async (options: {
     referenceId: existingRecord?.referenceId ?? options.referenceId,
     subscriptionCode: options.paystackSubscription.subscription_code,
     customerCode:
-      options.paystackSubscription.customer?.customer_code ??
+      resolveCustomer(options.paystackSubscription.customer)?.customer_code ??
       existingRecord?.customerCode ??
       "",
     customerId:
-      options.paystackSubscription.customer?.id ??
+      resolveCustomer(options.paystackSubscription.customer)?.id ??
       existingRecord?.customerId ??
       0,
     planCode:
-      options.paystackSubscription.plan?.plan_code ??
+      resolvePlan(options.paystackSubscription.plan)?.plan_code ??
       existingRecord?.planCode ??
       "",
     planName:
       options.plan?.normalizedName ??
-      options.paystackSubscription.plan?.name?.toLowerCase() ??
+      resolvePlan(options.paystackSubscription.plan)?.name?.toLowerCase() ??
       existingRecord?.planName ??
       "",
     emailToken:
@@ -234,15 +269,80 @@ const fetchPaystackSubscription = async (
 ): Promise<PaystackSubscription> =>
   pluginContext.options.paystackClient.subscriptions.fetch(subscriptionCode);
 
-const handleChargeSuccessWebhook: TypedWebhookHandler<
+const isSubscriptionChargeSuccess = (data: ChargeSuccessData): boolean =>
+  typeof data.subscription_code === "string" &&
+  data.subscription_code.length > 0 &&
+  typeof data.plan === "object" &&
+  data.plan !== null;
+
+const findPaymentByReference = async (adapter: Adapter, reference: string) => {
+  const existing = await adapter.findOne({
+    model: "payment",
+    where: [{ field: "reference", value: reference }],
+  });
+
+  return existing ? asDbPayment(existing) : null;
+};
+
+const upsertPayment = async (options: {
+  adapter: Adapter;
+  data: ChargeSuccessData;
+  metadata?: Record<string, unknown> | undefined;
+  referenceId?: string | undefined;
+  userId?: string | undefined;
+}): Promise<PaystackPaymentRecord> => {
+  const existing = await findPaymentByReference(
+    options.adapter,
+    options.data.reference
+  );
+
+  const payload = toDbPayment({
+    id: existing?.id,
+    reference: options.data.reference,
+    transactionId: options.data.id,
+    userId: options.userId,
+    referenceId: options.referenceId,
+    customerCode: options.data.customer.customer_code,
+    customerId: options.data.customer.id,
+    amount: options.data.amount,
+    currency: options.data.currency,
+    status: "successful",
+    channel: options.data.channel,
+    paidAt: new Date(options.data.paid_at),
+    metadata: options.metadata,
+  });
+
+  if (existing) {
+    const updated = await options.adapter.update({
+      model: "payment",
+      where: [{ field: "id", value: existing.id }],
+      update: payload,
+    });
+
+    return mapPaymentRecord(asDbPayment(updated));
+  }
+
+  const created = await options.adapter.create({
+    model: "payment",
+    data: payload,
+  });
+
+  return mapPaymentRecord(asDbPayment(created));
+};
+
+const handleSubscriptionChargeSuccess: TypedWebhookHandler<
   "charge.success"
-> = async ({ event, adapter, pluginContext }) => {
+> = async ({ ctx, event, pluginContext }) => {
+  const adapter = ctx.context.adapter;
   const data = event.data;
   const metadata = parseChargeSuccessMetadata(data);
   const customerCode = data.customer.customer_code;
   const userId = await resolveUserId(adapter, metadata, customerCode);
 
   if (!userId) {
+    ctx.context.logger.warn(
+      `Subscription charge.success for reference ${data.reference}: no userId resolved`
+    );
     return;
   }
 
@@ -253,6 +353,9 @@ const handleChargeSuccessWebhook: TypedWebhookHandler<
   const subscriptionCode = data.subscription_code;
 
   if (!subscriptionCode) {
+    ctx.context.logger.warn(
+      `Subscription charge.success for reference ${data.reference}: missing subscription_code`
+    );
     return;
   }
 
@@ -310,9 +413,93 @@ const handleChargeSuccessWebhook: TypedWebhookHandler<
   }
 };
 
+const handleOneTimeChargeSuccess: TypedWebhookHandler<
+  "charge.success"
+> = async ({ ctx, event, pluginContext }) => {
+  const adapter = ctx.context.adapter;
+  const data = event.data;
+  const metadata = parseChargeSuccessMetadata(data);
+  const customerCode = data.customer.customer_code;
+  const userId = await resolveUserId(adapter, metadata, customerCode);
+  const { referenceId } = checkoutMetadata.get(metadata);
+
+  if (!userId) {
+    ctx.context.logger.warn(
+      `One-time charge.success for reference ${data.reference}: no userId resolved (guest checkout)`
+    );
+  }
+
+  let payment: PaystackPaymentRecord | undefined;
+
+  if (!pluginContext.options.disablePaymentPersistence) {
+    const existing = await findPaymentByReference(adapter, data.reference);
+
+    if (existing?.status === "successful") {
+      ctx.context.logger.warn(
+        `Duplicate successful payment for reference ${data.reference}; skipping onCheckoutComplete`
+      );
+      return;
+    }
+
+    try {
+      payment = await upsertPayment({
+        adapter,
+        data,
+        metadata,
+        referenceId,
+        userId: userId ?? undefined,
+      });
+    } catch (error) {
+      ctx.context.logger.error(
+        `Failed to persist payment for reference ${data.reference}`,
+        error
+      );
+      throw error;
+    }
+  }
+
+  const onCheckoutComplete = pluginContext.options.checkout?.onCheckoutComplete;
+
+  if (!onCheckoutComplete) {
+    if (!pluginContext.options.disablePaymentPersistence) {
+      ctx.context.logger.warn(
+        `One-time charge.success for reference ${data.reference}: payment persisted but checkout.onCheckoutComplete is not configured`
+      );
+    }
+    return;
+  }
+
+  const checkoutContext: CheckoutCompleteContext = {
+    event,
+    reference: data.reference,
+    amount: data.amount,
+    currency: data.currency,
+    channel: data.channel,
+    paidAt: data.paid_at,
+    customer: data.customer,
+    userId: userId ?? undefined,
+    referenceId,
+    metadata,
+    payment,
+  };
+
+  await onCheckoutComplete(checkoutContext);
+};
+
+const handleChargeSuccessWebhook: TypedWebhookHandler<"charge.success"> = (
+  handlerCtx
+) => {
+  if (isSubscriptionChargeSuccess(handlerCtx.event.data)) {
+    return handleSubscriptionChargeSuccess(handlerCtx);
+  }
+
+  return handleOneTimeChargeSuccess(handlerCtx);
+};
+
 const handleSubscriptionCreateWebhook: TypedWebhookHandler<
   "subscription.create"
-> = async ({ event, adapter, pluginContext }) => {
+> = async ({ ctx, event, pluginContext }) => {
+  const adapter = ctx.context.adapter;
   const data = event.data;
   const subscriptionCode = data.subscription_code;
 
@@ -328,7 +515,7 @@ const handleSubscriptionCreateWebhook: TypedWebhookHandler<
   const userId = await resolveUserId(
     adapter,
     metadata,
-    paystackSubscription.customer?.customer_code
+    resolveCustomer(paystackSubscription.customer)?.customer_code
   );
 
   if (!userId) {
@@ -357,7 +544,8 @@ const handleSubscriptionCreateWebhook: TypedWebhookHandler<
 
 const handleSubscriptionDisableWebhook: TypedWebhookHandler<
   "subscription.disable"
-> = async ({ event, adapter, pluginContext }) => {
+> = async ({ ctx, event, pluginContext }) => {
+  const adapter = ctx.context.adapter;
   const subscriptionCode = event.data.subscription_code;
 
   if (!subscriptionCode) {
@@ -401,7 +589,8 @@ const handleSubscriptionDisableWebhook: TypedWebhookHandler<
 
 const handleSubscriptionNotRenewWebhook: TypedWebhookHandler<
   "subscription.not_renew"
-> = async ({ event, adapter, pluginContext }) => {
+> = async ({ ctx, event, pluginContext }) => {
+  const adapter = ctx.context.adapter;
   const subscriptionCode = event.data.subscription_code;
 
   if (!subscriptionCode) {
@@ -441,7 +630,7 @@ const handleSubscriptionNotRenewWebhook: TypedWebhookHandler<
 };
 
 const handleInvoiceWebhook = async (
-  ctx: WebhookHandlerContext & {
+  handlerCtx: WebhookHandlerContext & {
     event: Extract<
       PaystackWebhookEvent,
       {
@@ -450,7 +639,8 @@ const handleInvoiceWebhook = async (
     >;
   }
 ): Promise<void> => {
-  const { event, adapter, pluginContext } = ctx;
+  const { event, ctx, pluginContext } = handlerCtx;
+  const adapter = ctx.context.adapter;
   const data: InvoiceData = event.data;
   const subscriptionCode = data.subscription.subscription_code;
 
@@ -495,36 +685,36 @@ const handleInvoiceWebhook = async (
 };
 
 export const handlePaystackWebhookEvent = async (options: {
+  ctx: GenericEndpointContext;
   event: PaystackWebhookEvent;
-  adapter: Adapter;
   pluginContext: PluginContext;
   planRegistry?: PlanRegistry | undefined;
 }): Promise<void> => {
-  const { event, adapter, pluginContext, planRegistry } = options;
+  const { ctx, event, pluginContext, planRegistry } = options;
 
   if (pluginContext.options.onEvent) {
     await pluginContext.options.onEvent(event);
   }
 
-  const ctx: WebhookHandlerContext = {
-    adapter,
+  const handlerCtx: WebhookHandlerContext = {
+    ctx,
     pluginContext,
     planRegistry,
   };
 
   switch (event.event) {
     case "charge.success":
-      return handleChargeSuccessWebhook({ ...ctx, event });
+      return handleChargeSuccessWebhook({ ...handlerCtx, event });
     case "subscription.create":
-      return handleSubscriptionCreateWebhook({ ...ctx, event });
+      return handleSubscriptionCreateWebhook({ ...handlerCtx, event });
     case "subscription.disable":
-      return handleSubscriptionDisableWebhook({ ...ctx, event });
+      return handleSubscriptionDisableWebhook({ ...handlerCtx, event });
     case "subscription.not_renew":
-      return handleSubscriptionNotRenewWebhook({ ...ctx, event });
+      return handleSubscriptionNotRenewWebhook({ ...handlerCtx, event });
     case "invoice.create":
     case "invoice.update":
     case "invoice.payment_failed":
-      return handleInvoiceWebhook({ ...ctx, event });
+      return handleInvoiceWebhook({ ...handlerCtx, event });
     case "subscription.expiring_cards":
     case "charge.dispute.create":
     case "charge.dispute.remind":

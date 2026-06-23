@@ -37,16 +37,24 @@ const amount = z.number();
 
 const currency = z.string();
 
+const nullishString = z.string().nullish();
+const nullishNumber = z.number().nullish();
+const nullishBoolean = z.boolean().nullish();
+const nullishUnknown = z.unknown().nullish();
+const nullishIsoDate = isoDateString.nullish();
+const nullishAmount = amount.nullish();
+const nullishRecordArray = z.array(z.record(z.string(), z.unknown())).nullish();
+
 const customerSchema = z.object({
   id: z.number(),
   first_name: z.string().nullable(),
   last_name: z.string().nullable(),
   email: z.string(),
   customer_code: z.string(),
-  phone: z.string().nullable().optional(),
-  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
-  risk_action: z.string().optional(),
-  international_format_phone: z.string().nullable().optional(),
+  phone: nullishString,
+  metadata: z.record(z.string(), z.unknown()).nullish(),
+  risk_action: nullishString,
+  international_format_phone: nullishString,
 });
 
 const authorizationSchema = z.object({
@@ -61,15 +69,15 @@ const authorizationSchema = z.object({
   country_code: z.string(),
   brand: z.string(),
   reusable: z.boolean(),
-  signature: z.string().nullable().optional(),
-  account_name: z.string().nullable().optional(),
+  signature: nullishString,
+  account_name: nullishString,
 });
 
 const planSchema = z.object({
   id: z.number(),
   name: z.string(),
   plan_code: z.string(),
-  description: z.string().nullable().optional(),
+  description: nullishString,
   amount,
   interval: z.string(),
   currency,
@@ -78,10 +86,10 @@ const planSchema = z.object({
 const subscriptionRefSchema = z.object({
   id: z.number(),
   subscription_code: z.string(),
-  email_token: z.string().optional(),
+  email_token: nullishString,
   amount,
-  cron_expression: z.string().optional(),
-  next_payment_date: isoDateString.nullable().optional(),
+  cron_expression: nullishString,
+  next_payment_date: nullishIsoDate,
   status: z.string(),
 });
 
@@ -108,16 +116,15 @@ const chargeSuccessDataSchema = z.object({
   created_at: isoDateString,
   channel: z.string(),
   currency,
-  ip_address: z.string().nullable().optional(),
-  metadata: metadataSchema.optional(),
-  fees: z.number().nullable().optional(),
+  ip_address: nullishString,
+  metadata: metadataSchema.nullish(),
+  fees: nullishNumber,
   customer: customerSchema,
-  authorization: authorizationSchema.optional(),
-  subscription_code: z.string().optional(),
+  authorization: authorizationSchema.nullish(),
+  subscription_code: nullishString,
   plan: z
     .union([planSchema, z.string(), z.record(z.string(), z.unknown())])
-    .nullable()
-    .optional(),
+    .nullish(),
 });
 
 /* ------------------------------------------------------------------ */
@@ -143,34 +150,34 @@ const disputeTransactionSchema = z.object({
   reference: z.string(),
   amount,
   currency,
-  gateway_response: z.string().nullable().optional(),
-  paid_at: isoDateString.nullable().optional(),
-  created_at: isoDateString.nullable().optional(),
-  channel: z.string().nullable().optional(),
-  customer: customerSchema.optional(),
+  gateway_response: nullishString,
+  paid_at: nullishIsoDate,
+  created_at: nullishIsoDate,
+  channel: nullishString,
+  customer: customerSchema.nullish(),
 });
 
 const disputeDataSchema = z.object({
   id: z.number(),
-  refund_amount: amount.nullable().optional(),
+  refund_amount: nullishAmount,
   currency,
   status: z.string(),
-  resolution: z.string().nullable().optional(),
+  resolution: nullishString,
   domain: z.string(),
   transaction: disputeTransactionSchema,
-  transaction_reference: z.string().nullable().optional(),
-  category: z.string().nullable().optional(),
-  customer: customerSchema.optional(),
-  bin: z.string().nullable().optional(),
-  last4: z.string().nullable().optional(),
-  dueAt: isoDateString.nullable().optional(),
-  resolvedAt: isoDateString.nullable().optional(),
-  evidence: z.unknown().nullable().optional(),
-  attachments: z.unknown().nullable().optional(),
-  note: z.string().nullable().optional(),
-  history: z.array(disputeHistoryEntrySchema).optional(),
-  messages: z.array(disputeMessageSchema).optional(),
-  createdAt: isoDateString.optional(),
+  transaction_reference: nullishString,
+  category: nullishString,
+  customer: customerSchema.nullish(),
+  bin: nullishString,
+  last4: nullishString,
+  dueAt: nullishIsoDate,
+  resolvedAt: nullishIsoDate,
+  evidence: nullishUnknown,
+  attachments: nullishUnknown,
+  note: nullishString,
+  history: z.array(disputeHistoryEntrySchema).nullish(),
+  messages: z.array(disputeMessageSchema).nullish(),
+  createdAt: nullishIsoDate,
 });
 
 /* ------------------------------------------------------------------ */
@@ -180,10 +187,10 @@ const disputeDataSchema = z.object({
 const identificationSchema = z.object({
   country: z.string(),
   type: z.string(),
-  bvn: z.string().optional(),
-  account_number: z.string().optional(),
-  bank_code: z.string().optional(),
-  number: z.string().optional(),
+  bvn: nullishString,
+  account_number: nullishString,
+  bank_code: nullishString,
+  number: nullishString,
 });
 
 const customerIdentificationFailedDataSchema = z.object({
@@ -215,10 +222,10 @@ const dedicatedAccountSchema = z.object({
   bank: dedicatedAccountBankSchema,
   account_name: z.string(),
   account_number: z.string(),
-  assigned: z.boolean().optional(),
-  currency: currency.optional(),
-  active: z.boolean().optional(),
-  id: z.number().optional(),
+  assigned: nullishBoolean,
+  currency: currency.nullish(),
+  active: nullishBoolean,
+  id: nullishNumber,
 });
 
 const dedicatedAccountAssignSuccessDataSchema = z.object({
@@ -228,9 +235,9 @@ const dedicatedAccountAssignSuccessDataSchema = z.object({
 
 const dedicatedAccountAssignFailedDataSchema = z.object({
   customer: customerSchema,
-  account_number: z.string().nullable().optional(),
-  bank: dedicatedAccountBankSchema.nullable().optional(),
-  reason: z.string().optional(),
+  account_number: nullishString,
+  bank: dedicatedAccountBankSchema.nullish(),
+  reason: nullishString,
 });
 
 /* ------------------------------------------------------------------ */
@@ -239,9 +246,9 @@ const dedicatedAccountAssignFailedDataSchema = z.object({
 
 const invoiceDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   subscription: subscriptionRefSchema,
-  invoice_code: z.string().optional(),
+  invoice_code: nullishString,
   customer: customerSchema,
   transaction: z
     .object({
@@ -251,16 +258,15 @@ const invoiceDataSchema = z.object({
       amount,
       currency,
     })
-    .nullable()
-    .optional(),
+    .nullish(),
   amount,
-  period_start: isoDateString.optional(),
-  period_end: isoDateString.optional(),
+  period_start: nullishIsoDate,
+  period_end: nullishIsoDate,
   status: z.string(),
-  paid: z.boolean().optional(),
-  paid_at: isoDateString.nullable().optional(),
-  description: z.string().nullable().optional(),
-  created_at: isoDateString.optional(),
+  paid: nullishBoolean,
+  paid_at: nullishIsoDate,
+  description: nullishString,
+  created_at: nullishIsoDate,
 });
 
 /* ------------------------------------------------------------------ */
@@ -269,23 +275,23 @@ const invoiceDataSchema = z.object({
 
 const paymentRequestDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   amount,
   currency,
-  due_date: isoDateString.nullable().optional(),
-  has_invoice: z.boolean().optional(),
-  invoice_number: z.number().nullable().optional(),
-  description: z.string().nullable().optional(),
-  pdf_url: z.string().nullable().optional(),
-  line_items: z.array(z.record(z.string(), z.unknown())).optional(),
-  tax: z.array(z.record(z.string(), z.unknown())).optional(),
+  due_date: nullishIsoDate,
+  has_invoice: nullishBoolean,
+  invoice_number: nullishNumber,
+  description: nullishString,
+  pdf_url: nullishString,
+  line_items: nullishRecordArray,
+  tax: nullishRecordArray,
   request_code: z.string(),
   status: z.string(),
-  paid: z.boolean().optional(),
-  paid_at: isoDateString.nullable().optional(),
-  metadata: metadataSchema.optional(),
+  paid: nullishBoolean,
+  paid_at: nullishIsoDate,
+  metadata: metadataSchema.nullish(),
   customer: customerSchema,
-  created_at: isoDateString.optional(),
+  created_at: nullishIsoDate,
 });
 
 /* ------------------------------------------------------------------ */
@@ -294,17 +300,17 @@ const paymentRequestDataSchema = z.object({
 
 const refundDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
-  transaction_reference: z.string().optional(),
+  domain: nullishString,
+  transaction_reference: nullishString,
   amount,
   currency,
   status: z.string(),
-  refunded_at: isoDateString.nullable().optional(),
-  refunded_by: z.string().nullable().optional(),
-  customer_note: z.string().nullable().optional(),
-  merchant_note: z.string().nullable().optional(),
-  deducted_amount: amount.nullable().optional(),
-  fully_deducted: z.boolean().optional(),
+  refunded_at: nullishIsoDate,
+  refunded_by: nullishString,
+  customer_note: nullishString,
+  merchant_note: nullishString,
+  deducted_amount: nullishAmount,
+  fully_deducted: nullishBoolean,
   transaction: z
     .object({
       id: z.number(),
@@ -313,9 +319,9 @@ const refundDataSchema = z.object({
       currency,
       status: z.string(),
     })
-    .optional(),
-  customer: customerSchema.optional(),
-  created_at: isoDateString.optional(),
+    .nullish(),
+  customer: customerSchema.nullish(),
+  created_at: nullishIsoDate,
 });
 
 /* ------------------------------------------------------------------ */
@@ -324,15 +330,15 @@ const refundDataSchema = z.object({
 
 const subscriptionCreateDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   status: z.string(),
   subscription_code: z.string(),
   email_token: z.string(),
   amount,
   cron_expression: z.string(),
   next_payment_date: isoDateString.nullable(),
-  open_invoice: z.string().nullable().optional(),
-  createdAt: isoDateString.optional(),
+  open_invoice: nullishString,
+  createdAt: nullishIsoDate,
   plan: planSchema,
   authorization: authorizationSchema,
   customer: customerSchema,
@@ -340,7 +346,7 @@ const subscriptionCreateDataSchema = z.object({
 
 const subscriptionDisableDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   status: z.string(),
   subscription_code: z.string(),
   email_token: z.string(),
@@ -348,24 +354,24 @@ const subscriptionDisableDataSchema = z.object({
   cron_expression: z.string(),
   next_payment_date: isoDateString.nullable(),
   plan: planSchema,
-  authorization: authorizationSchema.optional(),
+  authorization: authorizationSchema.nullish(),
   customer: customerSchema,
 });
 
 const subscriptionNotRenewDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   status: z.string(),
   subscription_code: z.string(),
   email_token: z.string(),
   amount,
   cron_expression: z.string(),
   next_payment_date: isoDateString.nullable(),
-  open_invoice: z.string().nullable().optional(),
+  open_invoice: nullishString,
   plan: planSchema,
-  authorization: authorizationSchema.optional(),
+  authorization: authorizationSchema.nullish(),
   customer: customerSchema,
-  invoice_limit: z.number().optional(),
+  invoice_limit: nullishNumber,
 });
 
 const expiringCardSchema = z.object({
@@ -383,39 +389,39 @@ const subscriptionExpiringCardsDataSchema = z.array(expiringCardSchema);
 
 const transferRecipientSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   type: z.string(),
   currency,
-  name: z.string().nullable().optional(),
+  name: nullishString,
   details: z
     .object({
       account_number: z.string(),
-      account_name: z.string().nullable().optional(),
+      account_name: nullishString,
       bank_code: z.string(),
       bank_name: z.string(),
     })
-    .optional(),
+    .nullish(),
   recipient_code: z.string(),
-  active: z.boolean().optional(),
+  active: nullishBoolean,
 });
 
 const transferDataSchema = z.object({
   id: z.number(),
-  domain: z.string().optional(),
+  domain: nullishString,
   amount,
   currency,
   source: z.string(),
-  source_details: z.unknown().nullable().optional(),
-  reason: z.string().nullable().optional(),
+  source_details: nullishUnknown,
+  reason: nullishString,
   status: z.string(),
-  failures: z.unknown().nullable().optional(),
+  failures: nullishUnknown,
   transfer_code: z.string(),
-  titan_code: z.string().nullable().optional(),
-  transferred_at: isoDateString.nullable().optional(),
-  reference: z.string().nullable().optional(),
+  titan_code: nullishString,
+  transferred_at: nullishIsoDate,
+  reference: nullishString,
   recipient: transferRecipientSchema,
-  created_at: isoDateString.optional(),
-  updated_at: isoDateString.optional(),
+  created_at: nullishIsoDate,
+  updated_at: nullishIsoDate,
 });
 
 /* ------------------------------------------------------------------ */
