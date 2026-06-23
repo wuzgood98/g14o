@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { PaystackCustomer } from "../src/client/responses";
 import {
   paystackResponseEnvelopeSchema,
   paystackSubscriptionSchema,
@@ -10,6 +11,20 @@ const DEMO_PAYSTACK_SUBSCRIPTION_CODES = [
   "SUB_ga4snx1n36kituq",
   "SUB_aops53nsdklcs2h",
 ] as const;
+
+const resolveCustomer = (
+  customer: PaystackCustomer | number | undefined | null
+): PaystackCustomer | undefined => {
+  if (customer === undefined || customer === null) {
+    return;
+  }
+
+  if (typeof customer === "number") {
+    return;
+  }
+
+  return customer;
+};
 
 describe("Paystack response schemas", () => {
   it("parses demo customer subscription list payloads with string metadata and numeric reusable", () => {
@@ -75,7 +90,9 @@ describe("Paystack response schemas", () => {
     ).parse(payload);
 
     expect(parsed.data).toHaveLength(2);
-    expect(parsed.data[0]?.customer?.metadata).toEqual({ userId: "user_1" });
+    expect(resolveCustomer(parsed.data[0]?.customer)?.metadata).toEqual({
+      userId: "user_1",
+    });
     expect(parsed.data[0]?.authorization?.reusable).toBe(true);
     expect(parsed.data.map((sub) => sub.subscription_code)).toEqual([
       DEMO_PAYSTACK_SUBSCRIPTION_CODES[0],

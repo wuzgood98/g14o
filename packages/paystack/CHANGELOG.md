@@ -9,6 +9,7 @@
   ### Fixes
 
   - Accept `null` on authorization fields that Paystack returns as null: `signature`, `bank`, and `account_name`. Fixes `transactions.verify` and `transaction/charge_authorization` failing with `PAYSTACK_VALIDATION_ERROR` when `authorization.signature` is `null`.
+  - Make all optional webhook event fields in `webhook-events.ts` nullish (`.nullish()`) so Paystack payloads with `null` optional values parse without `PAYSTACK_VALIDATION_ERROR`.
 
   ### Schema expansions
 
