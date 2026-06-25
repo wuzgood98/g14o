@@ -155,7 +155,7 @@ describe.skipIf(!hasPaystackCredentials())(
         }
 
         const remote = await paystackClient.subscriptions.list({
-          customer: liveDemoCustomer.id,
+          customer: liveDemoCustomer?.id,
           perPage: 100,
         });
         expect(remote.length).toBeGreaterThan(0);
@@ -172,8 +172,8 @@ describe.skipIf(!hasPaystackCredentials())(
           model: "user",
           where: [{ field: "id", value: userId }],
           update: {
-            paystackCustomerCode: liveDemoCustomer.customer_code,
-            paystackCustomerId: liveDemoCustomer.id,
+            paystackCustomerCode: liveDemoCustomer?.customer_code,
+            paystackCustomerId: liveDemoCustomer?.id,
           },
         });
 
