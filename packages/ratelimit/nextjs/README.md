@@ -1,6 +1,6 @@
 # @g14o/ratelimit-nextjs
 
-Next.js rate limiting with Upstash Redis. Typed for `NextRequest` / `NextResponse` route handlers; delegates to [@g14o/ratelimit](../core/README.md) at runtime.
+Next.js rate limiting with Upstash Redis. Typed for `NextRequest` / `NextResponse` route handlers; delegates to [@g14o/ratelimit](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core) at runtime.
 
 ## Install
 
@@ -8,7 +8,7 @@ Next.js rate limiting with Upstash Redis. Typed for `NextRequest` / `NextRespons
 pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
 ```
 
-Peers are optional in `package.json` metadata for metadata-only installs; add Upstash packages and `next` when using Redis-backed limits in production.
+`@upstash/redis` and `@upstash/ratelimit` are optional peers (in-memory fallback without Redis). `next` is required.
 
 ## Setup
 
@@ -63,7 +63,7 @@ Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect 
 
 ## Framework-agnostic alternative
 
-For Hono, Workers, or other Web `Request` / `Response` runtimes, use [@g14o/ratelimit](../core/README.md) directly.
+For Hono, Workers, or other Web `Request` / `Response` runtimes, use [@g14o/ratelimit](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core) directly.
 
 ## Import map
 
