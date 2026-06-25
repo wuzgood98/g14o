@@ -16,17 +16,10 @@ export default defineConfig({
     utils: "src/utils.ts",
     types: "src/types.ts",
     config: "src/config.ts",
-    "cache/index": "src/cache/index.ts",
-    "ratelimit/index": "src/ratelimit/index.ts",
   },
   clean: true,
   deps: {
-    neverBundle: [
-      "@upstash/redis",
-      "@upstash/ratelimit",
-      "next",
-      "next/server",
-    ],
+    neverBundle: ["@upstash/redis"],
     skipNodeModulesBundle: true,
   },
 });

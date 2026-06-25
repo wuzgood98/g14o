@@ -1,4 +1,4 @@
-import type { Result } from "@g14o/core/types";
+import type { Result } from "@g14o/cache/types";
 import { withCache } from "@/lib/cache";
 
 const FETCH_DELAY_MS = 50;

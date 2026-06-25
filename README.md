@@ -2,30 +2,31 @@
 
 ![CI](https://github.com/wuzgood98/g14o/actions/workflows/ci.yml/badge.svg)
 
-Monorepo for [`@g14o/*`](packages/core) npm packages. The primary publishable package is **[@g14o/core](packages/core/README.md)** — core utilities, cache, and rate limiting for Next.js applications.
+Monorepo for [`@g14o/*`](packages/core) npm packages.
 
 ## What it provides
 
-- **Utilities** — fetch/mutation helpers, shared types, and Redis config helpers
-- **Cache** — `createCache()` / `withCache()` with Upstash Redis (URL + token or an existing client)
-- **Rate limiting** — `createRateLimit()` / `withRateLimit()` with the same Redis setup
-- **Next.js build safety** — in-memory adapters during `next build` by default (`inMemoryDuringNextBuild: true`), Redis at runtime
+- **[@g14o/core](packages/core/README.md)** — fetch/mutation helpers, shared types, and Redis config helpers
+- **[@g14o/cache](packages/cache/README.md)** — `createCache()` / `withCache()` with Upstash Redis
+- **[@g14o/ratelimit](packages/ratelimit/core/README.md)** — framework-agnostic rate limiting (`Request` / `Response`)
+- **[@g14o/ratelimit-nextjs](packages/ratelimit/nextjs/README.md)** — Next.js rate limiting (`NextRequest` / `NextResponse`)
+- **[@g14o/env-core](packages/env-core/README.md)** — typesafe environment variables via Standard Schema
 
 ## Install
 
 ```bash
 pnpm add @g14o/core
+pnpm add @g14o/cache @upstash/redis
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
 ```
 
-Add peers for optional features: `@upstash/redis` for cache, plus `@upstash/ratelimit` and `next` for rate limiting.
-
-See the [@g14o/core README](packages/core/README.md) for the install table, import paths, build vs runtime behavior, migration from legacy packages, and examples.
+See each package README for setup, import paths, and examples.
 
 ## Quick example
 
 ```ts
 // lib/cache.ts
-import { createCache } from "@g14o/core/cache";
+import { createCache } from "@g14o/cache";
 import { logger } from "@/lib/logger";
 
 export const { withCache, invalidateCache } = createCache({
@@ -41,8 +42,9 @@ export const { withCache, invalidateCache } = createCache({
 
 | Path | Purpose |
 |------|---------|
-| [`packages/core`](packages/core) | Source of truth; published as `@g14o/core` |
-| [`packages/cache`](packages/cache), [`packages/ratelimit`](packages/ratelimit) | Standalone published packages (also mirrored under `@g14o/core`) |
+| [`packages/core`](packages/core) | Utilities; published as `@g14o/core` |
+| [`packages/cache`](packages/cache) | Standalone cache package |
+| [`packages/ratelimit/core`](packages/ratelimit/core), [`packages/ratelimit/nextjs`](packages/ratelimit/nextjs) | Rate limiting (agnostic + Next.js) |
 | [`apps/cache-demo`](apps/cache-demo) | Manual verification of build vs runtime cache behavior |
 | [`apps/env-demo`](apps/env-demo) | Zod / Valibot / ArkType showcase for `@g14o/env-core` |
 | [`apps/web`](apps/web) | Internal Next.js app |

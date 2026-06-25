@@ -1,6 +1,6 @@
 /**
  * Discriminated union for success/failure results returned by server functions,
- * especially those wrapped with `withCache` from `@g14o/core/cache`.
+ * especially those wrapped with `withCache` from `@g14o/cache`.
  *
  * @typeParam T - Type of the success payload in `data`.
  * @typeParam E - Error type when `ok` is `false`. Defaults to `Error`.

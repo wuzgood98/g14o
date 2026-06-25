@@ -1,4 +1,4 @@
-import type { Logger } from "@g14o/core/types";
+import type { Logger } from "@g14o/cache/types";
 
 export const logger: Logger = {
   info: (...args: unknown[]) => {

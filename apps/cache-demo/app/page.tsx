@@ -11,7 +11,7 @@ export default async function Page() {
 
   return (
     <main style={{ padding: "2rem", maxWidth: 640 }}>
-      <h1>@g14o/core cache demo</h1>
+      <h1>@g14o/cache demo</h1>
       <p>
         This page calls <code>withCache</code> during render. With default{" "}
         <code>inMemoryDuringNextBuild</code>, run <code>next build</code> to

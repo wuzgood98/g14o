@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "@g14o/core cache demo",
+  title: "@g14o/cache demo",
   description: "Verify cache behavior during next build and at runtime",
 };
 

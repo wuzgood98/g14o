@@ -39,17 +39,6 @@ const coreSubpaths = [
     exports: ["Logger", "InMemoryEnvOptions"],
     typesOnlyInNode: true,
   },
-  {
-    importPath: "@g14o/core/cache",
-    distFile: "dist/cache/index.js",
-    exports: ["createCache", "createCacheKey"],
-  },
-  {
-    importPath: "@g14o/core/ratelimit",
-    distFile: "dist/ratelimit/index.js",
-    exports: ["createRateLimit", "parseDurationToMs"],
-    typesOnlyInNode: true,
-  },
 ];
 
 function smokeSchema(validate) {
@@ -88,6 +77,12 @@ const standalonePackages = [
   {
     filter: "@g14o/ratelimit",
     importPath: "@g14o/ratelimit",
+    distFile: "dist/index.mjs",
+    exports: ["createRateLimit", "parseDurationToMs"],
+  },
+  {
+    filter: "@g14o/ratelimit-nextjs",
+    importPath: "@g14o/ratelimit-nextjs",
     distFile: "dist/index.mjs",
     exports: ["createRateLimit", "parseDurationToMs"],
   },
@@ -148,6 +143,7 @@ try {
         pnpm: {
           overrides: {
             "@g14o/core": tarballByScope["@g14o/core"],
+            "@g14o/ratelimit": tarballByScope["@g14o/ratelimit"],
           },
         },
       },

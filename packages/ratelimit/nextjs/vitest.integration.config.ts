@@ -7,12 +7,7 @@ export default defineConfig({
     restoreMocks: true,
     include: ["src/**/*.integration.test.ts"],
     exclude: ["**/node_modules/**"],
-    setupFiles: [
-      "src/cache/integration.setup.ts",
-      "src/ratelimit/integration.setup.ts",
-    ],
+    setupFiles: ["src/integration.setup.ts"],
     testTimeout: 30_000,
-    // Shared Upstash instance: avoid cache + ratelimit files hitting Redis concurrently.
-    fileParallelism: false,
   },
 });

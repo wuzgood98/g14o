@@ -8,10 +8,10 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/wuzgood98/g14o.git",
-    "directory": "packages/ratelimit"
+    "directory": "packages/ratelimit/core"
   },
   "bugs": "https://github.com/wuzgood98/g14o/issues",
-  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit#readme",
+  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core#readme",
   "files": [
     "dist",
     "README.md"
