@@ -77,6 +77,7 @@ function resolveOptions<
     emptyStringAsUndefined: options.emptyStringAsUndefined ?? false,
     isServer: resolveIsServer(options.isServer),
     onInvalidAccess: options.onInvalidAccess,
+    onValidationError: options.onValidationError,
     skipValidation: options.skipValidation ?? false,
     runtime,
   };
@@ -103,7 +104,8 @@ function resolveOptions<
  * @param options.runtimeEnvStrict - Explicit per-key mapping; mutually exclusive with `runtimeEnv`.
  * @param options.emptyStringAsUndefined - Treat `""` as `undefined` before validation. Default `false`.
  * @param options.isServer - Override server detection. Default: no `window` on `globalThis`.
- * @param options.onInvalidAccess - Called before throwing when a non-client key is read on the client.
+ * @param options.onInvalidAccess - Called when a non-client key is read on the client. May throw a custom error; otherwise the default is thrown.
+ * @param options.onValidationError - Called when schema validation fails. May throw a custom error; otherwise the default is thrown.
  * @param options.skipValidation - Skip schema validation and return picked runtime values only. Default `false`.
  * @returns Readonly, frozen env object typed from inferred schema outputs; client reads are guarded by `Proxy`.
  *
@@ -164,7 +166,8 @@ export function createEnv<
   const validatedClient = validateShape(
     resolved.client,
     clientValues,
-    "client"
+    "client",
+    resolved.onValidationError
   );
 
   let validatedServer: Record<string, unknown> = {};
@@ -175,7 +178,12 @@ export function createEnv<
       resolved.runtime,
       resolved.emptyStringAsUndefined
     );
-    validatedServer = validateShape(resolved.server, serverValues, "server");
+    validatedServer = validateShape(
+      resolved.server,
+      serverValues,
+      "server",
+      resolved.onValidationError
+    );
   }
 
   const target = Object.freeze(

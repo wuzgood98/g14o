@@ -17,3 +17,4 @@ export type {
   Simplify,
   StrictRuntimeEnv,
 } from "./types";
+export type { OnValidationErrorHandler } from "./validate";
