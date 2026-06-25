@@ -6,18 +6,21 @@ Monorepo for [`@g14o/*`](packages/core) npm packages.
 
 ## What it provides
 
-- **[@g14o/core](packages/core/README.md)** — fetch/mutation helpers, shared types, and Redis config helpers
 - **[@g14o/cache](packages/cache/README.md)** — `createCache()` / `withCache()` with Upstash Redis
 - **[@g14o/ratelimit](packages/ratelimit/core/README.md)** — framework-agnostic rate limiting (`Request` / `Response`)
 - **[@g14o/ratelimit-nextjs](packages/ratelimit/nextjs/README.md)** — Next.js rate limiting (`NextRequest` / `NextResponse`)
 - **[@g14o/env-core](packages/env-core/README.md)** — typesafe environment variables via Standard Schema
+- **[@g14o/paystack](packages/paystack/README.md)** — paystack API client
+- **[@g14o/paystack-better-auth](packages/paystack-better-auth/README.md)** — paystack billing plugin for Better Auth
 
 ## Install
 
 ```bash
-pnpm add @g14o/core
 pnpm add @g14o/cache @upstash/redis
+pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
 pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+pnpm add @g14o/paystack zod
+pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
 ```
 
 See each package README for setup, import paths, and examples.
@@ -42,12 +45,14 @@ export const { withCache, invalidateCache } = createCache({
 
 | Path | Purpose |
 |------|---------|
-| [`packages/core`](packages/core) | Utilities; published as `@g14o/core` |
 | [`packages/cache`](packages/cache) | Standalone cache package |
 | [`packages/ratelimit/core`](packages/ratelimit/core), [`packages/ratelimit/nextjs`](packages/ratelimit/nextjs) | Rate limiting (agnostic + Next.js) |
+| [`packages/env-core`](packages/env-core) | Environment variable validation |
+| [`packages/paystack`](packages/paystack) | Paystack API client |
+| [`packages/paystack-better-auth`](packages/paystack-better-auth) | Paystack billing plugin for Better Auth |
 | [`apps/cache-demo`](apps/cache-demo) | Manual verification of build vs runtime cache behavior |
 | [`apps/env-demo`](apps/env-demo) | Zod / Valibot / ArkType showcase for `@g14o/env-core` |
-| [`apps/web`](apps/web) | Internal Next.js app |
+| [`apps/paystack-demo`](apps/paystack-demo) | Paystack demo app |
 
 ## Development
 
