@@ -59,12 +59,15 @@ export function validateShape(
     );
   }
 
-  const onValidationErrorHandler =
-    onValidationError ??
-    ((issues) => {
-      console.error("❌ Invalid environment variables:", issues);
-      throw new InvalidEnvironmentVariablesError(formattedIssues, scope);
-    });
+  const onValidationErrorHandler = (
+    issues: readonly StandardSchemaV1.Issue[]
+  ): never => {
+    if (onValidationError) {
+      onValidationError(issues);
+    }
+    console.error("❌ Invalid environment variables:", issues);
+    throw new InvalidEnvironmentVariablesError(formattedIssues, scope);
+  };
 
   if (rawIssues.length > 0) {
     return onValidationErrorHandler(rawIssues);
