@@ -71,15 +71,18 @@ export interface CreateRateLimitOptions extends InMemoryEnvOptions {
 }
 
 /** Rate limit client returned by {@link createRateLimit}. */
-export interface RateLimitClient {
+export interface RateLimitClient<
+  Req extends Request = Request,
+  Res extends Response = Response,
+> {
   /** Check the rate limit for a given request.
    * @param req - The request to check the rate limit for.
    * @param options - The options to check the rate limit for.
    * @returns The result of the rate limit check.
    */
   checkRateLimit: (
-    req: Request,
-    options?: RateLimitOptions
+    req: Req,
+    options?: RateLimitOptions<Req>
   ) => Promise<RateLimitCheckResult>;
   /** Get the rate limiter for a given tier.
    * @param tier - The tier to get the rate limiter for.
@@ -93,11 +96,9 @@ export interface RateLimitClient {
    * @param options - The options to wrap the handler with.
    * @returns The wrapped handler.
    */
-  withRateLimit: <
-    T extends (req: Request, ...args: any[]) => Promise<Response>,
-  >(
+  withRateLimit: <T extends (req: Req, ...args: any[]) => Promise<Res>>(
     handler: T,
-    options?: RateLimitOptions
+    options?: RateLimitOptions<Req>
   ) => T;
   /** With user rate limit.
    * @param handler - The handler to wrap with user rate limit.
@@ -105,12 +106,10 @@ export interface RateLimitClient {
    * @param options - The options to wrap the handler with.
    * @returns The wrapped handler.
    */
-  withUserRateLimit: <
-    T extends (req: Request, ...args: any[]) => Promise<Response>,
-  >(
+  withUserRateLimit: <T extends (req: Req, ...args: any[]) => Promise<Res>>(
     handler: T,
-    getUserId: (req: Request) => Promise<string | null>,
-    options?: Omit<RateLimitOptions, "identifierFn">
+    getUserId: (req: Req) => Promise<string | null>,
+    options?: Omit<RateLimitOptions<Req>, "identifierFn">
   ) => T;
 }
 
@@ -178,9 +177,10 @@ const RETRY_AFTER_DELAY = 1000;
  *
  * @param options - Redis credentials or client, logger, environment, and optional `tiers` overrides.
  */
-export function createRateLimit(
-  options: CreateRateLimitOptions = {}
-): RateLimitClient {
+export function createRateLimit<
+  Req extends Request = Request,
+  Res extends Response = Response,
+>(options: CreateRateLimitOptions = {}): RateLimitClient<Req, Res> {
   const runtime = createRateLimitRuntime(options);
 
   if (runtime.tiers) {
@@ -249,8 +249,8 @@ export function createRateLimit(
    * @returns The result of the rate limit check.
    */
   const checkRateLimit = async (
-    req: Request,
-    rateLimitOptions: RateLimitOptions = {}
+    req: Req,
+    rateLimitOptions: RateLimitOptions<Req> = {}
   ): Promise<RateLimitCheckResult> => {
     const { tier = "moderate", identifierFn, skipRateLimit } = rateLimitOptions;
     const { logger } = runtime;
@@ -320,13 +320,11 @@ export function createRateLimit(
    * @param options - The options to wrap the handler with.
    * @returns The wrapped handler.
    */
-  const withRateLimit = <
-    T extends (req: Request, ...args: any[]) => Promise<Response>,
-  >(
+  const withRateLimit = <T extends (req: Req, ...args: any[]) => Promise<Res>>(
     handler: T,
-    rateLimitOptions: RateLimitOptions = {}
+    rateLimitOptions: RateLimitOptions<Req> = {}
   ): T =>
-    (async (req: Request, ...args: any[]): Promise<Response> => {
+    (async (req: Req, ...args: any[]): Promise<Res> => {
       const rateLimitResult = await checkRateLimit(req, rateLimitOptions);
 
       const headers = {
@@ -352,7 +350,7 @@ export function createRateLimit(
               "Retry-After": retryAfterSeconds.toString(),
             },
           }
-        );
+        ) as Res;
       }
 
       const response = await handler(req, ...args);
@@ -382,11 +380,11 @@ export function createRateLimit(
    * ```
    */
   const withUserRateLimit = <
-    T extends (req: Request, ...args: any[]) => Promise<Response>,
+    T extends (req: Req, ...args: any[]) => Promise<Res>,
   >(
     handler: T,
-    getUserId: (req: Request) => Promise<string | null>,
-    rateLimitOptions: Omit<RateLimitOptions, "identifierFn"> = {}
+    getUserId: (req: Req) => Promise<string | null>,
+    rateLimitOptions: Omit<RateLimitOptions<Req>, "identifierFn"> = {}
   ): T =>
     withRateLimit(handler, {
       ...rateLimitOptions,

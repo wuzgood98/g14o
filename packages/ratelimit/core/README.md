@@ -2,6 +2,8 @@
 
 Framework-agnostic rate limiting with Upstash Redis. Works with any runtime that uses Web `Request` / `Response` (Next.js App Router, Hono, Cloudflare Workers, etc.).
 
+`RateLimitClient` and `RateLimitOptions` accept optional type parameters for framework-specific request/response types (defaults: `Request` / `Response`).
+
 ## Install
 
 ```bash
