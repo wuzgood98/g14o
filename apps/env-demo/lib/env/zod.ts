@@ -13,5 +13,9 @@ export const envZod = createEnv({
     NEXT_PUBLIC_APP_NAME: z.string().min(1),
   },
   runtimeEnvStrict: runtimeEnvStrict(),
+  onValidationError: (issues) => {
+    console.error("TESTING: Invalid environment variables:", issues);
+    throw new Error("TESTING: Invalid environment variables");
+  },
   emptyStringAsUndefined: true,
 });

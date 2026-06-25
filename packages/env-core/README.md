@@ -88,6 +88,9 @@ export const env = createEnv({
 When your framework only inlines env vars you reference explicitly, use `runtimeEnvStrict`:
 
 ```ts
+import { createEnv } from "@g14o/env-core";
+import * as z from "zod";
+
 export const env = createEnv({
   server: { DATABASE_URL: z.url() },
   clientPrefix: "NEXT_PUBLIC_",
@@ -96,6 +99,50 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
+});
+```
+
+### Overriding default error handler
+
+```ts
+import { createEnv } from "@g14o/env-core";
+
+export const env = createEnv({
+  // ...
+  // Called when schema validation fails.
+  onValidationError: (issues) => {
+    console.error("Invalid environment variables:", issues);
+    throw new Error("Invalid environment variables");
+  },
+  // Called when a server variable is accessed on the client.
+  onInvalidAccess: (variable) => {
+    console.error("Invalid access to server variable:", variable);
+    throw new Error("Invalid access to server variable");
+  },
+});
+```
+
+### Tell when we're in a server context
+
+```ts
+import { createEnv } from "@g14o/env-core";
+
+export const env = createEnv({
+  // ...
+  // Tell when we're in a server context
+  isServer: typeof window === "undefined", // or straight up `true` or `false`
+});
+```
+
+### Skip validation
+
+```ts
+import { createEnv } from "@g14o/env-core";
+
+export const env = createEnv({
+  // ...
+  // Tell the library to skip validation and return picked runtime values only
+  skipValidation: true,
 });
 ```
 
@@ -110,7 +157,9 @@ export const env = createEnv({
 | `runtimeEnvStrict` | Explicit per-key mapping; mutually exclusive with `runtimeEnv` |
 | `emptyStringAsUndefined` | Treat `""` as `undefined` before validation |
 | `isServer` | Override server detection (default: `typeof window === "undefined"`) |
-| `onInvalidAccess` | Hook before throwing when a server key is read on the client |
+| `onValidationError` | Hook when schema validation fails; may throw custom error, otherwise default `InvalidEnvironmentVariablesError` is thrown |
+| `onInvalidAccess` | Hook when a server key is accessed on the client; may throw custom error, otherwise default server-access error is thrown |
+| `skipValidation` | Skip schema validation and return picked runtime values only |
 
 ## Security
 

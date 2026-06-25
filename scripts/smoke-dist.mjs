@@ -52,11 +52,30 @@ const coreSubpaths = [
   },
 ];
 
+function smokeSchema(validate) {
+  return { "~standard": { version: 1, vendor: "smoke", validate } };
+}
+
+function assertThrows(fn, predicate) {
+  try {
+    fn();
+  } catch (error) {
+    if (predicate(error)) {
+      return;
+    }
+    throw new Error(`Unexpected error: ${error?.message ?? error}`);
+  }
+  throw new Error("Expected function to throw");
+}
+
+const passSchema = smokeSchema((value) => ({ value }));
+const failSchema = smokeSchema(() => ({ issues: [{ message: "invalid" }] }));
+
 const envCoreSmoke = {
   filter: "@g14o/env-core",
   importPath: "@g14o/env-core",
   distFile: "dist/index.mjs",
-  exports: ["createEnv"],
+  exports: ["createEnv", "InvalidEnvironmentVariablesError"],
 };
 
 const standalonePackages = [
@@ -201,7 +220,7 @@ try {
   }
 
   {
-    const { importPath, distFile, exports: names } = envCoreSmoke;
+    const { importPath, distFile } = envCoreSmoke;
     const pkgRoot = join(consumerDir, "node_modules", "@g14o", "env-core");
     const entryPath = join(pkgRoot, distFile);
 
@@ -241,28 +260,91 @@ try {
     if (typeof mod.createEnv !== "function") {
       throw new Error(`${importPath}: expected function export "createEnv"`);
     }
+    if (typeof mod.InvalidEnvironmentVariablesError !== "function") {
+      throw new Error(
+        `${importPath}: expected class export "InvalidEnvironmentVariablesError"`
+      );
+    }
 
-    const env = mod.createEnv({
-      server: {
-        SMOKE: {
-          "~standard": {
-            version: 1,
-            vendor: "smoke",
-            validate: (value) => ({ value }),
-          },
-        },
-      },
+    const { createEnv, InvalidEnvironmentVariablesError } = mod;
+
+    const skipEnv = createEnv({
+      server: { SMOKE: passSchema },
       runtimeEnv: { SMOKE: "ok" },
       isServer: true,
       skipValidation: true,
     });
-    if (env.SMOKE !== "ok") {
+    if (skipEnv.SMOKE !== "ok") {
       throw new Error(
-        `${importPath}: createEnv smoke returned unexpected value`
+        `${importPath}: createEnv skipValidation smoke returned unexpected value`
       );
     }
 
-    console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
+    const validEnv = createEnv({
+      server: { SMOKE: passSchema },
+      runtimeEnv: { SMOKE: "ok" },
+      isServer: true,
+    });
+    if (validEnv.SMOKE !== "ok") {
+      throw new Error(
+        `${importPath}: createEnv validation smoke returned unexpected value`
+      );
+    }
+
+    assertThrows(
+      () =>
+        createEnv({
+          server: { BAD: failSchema },
+          runtimeEnv: { BAD: "x" },
+          isServer: true,
+        }),
+      (error) => error instanceof InvalidEnvironmentVariablesError
+    );
+
+    assertThrows(
+      () =>
+        createEnv({
+          server: { BAD: failSchema },
+          runtimeEnv: { BAD: "x" },
+          isServer: true,
+          onValidationError: (issues) => {
+            if (issues[0]?.path?.[0]?.key !== "BAD") {
+              throw new Error(
+                `${importPath}: onValidationError issue path missing BAD key`
+              );
+            }
+            throw new Error("smoke-validation");
+          },
+        }),
+      (error) => error.message === "smoke-validation"
+    );
+
+    const clientEnv = createEnv({
+      server: { SECRET: passSchema },
+      runtimeEnv: { SECRET: "hidden" },
+      isServer: false,
+    });
+    assertThrows(
+      () => clientEnv.SECRET,
+      (error) => error.message.includes("SECRET")
+    );
+
+    const customAccessEnv = createEnv({
+      server: { SECRET: passSchema },
+      runtimeEnv: { SECRET: "hidden" },
+      isServer: false,
+      onInvalidAccess: () => {
+        throw new Error("smoke-access");
+      },
+    });
+    assertThrows(
+      () => customAccessEnv.SECRET,
+      (error) => error.message === "smoke-access"
+    );
+
+    console.log(
+      `${importPath}: packed smoke OK (createEnv, skipValidation, validation, onValidationError, onInvalidAccess)`
+    );
   }
 
   for (const { importPath, distFile, exports: names } of standalonePackages) {

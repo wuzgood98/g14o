@@ -1,5 +1,6 @@
 import type { OnInvalidAccessHandler } from "./client-guard";
 import type { StandardSchemaV1 } from "./standard-schema";
+import type { OnValidationErrorHandler } from "./validate";
 
 /**
  * Record mapping environment variable names to
@@ -203,8 +204,10 @@ export type CreateEnvOptions<
   emptyStringAsUndefined?: boolean;
   /** Override server detection. Default: no `window` on `globalThis`. */
   isServer?: boolean;
-  /** Called before throwing when a non-client key is read on the client. */
+  /** Called when a non-client key is read on the client. May throw a custom error; otherwise the default is thrown. */
   onInvalidAccess?: OnInvalidAccessHandler;
+  /** Called when schema validation fails. May throw a custom error; otherwise the default is thrown. */
+  onValidationError?: OnValidationErrorHandler;
   /** @internal Skip schema validation and return picked runtime values only. */
   skipValidation?: boolean;
 } & RuntimeEnvSource<TServer, TClient>;
@@ -234,6 +237,7 @@ export interface ResolvedCreateEnvOptions<
   emptyStringAsUndefined: boolean;
   isServer: boolean;
   onInvalidAccess: OnInvalidAccessHandler | undefined;
+  onValidationError: OnValidationErrorHandler | undefined;
   runtime: RuntimeEnvInput;
   server: TServer;
   skipValidation: boolean;

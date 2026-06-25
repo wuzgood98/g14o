@@ -3,7 +3,10 @@ import { pipe, string, url } from "valibot";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { createEnv } from "./create-env";
-import { InvalidEnvironmentVariablesError } from "./errors";
+import {
+  createServerAccessError,
+  InvalidEnvironmentVariablesError,
+} from "./errors";
 
 const RUNTIME_ENV_STRICT_MISSING = /runtimeEnvStrict is missing required keys/;
 const CLIENT_PREFIX_REQUIRED = /must start with "NEXT_PUBLIC_"/;
@@ -116,7 +119,9 @@ describe("createEnv client guard", () => {
   });
 
   it("calls onInvalidAccess before throwing", () => {
-    const onInvalidAccess = vi.fn();
+    const onInvalidAccess = vi.fn((variable: string): never => {
+      throw createServerAccessError(variable);
+    });
     const env = createEnv({
       server: { SECRET: z.string() },
       runtimeEnv: { SECRET: "hidden" },
@@ -124,8 +129,23 @@ describe("createEnv client guard", () => {
       onInvalidAccess,
     });
 
-    expect(() => env.SECRET).toThrow();
+    expect(() => env.SECRET).toThrow(
+      "Attempted to access server environment variable(s) on the client: SECRET"
+    );
     expect(onInvalidAccess).toHaveBeenCalledWith("SECRET");
+  });
+
+  it("propagates custom error when onInvalidAccess throws", () => {
+    const env = createEnv({
+      server: { SECRET: z.string() },
+      runtimeEnv: { SECRET: "hidden" },
+      isServer: false,
+      onInvalidAccess: (): never => {
+        throw new Error("custom access error");
+      },
+    });
+
+    expect(() => env.SECRET).toThrow("custom access error");
   });
 
   it("throws when accessing undeclared keys on the client", () => {
@@ -240,5 +260,77 @@ describe("createEnv with arktype", () => {
     });
 
     expect(env.DATABASE_URL).toBe("https://example.com");
+  });
+});
+
+describe("createEnv onValidationError", () => {
+  it("throws default when no handler is provided", () => {
+    expect(() =>
+      createEnv({
+        server: { DATABASE_URL: z.url() },
+        runtimeEnv: { DATABASE_URL: "not-a-url" },
+        isServer: true,
+      })
+    ).toThrow(InvalidEnvironmentVariablesError);
+  });
+
+  it("propagates custom error when onValidationError throws", () => {
+    expect(() =>
+      createEnv({
+        server: { DATABASE_URL: z.url() },
+        runtimeEnv: { DATABASE_URL: "not-a-url" },
+        isServer: true,
+        onValidationError: (issues): never => {
+          throw new Error(`custom: ${issues[0]?.message}`);
+        },
+      })
+    ).toThrow("custom:");
+  });
+
+  it("calls onValidationError when validation fails", () => {
+    const onValidationError = vi.fn((_issues): never => {
+      throw new Error("validation failed");
+    });
+    expect(() =>
+      createEnv({
+        server: { DATABASE_URL: z.url() },
+        runtimeEnv: { DATABASE_URL: "not-a-url" },
+        isServer: true,
+        onValidationError,
+      })
+    ).toThrow("validation failed");
+    expect(onValidationError).toHaveBeenCalledOnce();
+  });
+
+  it("passes env key as first path segment in issues", () => {
+    const onValidationError = vi.fn((issues): never => {
+      expect(issues[0]?.path?.[0]).toEqual({ key: "DATABASE_URL" });
+      throw new Error("validation failed");
+    });
+    expect(() =>
+      createEnv({
+        server: { DATABASE_URL: z.url() },
+        runtimeEnv: { DATABASE_URL: "not-a-url" },
+        isServer: true,
+        onValidationError,
+      })
+    ).toThrow("validation failed");
+    expect(onValidationError).toHaveBeenCalledOnce();
+  });
+
+  it("calls onValidationError for invalid client values on the client", () => {
+    const onValidationError = vi.fn((_issues): never => {
+      throw new Error("validation failed");
+    });
+    expect(() =>
+      createEnv({
+        clientPrefix: "NEXT_PUBLIC_",
+        client: { NEXT_PUBLIC_API_URL: z.url() },
+        runtimeEnv: { NEXT_PUBLIC_API_URL: "not-a-url" },
+        isServer: false,
+        onValidationError,
+      })
+    ).toThrow("validation failed");
+    expect(onValidationError).toHaveBeenCalledOnce();
   });
 });
