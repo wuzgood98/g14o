@@ -136,6 +136,8 @@ export const env = createEnv({
 
 ### Skip validation
 
+`skipValidation` bypasses both schema validation and the client-access proxy. Only use it when exposing the picked keys acceptable for the current runtime.
+
 ```ts
 import { createEnv } from "@g14o/env-core";
 
@@ -159,7 +161,7 @@ export const env = createEnv({
 | `isServer` | Override server detection (default: `typeof window === "undefined"`) |
 | `onValidationError` | Hook when schema validation fails; may throw custom error, otherwise default `InvalidEnvironmentVariablesError` is thrown |
 | `onInvalidAccess` | Hook when a server key is accessed on the client; may throw custom error, otherwise default server-access error is thrown |
-| `skipValidation` | Skip schema validation and return picked runtime values only |
+| `skipValidation` | Bypasses both schema validation and the client-access proxy. Only use it when exposing the picked keys acceptable for the current runtime (default: `false`) |
 
 ## Security
 
