@@ -232,13 +232,47 @@ export interface ResolvedCreateEnvOptions<
   TServer extends SchemaShape,
   TClient extends SchemaShape,
 > {
+  /**
+   * Client-safe schema shape.
+   */
   client: TClient;
+  /**
+   * Prefix every `client` key must use (enforced at compile time and runtime).
+   * @example `"NEXT_PUBLIC_"` or `"PUBLIC_"`
+   */
   clientPrefix: string | undefined;
+  /**
+   * Treat `""` as `undefined` before validation.
+   * @default `false`.
+   */
   emptyStringAsUndefined: boolean;
+  /**
+   * Whether we're in a server context.
+   * @default `typeof window === "undefined"`.
+   */
   isServer: boolean;
+  /**
+   * Called when a non-client key is read on the client. May throw a custom error; otherwise the default is thrown.
+   * @default `undefined`.
+   */
   onInvalidAccess: OnInvalidAccessHandler | undefined;
+  /**
+   * Called when schema validation fails. May throw a custom error; otherwise the default is thrown.
+   * @default `undefined`.
+   */
   onValidationError: OnValidationErrorHandler | undefined;
+  /**
+   * Record to read values from (e.g. `process.env`).
+   * @example `process.env`
+   */
   runtime: RuntimeEnvInput;
+  /**
+   * Server-only schema shape.
+   */
   server: TServer;
+  /**
+   * Skip schema validation and return picked runtime values only.
+   * @default `false`.
+   */
   skipValidation: boolean;
 }
