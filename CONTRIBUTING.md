@@ -14,7 +14,7 @@ pnpm install
 
 **Where to make changes:**
 
-- Product logic lives in [`packages/core/src`](packages/core/src), [`packages/cache/src`](packages/cache/src), [`packages/ratelimit/core/src`](packages/ratelimit/core/src), [`packages/ratelimit/nextjs/src`](packages/ratelimit/nextjs/src), and [`packages/env-core/src`](packages/env-core/src).
+- Product logic lives in [`packages/cache/src`](packages/cache/src), [`packages/ratelimit/core/src`](packages/ratelimit/core/src), [`packages/ratelimit/nextjs/src`](packages/ratelimit/nextjs/src), [`packages/env-core/src`](packages/env-core/src), [`packages/paystack/src`](packages/paystack/src), [`packages/paystack-better-auth/src`](packages/paystack-better-auth/src).
 
 ## Development workflow
 
@@ -29,7 +29,7 @@ pnpm typecheck
 pnpm test:dist      # smoke published tarballs (scripts/smoke-dist.mjs)
 ```
 
-`@g14o/core` lists `@upstash/redis` as an **optional peer** (devDependency in `packages/core` satisfies it for local work). `pnpm test:dist` installs Upstash and `next` peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
+`@g14o/cache` lists `@upstash/redis` as an **optional peer** (devDependency in `packages/cache` satisfies it for local work). `pnpm test:dist` installs Upstash and `next` peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
 
 Optional Upstash integration tests (skipped when credentials are missing):
 
@@ -37,7 +37,8 @@ Optional Upstash integration tests (skipped when credentials are missing):
 # Copy .env.example → .env.local at repo root when credentials are available
 pnpm --filter @g14o/cache test:integration
 pnpm --filter @g14o/ratelimit test:integration
-pnpm --filter @g14o/ratelimit-nextjs test:integration
+pnpm --filter @g14o/ratelimit-nextjs test:integration  
+pnpm --filter @g14o/paystack test:integration
 ```
 
 Cache demo verification:
@@ -68,7 +69,7 @@ GitHub Actions runs on every push and pull request to `main` (see [`.github/work
 - `pnpm test:dist`
 - `pnpm demo:cache:build`
 
-When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, an optional integration job also runs `pnpm --filter @g14o/core test:integration`. Fork PRs do not receive upstream secrets.
+When repository secrets `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are configured, an optional integration job also runs `pnpm --filter @g14o/cache test:integration`. Fork PRs do not receive upstream secrets.
 
 ## Code standards
 
