@@ -147,7 +147,7 @@ export const { withRateLimit } = createRateLimit({
 
 Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
 
-For Next.js route handlers with `NextRequest` / `NextResponse` types, use [@g14o/ratelimit-nextjs](../nextjs/README.md).
+For Next.js route handlers with `NextRequest` / `NextResponse` types, use [@g14o/ratelimit-nextjs](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/nextjs).
 
 ## Import paths
 
