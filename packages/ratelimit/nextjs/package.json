@@ -38,9 +38,6 @@
     },
     "@upstash/redis": {
       "optional": true
-    },
-    "next": {
-      "optional": true
     }
   },
   "devDependencies": {
