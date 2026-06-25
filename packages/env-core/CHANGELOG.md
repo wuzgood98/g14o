@@ -1,5 +1,11 @@
 # @g14o/env-core
 
+## 0.2.0
+
+### Minor Changes
+
+- Add `onValidationError` to `createEnv` for custom validation error handling. Export `OnValidationErrorHandler`. Issues passed to the handler include the env var name as the first path segment. Align `onInvalidAccess` with the same hook contract: call the custom handler, then throw the default error if it returns.
+
 ## 0.1.2
 
 ### Patch Changes
