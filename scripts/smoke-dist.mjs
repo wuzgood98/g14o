@@ -269,7 +269,7 @@ try {
     const { createEnv, InvalidEnvironmentVariablesError } = mod;
 
     const skipEnv = createEnv({
-      server: { SMOKE: passSchema },
+      server: { SMOKE: failSchema },
       runtimeEnv: { SMOKE: "ok" },
       isServer: true,
       skipValidation: true,
