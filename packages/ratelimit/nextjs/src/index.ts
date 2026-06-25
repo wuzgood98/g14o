@@ -14,7 +14,6 @@ export {
   parseDurationToMs,
   type RateLimitCheckResult,
   type RateLimiterAdapter,
-  type RateLimitOptions,
   type RateLimitResultData,
   type RateLimitTier,
   type RateLimitTierConfig,
@@ -26,5 +25,6 @@ export {
 export type {
   CreateRateLimitOptions,
   RateLimitClient,
+  RateLimitOptions,
 } from "./create-rate-limit-client";
 export { createRateLimit } from "./create-rate-limit-client";

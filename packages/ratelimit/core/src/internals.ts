@@ -113,9 +113,9 @@ export interface RateLimiterAdapter {
   limit(identifier: string): Promise<RateLimitResultData>;
 }
 
-export interface RateLimitOptions {
-  identifierFn?: (req: Request) => string | Promise<string>;
-  skipRateLimit?: (req: Request) => boolean | Promise<boolean>;
+export interface RateLimitOptions<Req extends Request = Request> {
+  identifierFn?: (req: Req) => string | Promise<string>;
+  skipRateLimit?: (req: Req) => boolean | Promise<boolean>;
   tier?: RateLimitTier;
 }
 
@@ -201,7 +201,7 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
   }
 }
 
-export function getDefaultIdentifier(req: Request): string {
+export function getDefaultIdentifier<Req extends Request>(req: Req): string {
   const forwarded = req.headers.get("x-forwarded-for");
   const realIp = req.headers.get("x-real-ip");
   const cfConnectingIp = req.headers.get("cf-connecting-ip");
