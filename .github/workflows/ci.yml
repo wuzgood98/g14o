@@ -135,3 +135,7 @@ jobs:
       - name: Run paystack integration tests
         if: env.PAYSTACK_SECRET_KEY != ''
         run: pnpm --filter @g14o/paystack test:integration
+
+      - name: Run paystack-better-auth integration tests
+        if: env.PAYSTACK_SECRET_KEY != ''
+        run: pnpm --filter @g14o/paystack-better-auth test:integration

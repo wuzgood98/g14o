@@ -39,6 +39,7 @@ pnpm --filter @g14o/cache test:integration
 pnpm --filter @g14o/ratelimit test:integration
 pnpm --filter @g14o/ratelimit-nextjs test:integration  
 pnpm --filter @g14o/paystack test:integration
+pnpm --filter @g14o/paystack-better-auth test:integration
 ```
 
 Cache demo verification:
