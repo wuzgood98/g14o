@@ -1,7 +1,7 @@
 {
   "name": "@g14o/core",
   "version": "1.2.0",
-  "description": "Core utilities, cache, and rate limiting for Next.js apps.",
+  "description": "Core utilities and shared types for Next.js apps.",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",
@@ -21,32 +21,20 @@
     "clean": "rimraf dist",
     "prepack": "tsdown",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test": "vitest run"
   },
   "peerDependencies": {
-    "@upstash/ratelimit": "^2.0.5",
-    "@upstash/redis": "^1.34.0",
-    "next": ">=15"
+    "@upstash/redis": "^1.34.0"
   },
   "peerDependenciesMeta": {
-    "@upstash/ratelimit": {
-      "optional": true
-    },
     "@upstash/redis": {
-      "optional": true
-    },
-    "next": {
       "optional": true
     }
   },
   "devDependencies": {
     "@types/node": "^22",
-    "@upstash/ratelimit": "^2.0.5",
     "@upstash/redis": "^1.34.0",
     "@workspace/typescript-config": "workspace:*",
-    "dotenv": "^16.6.1",
-    "next": "16.2.6",
     "rimraf": "^6.0.1",
     "tsdown": "^0.22.1",
     "typescript": "^5",
@@ -55,9 +43,7 @@
   "exports": {
     ".": "./src/utils.ts",
     "./types": "./src/types.ts",
-    "./config": "./src/config.ts",
-    "./cache": "./src/cache/index.ts",
-    "./ratelimit": "./src/ratelimit/index.ts"
+    "./config": "./src/config.ts"
   },
   "publishConfig": {
     "access": "public",
@@ -73,22 +59,12 @@
       "./config": {
         "types": "./dist/config.d.ts",
         "import": "./dist/config.js"
-      },
-      "./cache": {
-        "types": "./dist/cache/index.d.ts",
-        "import": "./dist/cache/index.js"
-      },
-      "./ratelimit": {
-        "types": "./dist/ratelimit/index.d.ts",
-        "import": "./dist/ratelimit/index.js"
       }
     }
   },
   "keywords": [
     "nextjs",
     "utils",
-    "cache",
-    "rate-limit",
     "fetch"
   ],
   "engines": {

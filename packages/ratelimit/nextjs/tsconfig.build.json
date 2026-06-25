@@ -3,11 +3,6 @@
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "paths": {
-      "@g14o/core": ["./src/utils.ts"],
-      "@g14o/core/types": ["./src/types.ts"],
-      "@g14o/core/config": ["./src/config.ts"]
-    },
     "strictNullChecks": true
   },
   "include": ["src"],

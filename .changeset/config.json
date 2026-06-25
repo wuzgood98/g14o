@@ -7,6 +7,7 @@
     ["@g14o/env-core"],
     ["@g14o/cache"],
     ["@g14o/ratelimit"],
+    ["@g14o/ratelimit-nextjs"],
     ["@g14o/paystack"],
     ["@g14o/paystack-better-auth"]
   ],

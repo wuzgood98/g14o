@@ -1,6 +1,6 @@
 # Cache demo
 
-Minimal Next.js app to verify `@g14o/core` cache behavior during `next build` and at runtime. It mirrors the cozy-haven pattern: the home page calls `withCache` during server render while static pages are generated.
+Minimal Next.js app to verify `@g14o/cache` behavior during `next build` and at runtime. It mirrors the cozy-haven pattern: the home page calls `withCache` during server render while static pages are generated.
 
 ## Setup
 

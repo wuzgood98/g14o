@@ -3,11 +3,9 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./*"],
-      "@g14o/core": ["../../packages/core/src/utils.ts"],
-      "@g14o/core/types": ["../../packages/core/src/types.ts"],
-      "@g14o/core/config": ["../../packages/core/src/config.ts"],
-      "@g14o/core/cache": ["../../packages/core/src/cache/index.ts"],
-      "@g14o/core/ratelimit": ["../../packages/core/src/ratelimit/index.ts"]
+      "@g14o/cache": ["../../packages/cache/src/index.ts"],
+      "@g14o/cache/config": ["../../packages/cache/src/config.ts"],
+      "@g14o/cache/types": ["../../packages/cache/src/types.ts"]
     },
     "plugins": [
       {

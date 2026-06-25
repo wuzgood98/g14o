@@ -14,8 +14,7 @@ pnpm install
 
 **Where to make changes:**
 
-- Product logic lives in [`packages/core/src`](packages/core/src), [`packages/cache/src`](packages/cache/src), [`packages/ratelimit/src`](packages/ratelimit/src), and [`packages/env-core/src`](packages/env-core/src).
-- Keep shared behavior in sync between `@g14o/core` subpaths and the standalone `@g14o/cache` / `@g14o/ratelimit` packages when both need the same change.
+- Product logic lives in [`packages/core/src`](packages/core/src), [`packages/cache/src`](packages/cache/src), [`packages/ratelimit/core/src`](packages/ratelimit/core/src), [`packages/ratelimit/nextjs/src`](packages/ratelimit/nextjs/src), and [`packages/env-core/src`](packages/env-core/src).
 
 ## Development workflow
 
@@ -30,13 +29,15 @@ pnpm typecheck
 pnpm test:dist      # smoke published tarballs (scripts/smoke-dist.mjs)
 ```
 
-`@g14o/core` lists `@upstash/redis`, `@upstash/ratelimit`, and `next` as **optional peers** (devDependencies in `packages/core` satisfy them for local work). `pnpm test:dist` installs those peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
+`@g14o/core` lists `@upstash/redis` as an **optional peer** (devDependency in `packages/core` satisfies it for local work). `pnpm test:dist` installs Upstash and `next` peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
 
 Optional Upstash integration tests (skipped when credentials are missing):
 
 ```bash
-# In packages/core — copy .env.example → .env.local when credentials are available
-pnpm --filter @g14o/core test:integration
+# Copy .env.example → .env.local at repo root when credentials are available
+pnpm --filter @g14o/cache test:integration
+pnpm --filter @g14o/ratelimit test:integration
+pnpm --filter @g14o/ratelimit-nextjs test:integration
 ```
 
 Cache demo verification:

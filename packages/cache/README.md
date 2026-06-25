@@ -128,12 +128,6 @@ See [`@g14o/core`](../core/README.md) for the full bundled documentation, or ins
 | Cache factory and helpers | `import { createCache, createListCacheKey, withCache } from "@g14o/cache"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase, type Logger } from "@g14o/cache/config"` |
 
-## Bundled alternative
+## Next.js
 
-For utils, cache, and rate limiting in one package:
-
-```bash
-pnpm add @g14o/core @upstash/redis
-```
-
-Import cache from `@g14o/core/cache` instead of `@g14o/cache`.
+`@g14o/cache` works in Next.js App Router route handlers and server components. For build-phase behavior, see `inMemoryDuringBuild` in the factory options and `isBuildLikePhase()` from `@g14o/cache/config`.

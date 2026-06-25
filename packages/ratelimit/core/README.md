@@ -145,7 +145,7 @@ export const { withRateLimit } = createRateLimit({
 
 Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
 
-See [`@g14o/core`](../core/README.md) for the bundled package (Next-coupled rate limit on `@g14o/core/ratelimit`).
+For Next.js route handlers with `NextRequest` / `NextResponse` types, use [@g14o/ratelimit-nextjs](../nextjs/README.md).
 
 ## Import paths
 
@@ -154,10 +154,10 @@ See [`@g14o/core`](../core/README.md) for the bundled package (Next-coupled rate
 | Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |
 
-## Bundled alternative
+## Next.js alternative
 
 ```bash
-pnpm add @g14o/core @upstash/redis @upstash/ratelimit next
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
 ```
 
-Import rate limiting from `@g14o/core/ratelimit` (uses `next/server` types).
+Import rate limiting from `@g14o/ratelimit-nextjs` (uses `next/server` types).

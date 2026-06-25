@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@g14o/core": "workspace:*",
+    "@g14o/cache": "workspace:*",
     "@upstash/redis": "^1.38.0",
     "next": "16.2.9",
     "react": "19.2.7",

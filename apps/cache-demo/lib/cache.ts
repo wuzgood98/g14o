@@ -1,4 +1,4 @@
-import { type CacheClient, createCache } from "@g14o/core/cache";
+import { type CacheClient, createCache } from "@g14o/cache";
 import { logger } from "@/lib/logger";
 
 // inMemoryDuringNextBuild defaults to true (in-memory during next build, Redis at runtime).
