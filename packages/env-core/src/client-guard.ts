@@ -15,11 +15,12 @@ export function guardEnv<T extends Record<string, unknown>>(
 ): Readonly<T> {
   const { isServer, clientKeys, onInvalidAccess } = opts;
 
-  const onInvalidAccessHandler =
-    onInvalidAccess ??
-    ((variable) => {
-      throw createServerAccessError(variable);
-    });
+  const onInvalidAccessHandler = (variable: string): never => {
+    if (onInvalidAccess) {
+      onInvalidAccess(variable);
+    }
+    throw createServerAccessError(variable);
+  };
 
   return new Proxy(target, {
     get(t, prop, receiver) {
