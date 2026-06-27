@@ -266,7 +266,23 @@ export interface PaystackSubscriptionOptions {
   onSubscriptionUpdate?: (
     ctx: SubscriptionLifecycleContext
   ) => Promise<void> | void;
-  plans?: PlansInput | undefined;
+  /**
+   * Subscription plans exposed for checkout. Pass a static array of {@link SubscriptionPlan}
+   * definitions, or an async function that returns plans at runtime (for dynamic pricing or
+   * entitlements).
+   *
+   * Each {@link SubscriptionPlan} is either **auto-created** or **pre-created**:
+   *
+   * - **Auto-created** — provide `name`, `amount`, `currency`, and `interval`. The plugin creates
+   *   or reuses matching Paystack plans when a customer subscribes. Optionally set
+   *   `annualDiscountedAmount` for a discounted annual billing variant.
+   * - **Pre-created** — provide `name` and `planCode` to reference an existing Paystack plan.
+   *   Optionally set `annualDiscountedPlanCode` for annual billing. Do not include billing fields
+   *   (`amount`, `currency`, `interval`) when using `planCode`.
+   *
+   * @remarks `SubscriptionPlan[] | function`
+   */
+  plans?: SubscriptionPlan[] | (() => Promise<SubscriptionPlan[]>);
 }
 
 /**
