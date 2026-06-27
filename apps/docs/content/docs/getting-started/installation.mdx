@@ -1,0 +1,61 @@
+---
+title: Installation
+description: Install commands and peer dependencies for each @g14o package.
+---
+
+## @g14o/cache
+
+```bash
+pnpm add @g14o/cache @upstash/redis
+```
+
+`@upstash/redis` is a **peer dependency** — required for Redis-backed cache in production.
+
+## @g14o/ratelimit
+
+```bash
+pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
+```
+
+Peers are optional for metadata-only installs; add both Upstash packages for Redis-backed limits in production.
+
+## @g14o/ratelimit-nextjs
+
+```bash
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+```
+
+`next` is required. Upstash packages are optional peers (in-memory fallback without Redis).
+
+## @g14o/env-core
+
+```bash
+pnpm add @g14o/env-core zod
+```
+
+Install only the validator you use: `zod`, `valibot`, or `arktype` (all optional peers).
+
+## @g14o/paystack
+
+```bash
+pnpm add @g14o/paystack zod
+```
+
+## @g14o/paystack-better-auth
+
+```bash
+pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
+```
+
+Requires [`@g14o/paystack`](/docs/packages/paystack) for the API client.
+
+## Next steps
+
+| Package | Guide |
+|---------|-------|
+| Cache | [Setup](/docs/packages/cache/setup) |
+| Rate limit | [Setup](/docs/packages/ratelimit/setup) |
+| Rate limit (Next.js) | [Setup](/docs/packages/ratelimit-nextjs/setup) |
+| Env | [Overview](/docs/packages/env-core) |
+| Paystack | [Client](/docs/packages/paystack/client) |
+| Paystack + Better Auth | [Server setup](/docs/packages/paystack-better-auth/server) |

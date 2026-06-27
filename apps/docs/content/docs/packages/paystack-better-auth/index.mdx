@@ -1,0 +1,30 @@
+---
+title: Overview
+description: Paystack billing plugin for Better Auth — checkout, subscriptions, and webhooks.
+---
+
+Paystack billing plugin for [Better Auth](https://better-auth.com). Supports customers, hosted checkout, subscriptions, authorization charges, and webhook synchronization.
+
+Requires [@g14o/paystack](/docs/packages/paystack) for the Paystack API client.
+
+## Installation
+
+```bash
+pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
+```
+
+## What it provides
+
+- Paystack customer sync on sign-up
+- Hosted checkout for one-time payments
+- Subscription upgrades, cancel, resume, and listing
+- Webhook verification and event deduplication
+- Database schema for subscriptions, payments, and webhook events
+
+## Next steps
+
+- [Server setup](/docs/packages/paystack-better-auth/server)
+- [Checkout](/docs/packages/paystack-better-auth/checkout)
+- [Subscriptions](/docs/packages/paystack-better-auth/subscriptions)
+- [Webhooks](/docs/packages/paystack-better-auth/webhooks)
+- [Database schema](/docs/packages/paystack-better-auth/schema)

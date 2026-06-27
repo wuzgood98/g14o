@@ -1,0 +1,43 @@
+---
+title: Introduction
+description: Documentation for the @g14o/* npm packages — cache, rate limiting, env validation, and Paystack integrations.
+---
+
+## What g14o provides
+
+- [**@g14o/cache**](/docs/packages/cache) — `createCache()` / `withCache()` with Upstash Redis
+- [**@g14o/ratelimit**](/docs/packages/ratelimit) — framework-agnostic rate limiting (`Request` / `Response`)
+- [**@g14o/ratelimit-nextjs**](/docs/packages/ratelimit-nextjs) — Next.js rate limiting (`NextRequest` / `NextResponse`)
+- [**@g14o/env-core**](/docs/packages/env-core) — typesafe environment variables via Standard Schema
+- [**@g14o/paystack**](/docs/packages/paystack) — typed Paystack REST SDK
+- [**@g14o/paystack-better-auth**](/docs/packages/paystack-better-auth) — Paystack billing plugin for Better Auth
+
+## Quick install
+
+```bash
+pnpm add @g14o/cache @upstash/redis
+pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+pnpm add @g14o/env-core zod
+pnpm add @g14o/paystack zod
+pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
+```
+
+See [Installation](/docs/getting-started/installation) for per-package setup, or jump to a package guide from the sidebar.
+
+## Quick example
+
+```ts title="lib/cache.ts"
+import { createCache } from "@g14o/cache";
+import { logger } from "@/lib/logger";
+
+export const { withCache, invalidateCache } = createCache({
+  redis: {
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  },
+  logger,
+});
+```
+
+Press **Cmd+K** (or **Ctrl+K**) to search across all documentation pages.

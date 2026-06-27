@@ -1,0 +1,40 @@
+---
+title: Getting Started
+description: Prerequisites and overview for using @g14o packages in your project.
+---
+
+## Prerequisites
+
+- **Node** `>=22.18` (CI uses Node 24)
+- **pnpm** (see root `packageManager` in the [g14o repository](https://github.com/wuzgood98/g14o))
+- Optional: [Upstash Redis](https://upstash.com) for cache and rate-limit packages in production
+
+## Monorepo layout
+
+The [g14o repository](https://github.com/wuzgood98/g14o) contains all `@g14o/*` packages plus demo apps:
+
+| Path | Purpose |
+|------|---------|
+| `packages/cache` | `@g14o/cache` |
+| `packages/ratelimit/core` | `@g14o/ratelimit` |
+| `packages/ratelimit/nextjs` | `@g14o/ratelimit-nextjs` |
+| `packages/env-core` | `@g14o/env-core` |
+| `packages/paystack` | `@g14o/paystack` |
+| `packages/paystack-better-auth` | `@g14o/paystack-better-auth` |
+| `apps/cache-demo` | Cache build vs runtime verification |
+| `apps/env-demo` | Zod / Valibot / ArkType showcase |
+| `apps/paystack-demo` | Paystack + Better Auth demo |
+
+## Development
+
+From the repo root:
+
+```bash
+git clone https://github.com/wuzgood98/g14o.git
+cd g14o
+pnpm install
+pnpm build
+pnpm test
+```
+
+See [Contributing](/docs/contributing) for the full contributor workflow.

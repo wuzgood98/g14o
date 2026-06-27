@@ -11,7 +11,7 @@
     "directory": "packages/cache"
   },
   "bugs": "https://github.com/wuzgood98/g14o/issues",
-  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/cache#readme",
+  "homepage": "https://docs.g14o.dev/packages/cache",
   "files": [
     "dist",
     "README.md"

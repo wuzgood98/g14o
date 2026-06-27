@@ -1,5 +1,7 @@
 # @g14o/env-core
 
+> Documentation: [docs.g14o.dev/packages/env-core](https://docs.g14o.dev/packages/env-core)
+
 Framework-agnostic, typesafe environment variables validated with any [Standard Schema](https://standardschema.dev) library (Zod, Valibot, ArkType, and others).
 
 **Zero runtime dependencies** — install only the validator you use.

@@ -11,7 +11,7 @@
     "directory": "packages/ratelimit/nextjs"
   },
   "bugs": "https://github.com/wuzgood98/g14o/issues",
-  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/nextjs#readme",
+  "homepage": "https://docs.g14o.dev/packages/ratelimit-nextjs",
   "files": [
     "dist",
     "README.md"

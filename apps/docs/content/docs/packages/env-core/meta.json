@@ -1,0 +1,4 @@
+{
+  "title": "@g14o/env-core",
+  "pages": ["index", "validators", "client-server", "api"]
+}

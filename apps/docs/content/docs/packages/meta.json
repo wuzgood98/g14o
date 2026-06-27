@@ -1,0 +1,11 @@
+{
+  "title": "Packages",
+  "pages": [
+    "cache",
+    "ratelimit",
+    "ratelimit-nextjs",
+    "env-core",
+    "paystack",
+    "paystack-better-auth"
+  ]
+}

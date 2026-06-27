@@ -1,0 +1,34 @@
+---
+title: Overview
+description: Next.js rate limiting with Upstash Redis for NextRequest and NextResponse.
+---
+
+Next.js rate limiting with Upstash Redis. Typed for `NextRequest` / `NextResponse` route handlers; delegates to [@g14o/ratelimit](/docs/packages/ratelimit) at runtime.
+
+## Install
+
+```bash
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+```
+
+`@upstash/redis` and `@upstash/ratelimit` are optional peers (in-memory fallback without Redis). `next` is required.
+
+## Quick start
+
+```ts
+import { createRateLimit } from "@g14o/ratelimit-nextjs";
+import { logger } from "@/lib/logger";
+
+export const { withRateLimit, checkRateLimit, withUserRateLimit } =
+  createRateLimit({
+    redis: {
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    },
+    logger,
+  });
+```
+
+## Framework-agnostic alternative
+
+For Hono, Cloudflare Workers, or plain `Request` / `Response`, use [@g14o/ratelimit](/docs/packages/ratelimit) instead.

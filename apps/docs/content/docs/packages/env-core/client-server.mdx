@@ -1,0 +1,43 @@
+---
+title: Client vs server
+description: How createEnv protects server variables on the client.
+---
+
+## How client protection works
+
+`createEnv` returns a [`Proxy`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) around the validated environment object (on both server and client):
+
+- **Server**: the proxy is transparent — all validated server and client keys are readable.
+- **Client**: only `client` schemas are validated at import time (missing server vars in `process.env` do not throw).
+- **Client access**: any property that is not a declared `client` key throws with the exact name, e.g. `DATABASE_URL` or typos like `NOT_DECLARED`.
+- **Interop**: `__esModule` and `$$typeof` are ignored so bundlers and React do not trigger false positives.
+
+## Override server detection
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+
+export const env = createEnv({
+  // ...
+  isServer: typeof window === "undefined", // or `true` / `false`
+});
+```
+
+## Security
+
+Server **values** are never validated or exposed on the client. Importing a single `env.ts` that defines `server` schemas still ships those **names** to the client bundle. For sensitive names, split into `env/server.ts` and `env/client.ts`.
+
+## Options reference
+
+| Option | Description |
+|--------|-------------|
+| `server` | Server-only variables (validated on server; throw on client access) |
+| `client` | Client-safe variables (validated on server and client) |
+| `clientPrefix` | Optional prefix required on all `client` keys (type + runtime) |
+| `runtimeEnv` | Record to read values from (e.g. `process.env`) |
+| `runtimeEnvStrict` | Explicit per-key mapping; mutually exclusive with `runtimeEnv` |
+| `emptyStringAsUndefined` | Treat `""` as `undefined` before validation |
+| `isServer` | Override server detection (default: `typeof window === "undefined"`) |
+| `onValidationError` | Hook when schema validation fails |
+| `onInvalidAccess` | Hook when a server key is accessed on the client |
+| `skipValidation` | Bypass validation and client-access proxy (default: `false`) |

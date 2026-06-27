@@ -1,5 +1,7 @@
 # @g14o/paystack-better-auth
 
+> Documentation: [docs.g14o.dev/packages/paystack-better-auth](https://docs.g14o.dev/packages/paystack-better-auth)
+
 Paystack billing plugin for [Better Auth](https://better-auth.com). Supports customers, hosted checkout, subscriptions, authorization charges, and webhook synchronization.
 
 Requires [`@g14o/paystack`](https://github.com/wuzgood98/g14o/tree/main/packages/paystack) for the Paystack API client.
@@ -75,6 +77,8 @@ export const authClient = createAuthClient({
 
 ## Checkout (one-time payments)
 
+See the [checkout guide](https://docs.g14o.dev/packages/paystack-better-auth/checkout) for client and server (`auth.api.createCheckoutSession`) examples.
+
 ```ts
 const { data, error } = await authClient.paystack.createCheckoutSession({
   amount: 1500,
@@ -103,6 +107,8 @@ Set `disablePaymentPersistence: true` to skip the `payment` table while still us
 
 When a plan entry includes `planCode`, the plugin fetches billing details from Paystack instead of creating a plan. Pass `annual: true` on upgrade to use `annualDiscountedPlanCode`.
 
+See the [subscriptions guide](https://docs.g14o.dev/packages/paystack-better-auth/subscriptions) for client and server examples for each operation.
+
 ```ts
 const { data, error } = await authClient.paystack.subscription.upgrade({
   plan: "pro",
@@ -126,7 +132,7 @@ await authClient.paystack.subscription.list();
 | `auth.api.cancelSubscription` | `authClient.paystack.subscription.cancel` |
 | `auth.api.resumeSubscription` | `authClient.paystack.subscription.resume` |
 | `auth.api.getSubscription` | `authClient.paystack.subscription.get` |
-| `auth.api.listSubscriptions` | `authClient.paystack.subscription.list` |
+| `auth.api.listActiveSubscriptions` | `authClient.paystack.subscription.list` |
 
 ## Webhooks
 
@@ -146,12 +152,18 @@ Run Better Auth CLI to generate migrations:
 npx auth@latest generate
 ```
 
+See the [full field reference](https://docs.g14o.dev/packages/paystack-better-auth/schema#schema) for each table and column.
+
 Tables added:
 
 - `user` field: `paystackCustomerCode` and `paystackCustomerId`
 - `subscription` (includes `emailToken` for cancel/resume; when `subscription.enabled`)
 - `payment` (one-time checkout records; omit when `disablePaymentPersistence: true`)
 - `webhookEvent` (included by default; omit when `disableWebhookPersistence: true`)
+
+### Numeric columns
+
+Paystack IDs (e.g. `6293201508`) and `payment.amount` exceed PostgreSQL `INTEGER` and require `BIGINT`. The plugin sets `bigint: true` on these fields by default. If you already migrated with `INTEGER` columns, update your schema — see [Database schema](https://docs.g14o.dev/packages/paystack-better-auth/schema).
 
 ## License
 

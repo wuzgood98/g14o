@@ -1,0 +1,59 @@
+---
+title: Contributing
+description: How to contribute to the g14o monorepo.
+---
+
+Thanks for helping improve g14o. This guide covers local setup, development workflow, and how to open pull requests.
+
+## Getting started
+
+**Prerequisites:** Node `>=22.18`, [pnpm](https://pnpm.io) (version pinned in root `package.json`). CI uses Node 24.
+
+```bash
+git clone https://github.com/wuzgood98/g14o.git
+cd g14o
+pnpm install
+```
+
+**Where to make changes:**
+
+- Product logic lives in `packages/cache/src`, `packages/ratelimit/core/src`, `packages/ratelimit/nextjs/src`, `packages/env-core/src`, `packages/paystack/src`, `packages/paystack-better-auth/src`.
+- Documentation lives in `apps/docs/content/docs/`.
+
+## Development workflow
+
+From the repo root:
+
+```bash
+pnpm check          # ultracite lint + format
+pnpm fix            # auto-fix
+pnpm test           # turbo test (all packages)
+pnpm build          # turbo build
+pnpm typecheck
+pnpm test:dist      # smoke published tarballs
+pnpm docs           # docs dev server (port 3003)
+```
+
+## Documentation
+
+When changing package APIs or behavior, update the corresponding pages under `apps/docs/content/docs/packages/`. API reference tables are generated from TypeScript via `fumadocs-typescript` — ensure exported types have clear JSDoc comments.
+
+Press **Cmd+K** in the docs site to verify search finds your new content after `pnpm docs`.
+
+### Ask AI (local)
+
+The docs site includes an OpenRouter-powered AI chat panel. To use it locally, copy `.env.example` to `.env.local` and set `OPENROUTER_API_KEY`. LLM endpoints (`/llms.txt`, `/llms-full.txt`, per-page `.md`) work without the key; only `/api/chat` requires it.
+
+## Code standards
+
+- Run `pnpm fix` before opening a PR.
+- Pre-commit runs `lint-staged` → `ultracite fix` via Husky.
+- Follow the conventions in `AGENTS.md` (TypeScript, React, Ultracite/Biome rules).
+
+## Pull requests
+
+- Use branch prefixes: `feat/`, `fix/`, `docs/`, `chore/`, etc.
+- PR titles should follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, …).
+- For published packages, add a Changeset when the change should trigger a release.
+
+See the full [CONTRIBUTING.md](https://github.com/wuzgood98/g14o/blob/main/CONTRIBUTING.md) on GitHub for CI details, integration tests, and publishing.

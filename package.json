@@ -17,7 +17,7 @@
     "url": "git+https://github.com/wuzgood98/g14o.git"
   },
   "bugs": "https://github.com/wuzgood98/g14o/issues",
-  "homepage": "https://github.com/wuzgood98/g14o#readme",
+  "homepage": "https://docs.g14o.dev",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
@@ -35,6 +35,9 @@
     "demo:env:build": "pnpm --filter env-demo build",
     "demo:paystack": "pnpm --filter paystack-demo dev",
     "demo:paystack:build": "pnpm --filter paystack-demo build",
+    "docs": "pnpm --filter docs dev",
+    "docs:dev": "pnpm run --filter docs dev",
+    "docs:build": "pnpm --filter docs build",
     "changeset": "changeset",
     "version-packages": "changeset version && pnpm install",
     "release:publish:core": "pnpm --filter @g14o/core publish --access public --no-git-checks",

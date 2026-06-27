@@ -1,0 +1,47 @@
+---
+title: Overview
+description: Framework-agnostic rate limiting with Upstash Redis for any Request/Response runtime.
+---
+
+Framework-agnostic rate limiting with Upstash Redis. Works with any runtime that uses Web `Request` / `Response` (Next.js App Router, Hono, Cloudflare Workers, etc.).
+
+`RateLimitClient` and `RateLimitOptions` accept optional type parameters for framework-specific request/response types (defaults: `Request` / `Response`).
+
+## Install
+
+```bash
+pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
+```
+
+Peers are optional in `package.json` metadata for metadata-only installs; add both Upstash packages when using Redis-backed limits in production.
+
+## Quick start
+
+```ts
+import { createRateLimit } from "@g14o/ratelimit";
+import { logger } from "@/lib/logger";
+
+export const { withRateLimit, checkRateLimit, withUserRateLimit } =
+  createRateLimit({
+    redis: {
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    },
+    logger,
+  });
+```
+
+## Import paths
+
+| Use case | Import |
+|----------|--------|
+| Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit"` |
+| Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |
+
+## Next.js alternative
+
+For `NextRequest` / `NextResponse` types, use [@g14o/ratelimit-nextjs](/docs/packages/ratelimit-nextjs).
+
+```bash
+pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+```
