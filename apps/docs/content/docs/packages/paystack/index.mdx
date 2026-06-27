@@ -1,0 +1,57 @@
+---
+title: Overview
+description: Typed Paystack REST SDK with Zod validation, retries, and webhook verification.
+---
+
+Typed Paystack REST SDK with Zod-validated responses, retries, and webhook verification.
+
+## Installation
+
+```bash
+pnpm add @g14o/paystack zod
+```
+
+## Quick usage
+
+```ts title="lib/paystack.ts"
+import { Paystack } from "@g14o/paystack";
+import { env } from "@/lib/env";
+
+const paystack = new Paystack({
+  secretKey: env.PAYSTACK_SECRET_KEY,
+});
+
+const checkout = await paystack.transactions.initialize({
+  email: "user@example.com",
+  amount: 1500,
+  currency: "GHS",
+});
+
+const customer = await paystack.customers.create({
+  email: "user@example.com",
+  first_name: "Ada",
+  last_name: "Lovelace",
+});
+```
+
+## Features
+
+- Typed API client for customers, transactions, plans, and subscriptions
+- Zod-validated responses
+- Retries with exponential backoff
+- Timeout and rate-limit handling
+- Structured error types
+
+## Better Auth integration
+
+For Better Auth billing (checkout, subscriptions, webhooks, DB sync), see [@g14o/paystack-better-auth](/docs/packages/paystack-better-auth).
+
+```bash
+pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
+```
+
+## Next steps
+
+- [Client usage](/docs/packages/paystack/client)
+- [Webhooks](/docs/packages/paystack/webhooks)
+- [API reference](/docs/packages/paystack/api)

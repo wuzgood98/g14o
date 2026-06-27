@@ -1,0 +1,68 @@
+---
+title: Setup
+description: Configure createCache with Redis, TTL overrides, and build-phase behavior.
+---
+
+## Basic setup
+
+```ts title="lib/cache.ts"
+import { createCache } from "@g14o/cache";
+import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
+
+export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  logger,
+});
+```
+
+## Custom TTL
+
+```ts title="lib/cache.ts"
+export const { withCache, getTTL } = createCache({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  ttl: {
+    development: { short: 30, long: 900 },
+    production: { medium: 3600 },
+  },
+});
+```
+
+## Shared Redis client
+
+Reuse an existing `@upstash/redis` client across your app:
+
+```ts title="lib/redis.ts"
+import { Redis } from "@upstash/redis";
+
+export const redis = Redis.fromEnv();
+```
+
+```ts title="lib/cache.ts"
+import { createCache } from "@g14o/cache";
+import { redis } from "@/lib/redis";
+import { logger } from "@/lib/logger";
+
+export const { withCache, invalidateCache, invalidateCacheKey } = createCache({ redis, logger });
+```
+
+## Build vs runtime
+
+By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` to `phase-production-build` or `phase-export` during `next build` / export), cache uses an in-memory adapter so prerender does not call Upstash. At runtime in production, Redis is used when configured.
+
+To opt into Redis during builds (debugging only):
+
+```ts
+createCache({
+  redis: { url: "...", token: "..." },
+  inMemoryDuringBuild: false,
+});
+```
+
+Import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase in your own code.

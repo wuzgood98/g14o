@@ -1,0 +1,113 @@
+---
+title: Database schema
+description: Tables and fields added by the Paystack Better Auth plugin.
+---
+
+Run Better Auth CLI to generate migrations:
+
+```bash
+npx auth@latest generate
+```
+
+## Schema
+
+The plugin extends the core `user` table and creates `subscription`, `payment`, and `webhookEvent` tables. Better Auth auto-adds an `id` field (string, primary key) on new tables. Numeric Paystack ID fields and `payment.amount` use `bigint` in PostgreSQL — see [Numeric columns](#numeric-columns-use-bigint).
+
+### User
+
+<DatabaseTable table="user" />
+
+### Subscription
+
+<DatabaseTable table="subscription" />
+
+### Payment
+
+<DatabaseTable table="payment" />
+
+### Webhook event
+
+<DatabaseTable table="webhookEvent" />
+
+<Callout type="warn">
+  Paystack numeric IDs and `payment.amount` can exceed PostgreSQL `INTEGER` (max `2,147,483,647`). Use `BIGINT` for the columns listed below or inserts may fail. New projects using this plugin get `bigint: true` by default; existing databases that already migrated with `INTEGER` need a manual migration.
+</Callout>
+
+## Numeric columns (use BIGINT)
+
+Paystack returns large numeric IDs from its API. For example, customer ID `6293201508` is greater than the PostgreSQL `INTEGER` maximum (`2,147,483,647`), so an `INTEGER` column will reject the value on insert.
+
+| Table | Column | Why BIGINT |
+|-------|--------|------------|
+| `user` | `paystackCustomerId` | Paystack customer ID |
+| `subscription` | `customerId` | Paystack customer ID |
+| `payment` | `customerId` | Paystack customer ID |
+| `payment` | `transactionId` | Paystack transaction ID |
+| `payment` | `amount` | Amount in smallest currency unit (can exceed INTEGER at high values) |
+
+String fields (`paystackCustomerCode`, `subscriptionCode`, `reference`, `eventId`, etc.) are unaffected. `amount` is the payment value in kobo, pesewas, cents, etc. — not a Paystack resource ID.
+
+## Fix existing databases
+
+If you already ran `npx auth@latest generate` before upgrading the plugin, edit your schema or migration to use `BIGINT` for the columns above.
+
+<Tabs items={["Prisma", "Drizzle", "SQL"]} groupId="schema-bigint">
+  <Tab value="Prisma">
+
+Edit `schema.prisma` after generate, then run `prisma migrate dev`:
+
+```prisma
+// user table
+paystackCustomerId BigInt?
+
+// subscription table
+customerId BigInt
+
+// payment table
+customerId    BigInt
+transactionId BigInt
+amount        BigInt
+```
+
+Prisma returns `BigInt` at runtime for these fields. Coerce with `Number()` when passing values to APIs that expect `number` if needed.
+
+  </Tab>
+  <Tab value="Drizzle">
+
+Change `integer(...)` to `bigint(..., { mode: "number" })` in the generated auth schema:
+
+```ts
+import { bigint } from "drizzle-orm/pg-core";
+
+paystackCustomerId: bigint("paystack_customer_id", { mode: "number" }),
+customerId: bigint("customer_id", { mode: "number" }),
+transactionId: bigint("transaction_id", { mode: "number" }),
+amount: bigint("amount", { mode: "number" }),
+```
+
+Use `mode: "number"` so values stay as JS `number` (safe for Paystack IDs under `Number.MAX_SAFE_INTEGER`). Run `drizzle-kit generate` / `migrate` after editing.
+
+  </Tab>
+  <Tab value="SQL">
+
+For Kysely adapter output or manual migrations (PostgreSQL):
+
+```sql
+ALTER TABLE "user" ALTER COLUMN "paystackCustomerId" TYPE BIGINT;
+ALTER TABLE "subscription" ALTER COLUMN "customerId" TYPE BIGINT;
+ALTER TABLE "payment" ALTER COLUMN "customerId" TYPE BIGINT;
+ALTER TABLE "payment" ALTER COLUMN "transactionId" TYPE BIGINT;
+ALTER TABLE "payment" ALTER COLUMN "amount" TYPE BIGINT;
+```
+
+Adjust quoted identifiers and table names to match your generated output. For MySQL and SQLite, use `BIGINT` equivalently.
+
+  </Tab>
+</Tabs>
+
+## Persistence options
+
+| Option | Effect |
+|--------|--------|
+| `disablePaymentPersistence: true` | Skip `payment` table; still use `onCheckoutComplete` |
+| `disableWebhookPersistence: true` | Skip `webhookEvent` table |

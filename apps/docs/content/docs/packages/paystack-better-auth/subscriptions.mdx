@@ -1,0 +1,151 @@
+---
+title: Subscriptions
+description: Upgrade, cancel, resume, and list subscriptions.
+---
+
+When a plan entry includes `planCode`, the plugin fetches billing details from Paystack instead of creating a plan. Pass `annual: true` on upgrade to use `annualDiscountedPlanCode`.
+
+## Upgrade
+
+<Tabs items={["Client", "Server"]} groupId="paystack-api">
+  <Tab value="Client">
+
+```ts
+const { data, error } = await authClient.paystack.subscription.upgrade({
+  plan: "pro",
+  annual: true,
+  subscriptionCode: "SUB_existing",
+  callbackUrl: "https://app.example.com/payment/callback",
+  cancelActionUrl: "https://app.example.com/pricing",
+});
+```
+
+  </Tab>
+  <Tab value="Server">
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+const result = await auth.api.upgradeSubscription({
+  body: {
+    plan: "pro",
+    annual: true,
+    subscriptionCode: "SUB_existing",
+    callbackUrl: "https://app.example.com/payment/callback",
+    cancelActionUrl: "https://app.example.com/pricing",
+    channels: ["card", "mobile_money"],
+    disableRedirect: true,
+  },
+  headers: await headers(),
+});
+```
+
+  </Tab>
+</Tabs>
+
+## Cancel
+
+<Tabs items={["Client", "Server"]} groupId="paystack-api">
+  <Tab value="Client">
+
+```ts
+await authClient.paystack.subscription.cancel({
+  subscriptionCode: "SUB_existing",
+});
+```
+
+  </Tab>
+  <Tab value="Server">
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+await auth.api.cancelSubscription({
+  body: { subscriptionCode: "SUB_existing" },
+  headers: await headers(),
+});
+```
+
+  </Tab>
+</Tabs>
+
+## Resume
+
+<Tabs items={["Client", "Server"]} groupId="paystack-api">
+  <Tab value="Client">
+
+```ts
+await authClient.paystack.subscription.resume({
+  subscriptionCode: "SUB_existing",
+});
+```
+
+  </Tab>
+  <Tab value="Server">
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+await auth.api.resumeSubscription({
+  body: { subscriptionCode: "SUB_existing" },
+  headers: await headers(),
+});
+```
+
+  </Tab>
+</Tabs>
+
+## Get
+
+<Tabs items={["Client", "Server"]} groupId="paystack-api">
+  <Tab value="Client">
+
+```ts
+await authClient.paystack.subscription.get({
+  subscriptionCode: "SUB_existing",
+});
+```
+
+  </Tab>
+  <Tab value="Server">
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+const subscription = await auth.api.getSubscription({
+  query: { subscriptionCode: "SUB_existing" },
+  headers: await headers(),
+});
+```
+
+  </Tab>
+</Tabs>
+
+## List
+
+<Tabs items={["Client", "Server"]} groupId="paystack-api">
+  <Tab value="Client">
+
+```ts
+await authClient.paystack.subscription.list();
+```
+
+  </Tab>
+  <Tab value="Server">
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+const subscriptions = await auth.api.listActiveSubscriptions({
+  query: { customer: session.user.paystackCustomerId },
+  headers: await headers(),
+});
+```
+
+  </Tab>
+</Tabs>

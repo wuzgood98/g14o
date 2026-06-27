@@ -1,0 +1,84 @@
+---
+title: Setup
+description: Create a rate limit client, custom tiers, and build-phase behavior.
+---
+
+## Create a client
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit";
+import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
+
+export const { withRateLimit, checkRateLimit, withUserRateLimit } =
+  createRateLimit({
+    redis: {
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    },
+    logger,
+  });
+```
+
+## Custom tiers
+
+Override built-in tier limits when creating the client:
+
+```ts title="lib/ratelimit.ts"
+export const { withRateLimit } = createRateLimit({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  tiers: {
+    strict: { limit: 3, window: "30 s" },
+    auth: { limit: 10 },
+  },
+});
+```
+
+## Build vs runtime
+
+By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` during `next build` / export), rate limiting uses an in-memory backend so prerender does not call Upstash.
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit";
+import { env } from "@/lib/env";
+
+export const { withRateLimit } = createRateLimit({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  inMemoryDuringBuild: true, // default
+});
+```
+
+Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
+
+## Hono
+
+```ts title="server.ts"
+import { Hono } from "hono";
+import { createRateLimit } from "@g14o/ratelimit";
+import { env } from "@/lib/env";
+
+const { withRateLimit } = createRateLimit({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+});
+const app = new Hono();
+
+app.get(
+  "/api",
+  withRateLimit(
+    async (req) =>
+      new Response(JSON.stringify({ ok: true }), {
+        headers: { "Content-Type": "application/json" },
+      }),
+    { tier: "moderate" }
+  )
+);
+```

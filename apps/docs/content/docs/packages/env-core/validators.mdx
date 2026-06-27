@@ -1,0 +1,108 @@
+---
+title: Validators
+description: Zod, Valibot, and ArkType examples with createEnv.
+---
+
+## Zod
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+import * as z from "zod";
+
+export const env = createEnv({
+  clientPrefix: "PUBLIC_",
+  server: {
+    DATABASE_URL: z.url(),
+    OPEN_AI_API_KEY: z.string().min(1),
+  },
+  client: {
+    PUBLIC_API_URL: z.url(),
+  },
+  runtimeEnv: process.env,
+  emptyStringAsUndefined: true,
+});
+```
+
+## Valibot
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+import * as v from "valibot";
+
+export const env = createEnv({
+  clientPrefix: "PUBLIC_",
+  server: {
+    DATABASE_URL: v.pipe(v.string(), v.url()),
+  },
+  client: {
+    PUBLIC_API_URL: v.pipe(v.string(), v.url()),
+  },
+  runtimeEnv: process.env,
+});
+```
+
+## ArkType
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+import { type } from "arktype";
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: type("string.url"),
+  },
+  clientPrefix: "PUBLIC_",
+  client: {
+    PUBLIC_API_URL: type("string.url"),
+  },
+  runtimeEnv: process.env,
+});
+```
+
+## Strict runtime mapping (bundler-friendly)
+
+When your framework only inlines env vars you reference explicitly, use `runtimeEnvStrict`:
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+import * as z from "zod";
+
+export const env = createEnv({
+  server: { DATABASE_URL: z.url() },
+  clientPrefix: "NEXT_PUBLIC_",
+  client: { NEXT_PUBLIC_API_URL: z.url() },
+  runtimeEnvStrict: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  },
+});
+```
+
+## Custom error handlers
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+
+export const env = createEnv({
+  // ...
+  onValidationError: (issues) => {
+    console.error("Invalid environment variables:", issues);
+    throw new Error("Invalid environment variables");
+  },
+  onInvalidAccess: (variable) => {
+    console.error("Invalid access to server variable:", variable);
+    throw new Error("Invalid access to server variable");
+  },
+});
+```
+
+## Skip validation
+
+`skipValidation` bypasses both schema validation and the client-access proxy. Only use it when exposing the picked keys acceptable for the current runtime.
+
+```ts title="lib/env.ts"
+export const env = createEnv({
+  // ...
+  skipValidation: true,
+});
+```

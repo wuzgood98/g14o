@@ -23,7 +23,7 @@ pnpm add @g14o/paystack zod
 pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod
 ```
 
-See each package README for setup, import paths, and examples.
+See each package guide in the [documentation](https://docs.g14o.dev) or package README for setup, import paths, and examples.
 
 ## Quick example
 
@@ -53,6 +53,7 @@ export const { withCache, invalidateCache } = createCache({
 | [`apps/cache-demo`](apps/cache-demo) | Manual verification of build vs runtime cache behavior |
 | [`apps/env-demo`](apps/env-demo) | Zod / Valibot / ArkType showcase for `@g14o/env-core` |
 | [`apps/paystack-demo`](apps/paystack-demo) | Paystack demo app |
+| [`apps/docs`](apps/docs) | Documentation site ([docs.g14o.dev](https://docs.g14o.dev)) |
 
 ## Development
 
@@ -71,6 +72,8 @@ pnpm demo:cache       # cache-demo dev server
 pnpm demo:cache:build # cache-demo production build
 pnpm demo:env         # env-demo dev server (port 3001)
 pnpm demo:env:build   # env-demo production build
+pnpm docs            # docs dev server (port 3003)
+pnpm docs:build      # docs production build
 ```
 
 See [apps/cache-demo/README.md](apps/cache-demo/README.md) for verifying cache behavior during `next build` and at runtime.

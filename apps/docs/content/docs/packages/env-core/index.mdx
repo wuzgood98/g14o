@@ -1,0 +1,52 @@
+---
+title: Overview
+description: Framework-agnostic typesafe environment variables via Standard Schema.
+---
+
+Framework-agnostic, typesafe environment variables validated with any [Standard Schema](https://standardschema.dev) library (Zod, Valibot, ArkType, and others).
+
+**Zero runtime dependencies** — install only the validator you use.
+
+## Install
+
+```bash
+pnpm add @g14o/env-core zod
+```
+
+### Peer dependencies
+
+`zod`, `valibot`, and `arktype` are **optional** peers — install the validator you use. Ranges follow [Standard Schema v1](https://standardschema.dev) support on each major line (`arktype` ^2.0.0, `valibot` ^1.0.0, `zod` ^4.0.0).
+
+## Usage
+
+```ts title="lib/env.ts"
+import { createEnv } from "@g14o/env-core";
+import * as z from "zod";
+
+export const env = createEnv({
+  clientPrefix: "PUBLIC_",
+  server: {
+    DATABASE_URL: z.url(),
+    OPEN_AI_API_KEY: z.string().min(1),
+  },
+  client: {
+    PUBLIC_API_URL: z.url(),
+  },
+  runtimeEnv: process.env,
+  emptyStringAsUndefined: true,
+});
+```
+
+On the **server**, all variables are validated and readable. On the **client**, only `client` keys are validated; accessing a `server` key throws with the exact variable name.
+
+Import the same `env` object in server and client code — no separate client export is required.
+
+## Next steps
+
+- [Validators](/docs/packages/env-core/validators) — Zod, Valibot, ArkType examples
+- [Client vs server](/docs/packages/env-core/client-server) — proxy behavior and security
+- [API reference](/docs/packages/env-core/api)
+
+## Demo
+
+See the [env-demo](https://github.com/wuzgood98/g14o/tree/main/apps/env-demo) app for a live Zod / Valibot / ArkType showcase.

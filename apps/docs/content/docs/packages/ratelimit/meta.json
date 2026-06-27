@@ -1,0 +1,4 @@
+{
+  "title": "@g14o/ratelimit",
+  "pages": ["index", "setup", "middleware", "api"]
+}

@@ -1,0 +1,12 @@
+{
+  "title": "@g14o/paystack-better-auth",
+  "pages": [
+    "index",
+    "server",
+    "checkout",
+    "subscriptions",
+    "webhooks",
+    "schema",
+    "api"
+  ]
+}

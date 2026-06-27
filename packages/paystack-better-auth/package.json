@@ -12,7 +12,7 @@
   },
   "author": "Gideon Ofori Addo",
   "bugs": "https://github.com/wuzgood98/g14o/issues",
-  "homepage": "https://github.com/wuzgood98/g14o/tree/main/packages/paystack-better-auth#readme",
+  "homepage": "https://docs.g14o.dev/packages/paystack-better-auth",
   "files": [
     "dist",
     "README.md"

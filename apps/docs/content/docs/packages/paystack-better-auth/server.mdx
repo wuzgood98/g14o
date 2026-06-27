@@ -1,0 +1,121 @@
+---
+title: Server setup
+description: Configure the Paystack plugin in your Better Auth server.
+---
+
+Create a `Paystack` client with your API keys, then pass it to the plugin as `paystackClient`.
+
+```ts title="lib/auth.ts"
+import { betterAuth } from "better-auth";
+import { Paystack } from "@g14o/paystack";
+import { paystack } from "@g14o/paystack-better-auth";
+import { env } from "@/lib/env";
+
+const paystackClient = new Paystack({
+  secretKey: env.PAYSTACK_SECRET_KEY,
+});
+
+export const auth = betterAuth({
+  // ...your auth config
+  plugins: [
+    paystack({
+      paystackClient,
+      createCustomerOnSignUp: true,
+      subscription: {
+        enabled: true,
+        plans: [
+          {
+            name: "basic",
+            interval: "monthly",
+            amount: "500",
+            currency: "GHS",
+          },
+          {
+            name: "pro",
+            planCode: "PLN_pro_monthly",
+            annualDiscountedPlanCode: "PLN_pro_annual",
+          },
+        ],
+        onSubscriptionComplete: async ({ subscription, plan }) => {
+          console.log(`Welcome ${subscription.referenceId} to ${plan?.name}`);
+        },
+      },
+      onEvent: async (event) => {
+        console.log("Paystack event", event.event);
+      },
+    }),
+  ],
+});
+```
+
+## Client setup
+
+```ts title="lib/auth-client.ts"
+import { createAuthClient } from "better-auth/client";
+import { paystackClient } from "@g14o/paystack-better-auth/client";
+
+export const authClient = createAuthClient({
+  plugins: [
+    paystackClient({
+      subscription: true, // enable subscription
+    }),
+  ],
+});
+```
+
+## Server-only APIs
+
+These endpoints are available on `auth.api` but are not exposed on `authClient.paystack` (no browser client wrapper).
+
+### Create Paystack customer
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+await auth.api.createPaystackCustomer({
+  body: {},
+  headers: await headers(),
+});
+```
+
+### Get Paystack customer
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+const customer = await auth.api.getPaystackCustomer({
+  query: {},
+  headers: await headers(),
+});
+```
+
+### Sync Paystack customer
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+await auth.api.syncPaystackCustomer({
+  body: {},
+  headers: await headers(),
+});
+```
+
+### Charge authorization
+
+Charge a saved authorization for the signed-in user (requires a reusable Paystack authorization on the customer):
+
+```ts
+import { headers } from "next/headers";
+import { auth } from "@/lib/auth";
+
+await auth.api.chargeAuthorization({
+  body: {
+    amount: 500,
+    currency: "GHS",
+  },
+  headers: await headers(),
+});
+```

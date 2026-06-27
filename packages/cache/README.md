@@ -1,5 +1,7 @@
 # @g14o/cache
 
+> Documentation: [docs.g14o.dev/packages/cache](https://docs.g14o.dev/packages/cache)
+
 Framework-agnostic Redis-backed caching with in-memory fallbacks for development and static build phases. Works with any Node.js server runtime (Next.js App Router, Hono, etc.).
 ## Install
 
@@ -119,7 +121,7 @@ createCache({
 ```
 
 You can also import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase in your own code.
-See [`@g14o/core`](../core/README.md) for the full bundled documentation, or install `@g14o/core` if you also need utilities and rate limiting.
+See [`@g14o/core`](../core/README.md) if you also need shared utilities and types.
 
 ## Import paths
 

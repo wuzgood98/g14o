@@ -1,0 +1,65 @@
+---
+title: Setup
+description: Next.js App Router routes and per-user rate limiting.
+---
+
+## Create a client
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-nextjs";
+import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
+
+export const { withRateLimit, checkRateLimit, withUserRateLimit } =
+  createRateLimit({
+    redis: {
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    },
+    logger,
+  });
+```
+
+## App Router route
+
+```ts title="app/api/chat/route.ts"
+import { NextResponse } from "next/server";
+import { withRateLimit } from "@/lib/rate-limit";
+
+export const POST = withRateLimit(
+  async (req) => NextResponse.json({ ok: true }),
+  { tier: "moderate" }
+);
+```
+
+## Per-user limits
+
+```ts title="app/api/chat/route.ts"
+import { NextResponse } from "next/server";
+import { withUserRateLimit } from "@/lib/rate-limit";
+
+export const POST = withUserRateLimit(
+  async (req) => NextResponse.json({ ok: true }),
+  async (req) => req.headers.get("x-user-id"),
+  { tier: "auth" }
+);
+```
+
+## Middleware
+
+Use `checkRateLimit` from your middleware when you need manual control:
+
+```ts
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+export async function middleware(req: NextRequest) {
+  const result = await checkRateLimit(req, { tier: "strict" });
+  if (!result.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+}
+```
+
+See [@g14o/ratelimit middleware patterns](/docs/packages/ratelimit/middleware) for more examples (adapt `Response` to `NextResponse`).

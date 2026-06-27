@@ -1,0 +1,45 @@
+---
+title: Examples
+description: withCache, cache keys, invalidation, and parameterized caching.
+---
+
+## Wrap a server function with withCache
+
+Functions passed to `withCache` must return `{ ok: true, data }` or `{ ok: false, error, status }`:
+
+```ts title="lib/users.ts"
+import { withCache } from "@/lib/cache";
+
+async function getUsers() {
+  return fetchUsersFromDb();
+}
+
+export const getUsersCached = withCache(getUsers, {
+  ttl: "medium",
+  prefix: "users",
+});
+```
+
+## Parameterized cache with a custom key
+
+```ts title="lib/users.ts"
+import { createListCacheKey } from "@g14o/cache";
+import { withCache } from "@/lib/cache";
+
+export const listUsersCached = withCache(listUsers, {
+  prefix: "users",
+  keyGenerator: (filters) => createListCacheKey("users", filters),
+  ttl: "short",
+});
+```
+
+## Invalidate after a mutation
+
+```ts title="lib/users.ts"
+import { createEntityCacheKey } from "@g14o/cache";
+import { invalidateCache, invalidateCacheKey } from "@/lib/cache";
+
+await updateUser(id, data);
+await invalidateCacheKey(createEntityCacheKey("user", id));
+await invalidateCache("*", { prefix: "users" }); // list keys matching users:*
+```

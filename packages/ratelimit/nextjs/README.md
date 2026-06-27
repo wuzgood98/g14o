@@ -1,5 +1,7 @@
 # @g14o/ratelimit-nextjs
 
+> Documentation: [docs.g14o.dev/packages/ratelimit-nextjs](https://docs.g14o.dev/packages/ratelimit-nextjs)
+
 Next.js rate limiting with Upstash Redis. Typed for `NextRequest` / `NextResponse` route handlers; delegates to [@g14o/ratelimit](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core) at runtime.
 
 ## Install
