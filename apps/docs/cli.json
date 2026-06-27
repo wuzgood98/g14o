@@ -8,7 +8,7 @@
     "libDir": "./lib"
   },
   "baseDir": "",
-  "uiLibrary": "base-ui",
+  "uiLibrary": "radix-ui",
   "framework": "next",
   "commands": {}
 }
