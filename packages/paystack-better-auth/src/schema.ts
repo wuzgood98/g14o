@@ -13,6 +13,7 @@ export const user = {
       paystackCustomerId: {
         type: "number",
         required: false,
+        bigint: true,
       },
     },
   },
@@ -47,6 +48,7 @@ export const subscriptions = {
       customerId: {
         type: "number",
         required: true,
+        bigint: true,
       },
       customerCode: {
         type: "string",
@@ -100,6 +102,7 @@ export const payments = {
       transactionId: {
         type: "number",
         required: true,
+        bigint: true,
       },
       userId: {
         type: "string",
@@ -126,10 +129,12 @@ export const payments = {
       customerId: {
         type: "number",
         required: true,
+        bigint: true,
       },
       amount: {
         type: "number",
         required: true,
+        bigint: true,
       },
       currency: {
         type: "string",
