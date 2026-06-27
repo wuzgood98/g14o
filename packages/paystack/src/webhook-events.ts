@@ -429,6 +429,8 @@ const transferDataSchema = z.object({
 /* ------------------------------------------------------------------ */
 
 const eventSchemaMap = {
+  "bank.transfer.rejected": chargeSuccessDataSchema,
+
   "charge.success": chargeSuccessDataSchema,
 
   "charge.dispute.create": disputeDataSchema,
@@ -468,6 +470,11 @@ export type PaystackEventName = keyof typeof eventSchemaMap;
 /* ------------------------------------------------------------------ */
 /* Per-event envelope schemas ( { event, data } )                      */
 /* ------------------------------------------------------------------ */
+
+const bankTransferRejectedEventSchema = z.object({
+  event: z.literal("bank.transfer.rejected"),
+  data: chargeSuccessDataSchema,
+});
 
 const chargeSuccessEventSchema = z.object({
   event: z.literal("charge.success"),
@@ -594,6 +601,7 @@ const transferReversedEventSchema = z.object({
 /* ------------------------------------------------------------------ */
 
 export const paystackWebhookEventSchema = z.discriminatedUnion("event", [
+  bankTransferRejectedEventSchema,
   chargeSuccessEventSchema,
   chargeDisputeCreateEventSchema,
   chargeDisputeRemindEventSchema,
@@ -663,6 +671,7 @@ export type TransferData = z.infer<typeof transferDataSchema>;
  * or `PaystackEventDataMap["charge.dispute.create"]`.
  */
 export interface PaystackEventDataMap {
+  "bank.transfer.rejected": ChargeSuccessData;
   "charge.dispute.create": ChargeDisputeData;
   "charge.dispute.remind": ChargeDisputeData;
   "charge.dispute.resolve": ChargeDisputeData;
