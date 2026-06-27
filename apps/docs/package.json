@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.208",
-    "@base-ui/react": "^1.6.0",
     "@g14o/cache": "workspace:*",
     "@g14o/env-core": "workspace:*",
     "@g14o/paystack": "workspace:*",
@@ -27,7 +26,7 @@
     "fumadocs-core": "^16.10.5",
     "fumadocs-mdx": "^15.0.12",
     "fumadocs-typescript": "^5.2.6",
-    "fumadocs-ui": "npm:@fumadocs/base-ui@latest",
+    "fumadocs-ui": "^16.10.5",
     "hast-util-to-jsx-runtime": "^2.3.6",
     "lucide-react": "^1.20.0",
     "mermaid": "^11.16.0",
