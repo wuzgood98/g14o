@@ -1,4 +1,4 @@
 {
   "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd ../.. && pnpm --filter docs build"
+  "buildCommand": "cd ../.. && turbo build --filter=docs"
 }
