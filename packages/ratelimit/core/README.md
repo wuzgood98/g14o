@@ -16,17 +16,18 @@ Peers are optional in `package.json` metadata for metadata-only installs; add bo
 
 ## Setup
 
-Create an app-owned client in `lib/rate-limit.ts`:
+Create an app-owned client in `lib/ratelimit.ts`:
 
 ```ts
 import { createRateLimit } from "@g14o/ratelimit";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   createRateLimit({
     redis: {
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
     },
     logger,
   });
@@ -37,7 +38,7 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
 ### Next.js App Router route
 
 ```ts
-import { withRateLimit } from "@/lib/rate-limit";
+import { withRateLimit } from "@/lib/ratelimit";
 
 export const POST = withRateLimit(
   async (req) => Response.json({ ok: true }),
@@ -50,9 +51,9 @@ export const POST = withRateLimit(
 Use `checkRateLimit` when you are not wrapping a route handler:
 
 ```ts
-import { checkRateLimit } from "@/lib/rate-limit";
+import { checkRateLimit } from "@/lib/ratelimit";
 
-export async function handleRequest(req: Request) {
+export async function POST(req: Request) {
   const result = await checkRateLimit(req, { tier: "strict" });
   if (!result.ok) {
     return Response.json({ error: "Too many requests" }, { status: 429 });
@@ -64,7 +65,7 @@ export async function handleRequest(req: Request) {
 ### Per-user rate limit
 
 ```ts
-import { withUserRateLimit } from "@/lib/rate-limit";
+import { withUserRateLimit } from "@/lib/ratelimit";
 
 export const POST = withUserRateLimit(
   async (req) => Response.json({ ok: true }),
@@ -76,7 +77,7 @@ export const POST = withUserRateLimit(
 ### Custom identifier
 
 ```ts
-import { withRateLimit } from "@/lib/rate-limit";
+import { withRateLimit } from "@/lib/ratelimit";
 
 export const GET = withRateLimit(
   async (req) => Response.json({ ok: true }),
@@ -88,32 +89,6 @@ export const GET = withRateLimit(
 );
 ```
 
-### Hono
-
-```ts
-import { Hono } from "hono";
-import { createRateLimit } from "@g14o/ratelimit";
-
-const { withRateLimit } = createRateLimit({
-  redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  },
-});
-const app = new Hono();
-
-app.get(
-  "/api",
-  withRateLimit(
-    async (req) =>
-      new Response(JSON.stringify({ ok: true }), {
-        headers: { "Content-Type": "application/json" },
-      }),
-    { tier: "moderate" }
-  )
-);
-```
-
 ### Custom tiers
 
 Override built-in tier limits when creating the client:
@@ -121,8 +96,8 @@ Override built-in tier limits when creating the client:
 ```ts
 export const { withRateLimit } = createRateLimit({
   redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
   },
   tiers: {
     strict: { limit: 3, window: "30 s" },
@@ -137,11 +112,12 @@ By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js
 
 ```ts
 import { createRateLimit } from "@g14o/ratelimit";
+import { env } from "@/lib/env";
 
 export const { withRateLimit } = createRateLimit({
   redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
   },
   inMemoryDuringBuild: true, // default
 });
