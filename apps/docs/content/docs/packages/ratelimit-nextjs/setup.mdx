@@ -49,12 +49,12 @@ export const POST = withUserRateLimit(
 
 Use `checkRateLimit` from your middleware when you need manual control:
 
-```ts
+```ts title="app/api/chat/route.ts"
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 
-export async function middleware(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const result = await checkRateLimit(req, { tier: "strict" });
   if (!result.ok) {
     return NextResponse.json({ error: "Too many requests" }, { status: 429 });
