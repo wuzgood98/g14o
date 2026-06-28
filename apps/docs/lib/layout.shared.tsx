@@ -1,14 +1,15 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
+import { siteConfig } from "./site-config";
 
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      title: "g14o",
+      title: siteConfig.name,
     },
     links: [
       {
         text: "GitHub",
-        url: "https://github.com/wuzgood98/g14o",
+        url: siteConfig.githubUrl,
         external: true,
       },
     ],
