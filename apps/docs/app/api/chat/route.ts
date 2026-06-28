@@ -3,6 +3,7 @@ import { convertToModelMessages, stepCountIs, streamText, tool } from "ai";
 import { z } from "zod";
 import type { ChatUIMessage, SearchTool } from "@/components/ai/search";
 import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import { withRateLimit } from "@/lib/ratelimit";
 import { searchDocs } from "@/lib/search/server";
 
@@ -27,10 +28,11 @@ const systemPrompt = `
 
   ## Search behavior
   - searchDocs is full-text search with no package filter. To bias results toward a specific package, include its name as a literal token in the query (e.g. "@g14o/ratelimit configure" rather than "configure rate limiting").
-  - Each result has breadcrumbs showing which package/section it belongs to. Check breadcrumbs to confirm a result actually belongs to the package the user is asking about, especially for similarly-named packages like ratelimit vs ratelimit-nextjs.
+  - Each result has breadcrumbs showing which package/section it belongs to. Check breadcrumbs to confirm a result actually belongs to the package the user is asking about, especially for similarly-named packages like ratelimit vs ratelimit-nextjs, or paystack vs paystack-better-auth.
   - Each result has a type: "page" results are broader/summary-level; "heading" and "text" results are narrower snippets from one section. Weigh how much a result actually supports your answer based on this.
   - Request 5-10 results for a specific question. Only request more if an initial broad query returns weak or off-topic matches.
-  - For questions spanning multiple packages, issue one query per package rather than one combined query.
+  - If the user names a single package (e.g. "paystack"), search for that package first. Only branch into a second, similarly-named package (e.g. paystack-better-auth) if the first search's results or breadcrumbs suggest the answer actually lives there — don't treat a single package name as automatically spanning multiple packages.
+  - If a question genuinely spans multiple packages (e.g. "how do I use ratelimit with paystack-better-auth"), search for each package separately rather than relying on one combined query.
   - You have a limited number of steps. If your first search misses, refine the query once with more specific terms (exact function/error name) before giving up — don't burn steps re-running near-identical queries.
 
   ## Rules
@@ -41,11 +43,13 @@ const systemPrompt = `
   - Keep answers concise: extract only the relevant snippet, don't reproduce full pages. Use code blocks for code.
   - If a question is unrelated to the @g14o packages, say that's outside what you can help with.
   - If a question is ambiguous (could mean two packages, or v1 vs v2), ask a brief clarifying question instead of picking silently.
+  - You must always end your turn with a text response to the user, even if you've used several search steps. Never end your turn on a tool call alone — if you're running low on steps, answer with what you've already found rather than searching again.
 `;
 
 export const POST = withRateLimit(
   async (req) => {
     if (!env.ENABLE_AI_CHAT) {
+      logger.warn("AI chat is disabled");
       return Response.json({ error: "AI chat is disabled" }, { status: 403 });
     }
 
@@ -55,7 +59,7 @@ export const POST = withRateLimit(
       model: chatModel,
       maxOutputTokens: 2048,
       system: systemPrompt,
-      stopWhen: stepCountIs(5),
+      stopWhen: stepCountIs(8),
       tools: {
         searchDocs: searchTool,
       },
@@ -82,12 +86,12 @@ export const POST = withRateLimit(
 
 const searchTool = tool({
   description:
-    "Search across all `@g14o/*` documentation for specific terms, keywords, or concepts. Returns matching page slugs and snippets. Use this when you're not sure about which page contains the answer.",
+    "Search across all `@g14o/*` documentation for specific terms, keywords, or concepts. Returns matching page slugs and snippets. Always call this before answering any question about package behavior, APIs, configuration, or usage — do not rely on prior knowledge.",
   inputSchema: z.object({
     query: z
       .string()
       .describe(
-        "Search query - keywords or terms to find. e.g 'rate limit', 'cache', 'paystack', 'environment variable validation', 'better-auth'"
+        "Search query - keywords or terms to find. To bias results toward a specific package, include its name as a literal token (e.g. '@g14o/ratelimit configure', '@g14o/paystack-better-auth setup') rather than generic phrasing. e.g 'rate limit', 'cache', 'paystack', 'environment variable validation', 'better-auth'"
       ),
     limit: z
       .number()
