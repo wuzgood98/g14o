@@ -55,30 +55,3 @@ export const { withRateLimit } = createRateLimit({
 ```
 
 Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
-
-## Hono
-
-```ts title="server.ts"
-import { Hono } from "hono";
-import { createRateLimit } from "@g14o/ratelimit";
-import { env } from "@/lib/env";
-
-const { withRateLimit } = createRateLimit({
-  redis: {
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
-  },
-});
-const app = new Hono();
-
-app.get(
-  "/api",
-  withRateLimit(
-    async (req) =>
-      new Response(JSON.stringify({ ok: true }), {
-        headers: { "Content-Type": "application/json" },
-      }),
-    { tier: "moderate" }
-  )
-);
-```
