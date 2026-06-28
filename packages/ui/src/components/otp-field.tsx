@@ -1,7 +1,7 @@
 "use client";
 
 // biome-ignore lint/style/noExportedImports: ok
-import { OTPFieldPreview as OTPFieldPrimitive } from "@base-ui/react/otp-field";
+import { OTPField as OTPFieldPrimitive } from "@base-ui/react/otp-field";
 import { Separator } from "@workspace/ui/components/separator";
 import { cn } from "@workspace/ui/lib/utils";
 import type * as React from "react";
