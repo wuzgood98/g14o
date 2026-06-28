@@ -732,6 +732,7 @@ export const handlePaystackWebhookEvent = async (options: {
     case "transfer.failed":
     case "transfer.success":
     case "transfer.reversed":
+    case "bank.transfer.rejected":
       return;
     default:
       return assertNever(event);
