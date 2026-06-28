@@ -56,7 +56,13 @@ export interface RateLimitTiersOverride {
 
 /** Options for {@link createRateLimit}. */
 export interface CreateRateLimitOptions extends InMemoryEnvOptions {
+  /**
+   * Application logger. Defaults to a silent no-op logger.
+   */
   logger?: Logger;
+  /**
+   * Upstash credentials or a pre-built Redis client (e.g. `Redis.fromEnv()`).
+   */
   redis?: RedisConfig;
   /**
    * Override built-in tier limits/windows/prefixes. Each tier key is optional;
