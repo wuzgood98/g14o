@@ -91,7 +91,7 @@ const searchTool = tool({
     query: z
       .string()
       .describe(
-        "Search query - keywords or terms to find. To bias results toward a specific package, include its name as a literal token (e.g. '@g14o/ratelimit configure', '@g14o/paystack-better-auth setup') rather than generic phrasing. e.g 'rate limit', 'cache', 'paystack', 'environment variable validation', 'better-auth'"
+        "Search query - keywords or terms to find. For package-specific questions, include the package name as a literal token (e.g. '`@g14o/ratelimit` configure', '`@g14o/paystack-better-auth` setup'). For non-package-specific concepts, use the exact concept terms (e.g. 'rate limit', 'cache', 'environment variable validation')."
       ),
     limit: z
       .number()
