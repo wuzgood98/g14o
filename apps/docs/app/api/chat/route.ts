@@ -45,6 +45,10 @@ const systemPrompt = `
 
 export const POST = withRateLimit(
   async (req) => {
+    if (!env.ENABLE_AI_CHAT) {
+      return Response.json({ error: "AI chat is disabled" }, { status: 403 });
+    }
+
     const reqJson = await req.json();
 
     const result = streamText({
