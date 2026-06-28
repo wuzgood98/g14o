@@ -66,7 +66,7 @@ export const POST = withRateLimit(
 
 const searchTool = tool({
   description:
-    "Search accross all `@g14o/*` documentation for specific terms, keywords, or concepts. Returns matching page slugs and snippets. Use this when you're not sure about which page contains the answer.",
+    "Search across all `@g14o/*` documentation for specific terms, keywords, or concepts. Returns matching page slugs and snippets. Use this when you're not sure about which page contains the answer.",
   inputSchema: z.object({
     query: z
       .string()
