@@ -19,12 +19,13 @@ Create an app-owned client in `lib/rate-limit.ts`:
 ```ts
 import { createRateLimit } from "@g14o/ratelimit-nextjs";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   createRateLimit({
     redis: {
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
     },
     logger,
   });
