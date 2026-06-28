@@ -20,13 +20,17 @@ import { env } from "@/lib/env";
 const paystack = new Paystack({
   secretKey: env.PAYSTACK_SECRET_KEY,
 });
+```
 
+```ts
+// Start hosted checkout
 const checkout = await paystack.transactions.initialize({
   email: "user@example.com",
   amount: 1500,
   currency: "GHS",
 });
 
+// Create customer
 const customer = await paystack.customers.create({
   email: "user@example.com",
   first_name: "Ada",
