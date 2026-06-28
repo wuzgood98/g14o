@@ -30,11 +30,12 @@ See [Installation](/docs/getting-started/installation) for per-package setup, or
 ```ts title="lib/cache.ts"
 import { createCache } from "@g14o/cache";
 import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
 
 export const { withCache, invalidateCache } = createCache({
   redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
   },
   logger,
 });
