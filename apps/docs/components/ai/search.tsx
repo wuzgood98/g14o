@@ -138,9 +138,7 @@ export function AISearchInputActions() {
 const StorageKeyInput = "__ai_search_input";
 export function AISearchInput(props: ComponentProps<"form">) {
   const { status, sendMessage, stop } = useChatContext();
-  const [input, setInput] = useState(
-    () => localStorage.getItem(StorageKeyInput) ?? ""
-  );
+  const [input, setInput] = useState("");
   const isLoading = status === "streaming" || status === "submitted";
   const onStart = (e?: SyntheticEvent) => {
     e?.preventDefault();
@@ -173,6 +171,13 @@ export function AISearchInput(props: ComponentProps<"form">) {
       document.getElementById("nd-ai-input")?.focus();
     }
   }, [isLoading]);
+
+  useEffect(() => {
+    const input = localStorage.getItem(StorageKeyInput);
+    if (input) {
+      setInput(input);
+    }
+  }, []);
 
   return (
     <form
@@ -237,29 +242,45 @@ function List(props: Omit<ComponentProps<"div">, "dir">) {
     if (!containerRef.current) {
       return;
     }
-    function callback() {
-      const container = containerRef.current;
-      if (!container) {
-        return;
-      }
+    const container = containerRef.current;
 
+    const scrollToBottom = () => {
       container.scrollTo({
         top: container.scrollHeight,
         behavior: "instant",
       });
-    }
+    };
 
-    const observer = new ResizeObserver(callback);
-    callback();
+    // Observe size changes on all current and future children
+    const resizeObserver = new ResizeObserver(scrollToBottom);
+    const observeChildren = () => {
+      resizeObserver.disconnect();
+      for (const child of container.children) {
+        resizeObserver.observe(child);
+      }
+    };
 
-    const element = containerRef.current?.firstElementChild;
+    observeChildren();
 
-    if (element) {
-      observer.observe(element);
-    }
+    // Re-attach when children are added/removed
+    const mutationObserver = new MutationObserver(observeChildren);
+    mutationObserver.observe(container, { childList: true });
+
+    // Prevent scroll chaining to body on desktop
+    const onWheel = (e: WheelEvent) => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      const atTop = scrollTop <= 0 && e.deltaY < 0;
+      const atBottom = scrollTop + clientHeight >= scrollHeight && e.deltaY > 0;
+      if (atTop || atBottom) {
+        e.preventDefault();
+      }
+    };
+    container.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
-      observer.disconnect();
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      container.removeEventListener("wheel", onWheel);
     };
   }, []);
 
@@ -300,7 +321,7 @@ function Input(props: ComponentProps<"textarea">) {
 
 const roleName: Record<string, string> = {
   user: "you",
-  assistant: "fumadocs",
+  assistant: "g14o bot",
 };
 
 function Message({
@@ -320,11 +341,17 @@ function Message({
       const toolName = part.type.slice("tool-".length);
       const p = part as UIToolInvocation<Tool>;
 
-      if (toolName !== "search" || !p.toolCallId) {
+      if (toolName !== "searchDocs" || !p.toolCallId) {
         continue;
       }
       searchCalls.push(p);
     }
+  }
+
+  // Fix incomplete code blocks
+  const codeBlockCount = (markdown.match(/```/g) || []).length;
+  if (codeBlockCount % 2 !== 0) {
+    markdown += "\n```";
   }
 
   return (
@@ -367,7 +394,7 @@ function Message({
 export function AISearch({ children }: { children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const chat = useChat<ChatUIMessage>({
-    id: "search",
+    id: "ai-chat",
     transport: new DefaultChatTransport({
       api: "/api/chat",
     }),
@@ -502,9 +529,30 @@ export function AISearchPanelList({
           {messages.map((item) => (
             <Message key={item.id} message={item} />
           ))}
+          <ThinkingIndicator />
         </div>
       )}
     </List>
+  );
+}
+
+function ThinkingIndicator() {
+  const { status, messages } = useChatContext();
+  const lastMessage = messages.at(-1);
+  const hasNoText =
+    !lastMessage ||
+    lastMessage.role !== "assistant" ||
+    !lastMessage.parts?.some((p) => p.type === "text" && p.text.length > 0);
+
+  if (status !== "submitted" && !(status === "streaming" && hasNoText)) {
+    return null;
+  }
+
+  return (
+    <div className="flex items-center gap-2 py-2 text-muted-foreground text-xs">
+      <Loader2 className="size-3 animate-spin" />
+      <span>Looking through docs...</span>
+    </div>
   );
 }
 
@@ -540,9 +588,5 @@ export function useAISearchContext() {
 }
 
 function useChatContext() {
-  const context = use(Context);
-  if (!context) {
-    throw new Error("useChatContext must be used within an AISearchProvider");
-  }
-  return context.chat;
+  return useAISearchContext().chat;
 }
