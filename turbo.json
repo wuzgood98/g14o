@@ -23,7 +23,8 @@
         "UPSTASH_REDIS_REST_URL",
         "UPSTASH_REDIS_REST_TOKEN",
         "OPENROUTER_API_KEY",
-        "OPENROUTER_MODEL"
+        "OPENROUTER_MODEL",
+        "ENABLE_AI_CHAT"
       ]
     },
     "//#check": {},

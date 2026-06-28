@@ -84,6 +84,7 @@ jobs:
           UPSTASH_REDIS_REST_TOKEN: sk_test_1234567890
           OPENROUTER_API_KEY: sk_test_1234567890
           OPENROUTER_MODEL: gpt-4o-mini
+          ENABLE_AI_CHAT: true
         run: pnpm build
 
       - name: Check
