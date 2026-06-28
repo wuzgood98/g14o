@@ -6,7 +6,7 @@ description: withRateLimit, checkRateLimit, per-user limits, and custom identifi
 ## App Router route
 
 ```ts title="app/api/chat/route.ts"
-import { withRateLimit } from "@/lib/rate-limit";
+import { withRateLimit } from "@/lib/ratelimit";
 
 export const POST = withRateLimit(
   async (req) => Response.json({ ok: true }),
@@ -18,10 +18,10 @@ export const POST = withRateLimit(
 
 Use `checkRateLimit` when you are not wrapping a route handler:
 
-```ts title="lib/chat.ts"
-import { checkRateLimit } from "@/lib/rate-limit";
+```ts title="app/api/chat/route.ts"
+import { checkRateLimit } from "@/lib/ratelimit";
 
-export async function handleRequest(req: Request) {
+export async function POST(req: Request) {
   const result = await checkRateLimit(req, { tier: "strict" });
   if (!result.ok) {
     return Response.json({ error: "Too many requests" }, { status: 429 });
@@ -33,7 +33,7 @@ export async function handleRequest(req: Request) {
 ## Per-user rate limit
 
 ```ts title="app/api/chat/route.ts"
-import { withUserRateLimit } from "@/lib/rate-limit";
+import { withUserRateLimit } from "@/lib/ratelimit";
 
 export const POST = withUserRateLimit(
   async (req) => Response.json({ ok: true }),
@@ -45,7 +45,7 @@ export const POST = withUserRateLimit(
 ## Custom identifier
 
 ```ts title="app/api/chat/route.ts"
-import { withRateLimit } from "@/lib/rate-limit";
+import { withRateLimit } from "@/lib/ratelimit";
 
 export const GET = withRateLimit(
   async (req) => Response.json({ ok: true }),
