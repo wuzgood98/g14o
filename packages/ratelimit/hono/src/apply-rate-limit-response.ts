@@ -11,17 +11,22 @@ import type { Context, Env } from "hono";
  *
  * @param response - Handler response.
  * @param result - Limit, remaining, and reset from a check result.
- * @returns The same response with rate-limit headers set.
+ * @returns A new response with rate-limit headers set.
  */
 export function applyRateLimitHeadersToResponse(
   response: Response,
   result: Pick<RateLimitCheckResult, "limit" | "remaining" | "reset">
 ): Response {
-  const headers = buildRateLimitHeaders(result);
-  for (const [key, value] of Object.entries(headers)) {
-    response.headers.set(key, value);
+  const rateLimitHeaders = buildRateLimitHeaders(result);
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(rateLimitHeaders)) {
+    headers.set(key, value);
   }
-  return response;
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 /**
@@ -34,10 +39,7 @@ export function applyRateLimitHeadersToContext<E extends Env>(
   c: Context<E>,
   result: Pick<RateLimitCheckResult, "limit" | "remaining" | "reset">
 ): void {
-  const headers = buildRateLimitHeaders(result);
-  for (const [key, value] of Object.entries(headers)) {
-    c.res.headers.set(key, value);
-  }
+  c.res = applyRateLimitHeadersToResponse(c.res, result);
 }
 
 /**
