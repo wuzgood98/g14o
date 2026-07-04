@@ -67,6 +67,15 @@ type TokenConfigOverride = Partial<
   Pick<TokenConfig, "limit" | "prefix" | "window">
 >;
 
+/** Validates a Redis key prefix. */
+export function validatePrefix(prefix: string): void {
+  if (typeof prefix !== "string" || prefix.trim() === "") {
+    throw new Error(
+      "Invalid rate limit prefix: prefix must be a non-empty string"
+    );
+  }
+}
+
 /** Validates a resolved {@link TokenConfig} for one tier. */
 export function validateTokenConfig(
   config: TokenConfig,
@@ -114,8 +123,31 @@ export interface RateLimiterAdapter {
 }
 
 export interface RateLimitOptions<Req extends Request = Request> {
+  /**
+   * Function to get the identifier for the request. Defaults to the IP address of the request.
+   * @example
+   * ```ts
+   * { identifierFn: (req) => req.headers.get("x-api-key") ?? "anonymous" }
+   * ```
+   */
   identifierFn?: (req: Req) => string | Promise<string>;
+  /**
+   * Redis key prefix override for this call (Upstash only). Defaults to the tier prefix.
+   * @example
+   * ```ts
+   * { prefix: "@ratelimit:docs-chat" }
+   * ```
+   */
+  prefix?: string;
+  /** Skip rate limit for this request. */
   skipRateLimit?: (req: Req) => boolean | Promise<boolean>;
+  /**
+   * Rate limit tier to use. Defaults to "moderate".
+   * @example
+   * ```ts
+   * { tier: "strict" }
+   * ```
+   */
   tier?: RateLimitTier;
 }
 

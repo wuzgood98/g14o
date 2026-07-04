@@ -1,6 +1,6 @@
 {
   "name": "@g14o/ratelimit",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Framework-agnostic rate limiting with Upstash Redis.",
   "type": "module",
   "sideEffects": false,

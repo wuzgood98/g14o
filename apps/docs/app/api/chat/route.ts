@@ -81,7 +81,7 @@ export const POST = withRateLimit(
 
     return result.toUIMessageStreamResponse();
   },
-  { tier: "moderate" }
+  { tier: "moderate", prefix: "@ratelimit:docs-chat" }
 );
 
 const searchTool = tool({

@@ -21,6 +21,7 @@ import {
   resolveTierConfig,
   type TokenConfig,
   tokenConfig,
+  validatePrefix,
 } from "./internals";
 import type { Duration } from "./parse-duration";
 
@@ -198,7 +199,7 @@ export function createRateLimit<
     }
   }
 
-  const rateLimiterCache = new Map<RateLimitTier, RateLimiterAdapter>();
+  const rateLimiterCache = new Map<string, RateLimiterAdapter>();
 
   /** Reset the rate limit. */
   const reset = (): void => {
@@ -210,21 +211,38 @@ export function createRateLimit<
     rateLimiterCache.clear();
   };
 
+  const resolveLimiterConfig = (
+    tier: RateLimitTier,
+    prefixOverride?: string
+  ): TokenConfig => {
+    const override = runtime.tiers?.[tier];
+    const config = override
+      ? resolveTierConfig(tier, override)
+      : tokenConfig[tier];
+    if (prefixOverride !== undefined) {
+      validatePrefix(prefixOverride);
+    }
+    const effectivePrefix = prefixOverride ?? config.prefix;
+    return { ...config, prefix: effectivePrefix };
+  };
+
   /** Get the rate limiter for a given tier.
    * @param tier - The tier to get the rate limiter for.
+   * @param prefixOverride - Optional Redis key prefix override for this limiter.
    * @returns The rate limiter for the given tier.
    */
-  const getRateLimiter = (tier: RateLimitTier): RateLimiterAdapter => {
-    const cached = rateLimiterCache.get(tier);
+  const getRateLimiter = (
+    tier: RateLimitTier,
+    prefixOverride?: string
+  ): RateLimiterAdapter => {
+    const config = resolveLimiterConfig(tier, prefixOverride);
+    const cacheKey = `${tier}:${config.prefix}`;
+    const cached = rateLimiterCache.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     const { logger } = runtime;
-    const override = runtime.tiers?.[tier];
-    const config = override
-      ? resolveTierConfig(tier, override)
-      : tokenConfig[tier];
     let limiter: RateLimiterAdapter;
 
     if (
@@ -245,7 +263,7 @@ export function createRateLimit<
       limiter = new UpstashRateLimiter(config, redis);
     }
 
-    rateLimiterCache.set(tier, limiter);
+    rateLimiterCache.set(cacheKey, limiter);
     return limiter;
   };
 
@@ -258,7 +276,17 @@ export function createRateLimit<
     req: Req,
     rateLimitOptions: RateLimitOptions<Req> = {}
   ): Promise<RateLimitCheckResult> => {
-    const { tier = "moderate", identifierFn, skipRateLimit } = rateLimitOptions;
+    const {
+      tier = "moderate",
+      identifierFn,
+      skipRateLimit,
+      prefix,
+    } = rateLimitOptions;
+
+    if (prefix !== undefined) {
+      validatePrefix(prefix);
+    }
+
     const { logger } = runtime;
     const logUrl = sanitizeLogValue(req.url);
 
@@ -278,7 +306,7 @@ export function createRateLimit<
         : getDefaultIdentifier(req);
       const logIdentifier = sanitizeLogValue(identifier);
 
-      const ratelimit = getRateLimiter(tier);
+      const ratelimit = getRateLimiter(tier, prefix);
 
       const {
         success,
