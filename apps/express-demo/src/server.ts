@@ -1,4 +1,5 @@
 import express from "express";
+import { demoAuth } from "./middleware/demo-auth.js";
 import { chatHandler } from "./routes/chat";
 import { statusHandler, statusMiddleware } from "./routes/status";
 import {
@@ -16,14 +17,14 @@ app.get("/", (_req, res) => {
     routes: [
       "GET /api/status",
       "POST /api/chat",
-      "POST /api/user-action (requires x-user-id header)",
+      "POST /api/user-action (demo auth via x-user-id header)",
     ],
   });
 });
 
 app.get("/api/status", statusMiddleware, statusHandler);
 app.post("/api/chat", chatHandler);
-app.post("/api/user-action", userActionMiddleware, userActionHandler);
+app.post("/api/user-action", demoAuth, userActionMiddleware, userActionHandler);
 
 app.listen(port, () => {
   console.log(`express-demo listening on http://localhost:${port}`);

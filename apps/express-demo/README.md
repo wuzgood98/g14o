@@ -28,7 +28,7 @@ pnpm demo:express
 |--------|------|---------|
 | `GET` | `/api/status` | `middleware({ tier: "lenient" })` |
 | `POST` | `/api/chat` | `withRateLimit` with per-endpoint prefix |
-| `POST` | `/api/user-action` | `userMiddleware` keyed on `x-user-id` header |
+| `POST` | `/api/user-action` | `demoAuth` sets `req.user`, then `userMiddleware` keys on `req.user.id` |
 
 ## Try it
 

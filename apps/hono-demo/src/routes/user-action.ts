@@ -2,7 +2,7 @@ import { userMiddleware } from "../lib/ratelimit";
 import type { Context } from "../types";
 
 export const userActionMiddleware = userMiddleware(
-  async (c) => c.req.header("x-user-id") ?? null,
+  async (c) => c.get("user")?.id ?? null,
   { tier: "auth" }
 );
 

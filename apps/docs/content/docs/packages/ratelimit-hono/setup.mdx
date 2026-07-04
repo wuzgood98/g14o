@@ -84,6 +84,8 @@ Works the same in route modules — import `withRateLimit` from `lib/ratelimit.t
 
 ## Per-user limits
 
+Use a verified identity from upstream auth middleware (session, JWT, etc.) — set on `Variables.user`, not client-controlled headers.
+
 ```ts title="src/routes/user-action.ts"
 import { Hono } from "hono";
 import { userMiddleware } from "../lib/ratelimit";
@@ -93,7 +95,7 @@ const app = new Hono<AppEnv>();
 
 app.post(
   "/api/user-action",
-  userMiddleware(async (c) => c.req.header("x-user-id") ?? null, {
+  userMiddleware(async (c) => c.get("user")?.id ?? null, {
     tier: "auth",
   }),
   (c) => c.json({ ok: true })

@@ -8,7 +8,7 @@ Demo app for [@g14o/ratelimit-hono](../../packages/ratelimit/hono).
 |--------|------|---------|
 | GET | `/api/status` | `middleware({ tier: "lenient" })` |
 | POST | `/api/chat` | `withRateLimit(handler, { tier: "moderate" })` |
-| POST | `/api/user-action` | `userMiddleware` (requires `x-user-id` header) |
+| POST | `/api/user-action` | `demoAuth` sets `Variables.user`, then `userMiddleware` keys on `user.id` |
 
 ## Run
 

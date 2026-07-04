@@ -151,10 +151,14 @@ export interface RateLimitClient<
    * @example
    * ```ts
    * import { withUserRateLimit } from "@/lib/ratelimit";
+   * import { getSession } from "@/lib/auth";
    *
    * export const POST = withUserRateLimit(
    *   (req) => Response.json({ message: "Hello, world!" }),
-   *   async (req) => req.headers.get("x-user-id"),
+   *   async (req) => {
+   *     const session = await getSession(req);
+   *     return session?.user.id ?? null;
+   *   },
    *   { tier: "moderate" }
    * );
    * ```
@@ -455,10 +459,14 @@ export function createRateLimit<
    * @example
    * ```ts
    * import { withUserRateLimit } from "@/lib/ratelimit";
+   * import { getSession } from "@/lib/auth";
    *
    * export const POST = withUserRateLimit(
    *   (req) => Response.json({ message: "Hello, world!" }),
-   *   async (req) => req.headers.get("x-user-id"),
+   *   async (req) => {
+   *     const session = await getSession(req);
+   *     return session?.user.id ?? null;
+   *   },
    *   { tier: "moderate" }
    * );
    * ```

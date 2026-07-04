@@ -47,13 +47,19 @@ export const POST = withRateLimit(
 
 ### Per-user limits
 
+Use a verified identity from your auth provider — not client-controlled headers.
+
 ```ts
 import { NextResponse } from "next/server";
 import { withUserRateLimit } from "@/lib/rate-limit";
+import { getSession } from "@/lib/auth";
 
 export const POST = withUserRateLimit(
   async (req) => NextResponse.json({ ok: true }),
-  async (req) => req.headers.get("x-user-id"),
+  async (req) => {
+    const session = await getSession(req);
+    return session?.user.id ?? null;
+  },
   { tier: "write" }
 );
 ```

@@ -64,12 +64,18 @@ export async function POST(req: Request) {
 
 ### Per-user rate limit
 
+Use a verified identity from your auth provider — not client-controlled headers.
+
 ```ts
 import { withUserRateLimit } from "@/lib/ratelimit";
+import { getSession } from "@/lib/auth";
 
 export const POST = withUserRateLimit(
   async (req) => Response.json({ ok: true }),
-  async (req) => req.headers.get("x-user-id"),
+  async (req) => {
+    const session = await getSession(req);
+    return session?.user.id ?? null;
+  },
   { tier: "auth" }
 );
 ```

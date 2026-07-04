@@ -92,12 +92,14 @@ app.post(
 
 ### Per-user limits
 
+Use a verified identity from upstream auth middleware — set on `Variables.user`, not client-controlled headers.
+
 ```ts
 import { userMiddleware } from "./lib/ratelimit";
 
 app.post(
   "/api/user-action",
-  userMiddleware(async (c) => c.req.header("x-user-id") ?? null, { tier: "auth" }),
+  userMiddleware(async (c) => c.get("user")?.id ?? null, { tier: "auth" }),
   (c) => c.json({ ok: true })
 );
 ```
