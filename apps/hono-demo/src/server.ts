@@ -1,7 +1,7 @@
 import { serve } from "@hono/node-server";
 import { Hono } from "hono";
-import { withRateLimit } from "./lib/ratelimit";
 import { demoAuth } from "./middleware/demo-auth";
+import { chatHandler } from "./routes/chat";
 import { statusHandler, statusMiddleware } from "./routes/status";
 import { userActionHandler, userActionMiddleware } from "./routes/user-action";
 import type { AppEnv } from "./types";
@@ -20,22 +20,7 @@ app.get("/", (c) =>
 );
 
 app.get("/status", statusMiddleware, statusHandler);
-app.post(
-  "/chat",
-  withRateLimit(
-    (c) => {
-      const user = c.get("user");
-      const token = c.env.TOKEN;
-      return c.json({
-        ok: true,
-        message: "Chat response",
-        user,
-        token,
-      });
-    },
-    { tier: "moderate", prefix: "@ratelimit:hono-demo-chat" }
-  )
-);
+app.post("/chat", chatHandler);
 app.post("/user-action", demoAuth, userActionMiddleware, userActionHandler);
 
 serve({ fetch: app.fetch, port }, () => {
