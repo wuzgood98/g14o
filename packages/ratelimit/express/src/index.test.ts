@@ -142,8 +142,12 @@ describe("createRateLimit (Express factory API)", () => {
       await handler(req, res, next);
 
       expect(next).toHaveBeenCalledOnce();
-      expect(res.capturedHeaders["X-RateLimit-Limit"]).toBeDefined();
-      expect(res.capturedHeaders["X-RateLimit-Remaining"]).toBeDefined();
+      expect(res.capturedHeaders["X-RateLimit-Limit"]).toEqual(
+        expect.any(String)
+      );
+      expect(res.capturedHeaders["X-RateLimit-Remaining"]).toEqual(
+        expect.any(String)
+      );
     });
 
     it("does not call next and returns 429 when limit exceeded", async () => {
@@ -171,7 +175,9 @@ describe("createRateLimit (Express factory API)", () => {
         error: "Too many requests",
         retryAfter: expect.any(Number),
       });
-      expect(blockedRes.capturedHeaders["Retry-After"]).toBeDefined();
+      expect(blockedRes.capturedHeaders["Retry-After"]).toEqual(
+        expect.any(String)
+      );
     });
   });
 

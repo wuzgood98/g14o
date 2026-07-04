@@ -28,6 +28,29 @@ export function buildRateLimitHeaders(
 }
 
 /**
+ * Attaches `X-RateLimit-*` headers to a Web `Response`.
+ *
+ * @param response - Handler response.
+ * @param result - Limit, remaining, and reset from a check result.
+ * @returns A new response with rate-limit headers set.
+ */
+export function applyRateLimitHeadersToResponse(
+  response: Response,
+  result: RateLimitHeaderInput
+): Response {
+  const rateLimitHeaders = buildRateLimitHeaders(result);
+  const headers = new Headers(response.headers);
+  for (const [key, value] of Object.entries(rateLimitHeaders)) {
+    headers.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+/**
  * Computes `Retry-After` seconds from a reset timestamp.
  *
  * @param reset - Unix timestamp (ms) when the rate-limit window resets.

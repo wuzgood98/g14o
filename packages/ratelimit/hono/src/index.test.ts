@@ -119,8 +119,8 @@ describe("createRateLimit (Hono factory API)", () => {
       await handler(c, next);
 
       expect(next).toHaveBeenCalledOnce();
-      expect(c.res.headers.get("X-RateLimit-Limit")).toBeDefined();
-      expect(c.res.headers.get("X-RateLimit-Remaining")).toBeDefined();
+      expect(c.res.headers.get("X-RateLimit-Limit")).not.toBeNull();
+      expect(c.res.headers.get("X-RateLimit-Remaining")).not.toBeNull();
     });
 
     it("sets rate-limit headers on c.res before next() so handlers can read them", async () => {
@@ -170,7 +170,7 @@ describe("createRateLimit (Hono factory API)", () => {
         error: "Too many requests",
         retryAfter: expect.any(Number),
       });
-      expect(response?.headers.get("Retry-After")).toBeDefined();
+      expect(response?.headers.get("Retry-After")).not.toBeNull();
     });
   });
 
@@ -187,7 +187,8 @@ describe("createRateLimit (Hono factory API)", () => {
         const response = await limited(c, vi.fn());
         expect(handler).toHaveBeenCalledTimes(i + 1);
         expect(response?.status).toBe(200);
-        expect(response?.headers.get("X-RateLimit-Limit")).toBeDefined();
+        expect(response?.headers.get("X-RateLimit-Limit")).not.toBeNull();
+        expect(response?.headers.get("X-RateLimit-Remaining")).not.toBeNull();
       }
 
       const blockedResponse = await limited(c, vi.fn());

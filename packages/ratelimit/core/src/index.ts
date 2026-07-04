@@ -31,6 +31,7 @@ export {
 export type { Duration, Unit } from "./parse-duration";
 export { parseDurationToMs } from "./parse-duration";
 export {
+  applyRateLimitHeadersToResponse,
   buildRateLimitExceededBody,
   buildRateLimitHeaders,
   computeRetryAfterSeconds,

@@ -27,6 +27,7 @@ import {
 } from "./internals";
 import type { Duration } from "./parse-duration";
 import {
+  applyRateLimitHeadersToResponse,
   buildRateLimitExceededBody,
   buildRateLimitHeaders,
   computeRetryAfterSeconds,
@@ -443,11 +444,10 @@ export function createRateLimit<
 
       const response = await handler(req, ...args);
 
-      for (const [key, value] of Object.entries(headers)) {
-        response.headers.set(key, value);
-      }
-
-      return response;
+      return applyRateLimitHeadersToResponse(
+        response as unknown as Response,
+        rateLimitResult
+      ) as unknown as Res;
     }) as T;
 
   /** With user rate limit.
