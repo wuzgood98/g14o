@@ -202,6 +202,66 @@ describe("createRateLimit (factory API)", () => {
       expect(blocked.status).toBe(429);
       expect(handler).toHaveBeenCalledTimes(5);
     });
+
+    it("isolates counters per prefix on the same tier", async () => {
+      const handlerA = vi.fn(async (_req: Request) =>
+        Response.json({ ok: true })
+      );
+      const handlerB = vi.fn(async (_req: Request) =>
+        Response.json({ ok: true })
+      );
+      const options = {
+        tier: "strict" as const,
+        identifierFn: async () => "shared-identifier",
+      };
+      const limitedA = rateLimit.withRateLimit(handlerA, {
+        ...options,
+        prefix: "@ratelimit:endpoint-a",
+      });
+      const limitedB = rateLimit.withRateLimit(handlerB, {
+        ...options,
+        prefix: "@ratelimit:endpoint-b",
+      });
+
+      const req = mockRequest();
+      for (let i = 0; i < 5; i++) {
+        const res = await limitedA(req);
+        expect(res.status).toBe(200);
+      }
+
+      const blocked = await limitedA(req);
+      expect(blocked.status).toBe(429);
+      expect(handlerA).toHaveBeenCalledTimes(5);
+
+      const allowed = await limitedB(req);
+      expect(allowed.status).toBe(200);
+      expect(handlerB).toHaveBeenCalledTimes(1);
+    });
+
+    it("throws when prefix is empty", async () => {
+      const handler = vi.fn(async (_req: Request) =>
+        Response.json({ ok: true })
+      );
+      const limited = rateLimit.withRateLimit(handler, {
+        tier: "strict",
+        prefix: "",
+      });
+
+      await expect(limited(mockRequest())).rejects.toThrow(
+        INVALID_PREFIX_PATTERN
+      );
+    });
+  });
+
+  describe("checkRateLimit prefix", () => {
+    it("throws when prefix is empty", async () => {
+      await expect(
+        rateLimit.checkRateLimit(mockRequest(), {
+          tier: "strict",
+          prefix: "",
+        })
+      ).rejects.toThrow(INVALID_PREFIX_PATTERN);
+    });
   });
 });
 

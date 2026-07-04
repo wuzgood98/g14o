@@ -1,5 +1,10 @@
 # @g14o/ratelimit
 
+## 0.2.0
+
+### Minor Changes
+
+- Add optional `prefix` to `RateLimitOptions` for per-endpoint Redis key namespaces. Use it on `withRateLimit`, `checkRateLimit`, or `withUserRateLimit` to scope rate limits independently while keeping the same tier defaults.
 ## 0.1.1
 
 ### Patch Changes
