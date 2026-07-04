@@ -4,6 +4,9 @@ import {
   getDefaultIdentifier,
   getTokenConfigReadonly,
   parseDurationToMs,
+  type RateLimitClient,
+  type RateLimitRequest,
+  type RateLimitResponse,
   tokenConfigSnapshot,
 } from "./index";
 
@@ -24,7 +27,7 @@ function mockRequest(headers: Record<string, string | null> = {}): Request {
 }
 
 describe("createRateLimit (factory API)", () => {
-  let rateLimit: ReturnType<typeof createRateLimit>;
+  let rateLimit: RateLimitClient;
 
   beforeEach(() => {
     rateLimit = createRateLimit({ env: "test" });
@@ -58,13 +61,39 @@ describe("createRateLimit (factory API)", () => {
       }
     });
 
+    it("accepts duck-typed RateLimitRequest objects", async () => {
+      const duckTyped = {
+        url: "http://localhost/api/custom",
+        headers: {
+          get: (name: string) =>
+            name === "x-forwarded-for" ? "duck-typed-client" : null,
+        },
+      };
+
+      const genericClient = createRateLimit<
+        RateLimitRequest,
+        RateLimitResponse
+      >({ env: "test" });
+      try {
+        const result = await genericClient.checkRateLimit(duckTyped, {
+          tier: "strict",
+        });
+        expect(result.ok).toBe(true);
+      } finally {
+        genericClient.reset();
+      }
+    });
+
     it("strips CR/LF from req.url and identifier in log messages", async () => {
       const logger = {
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),
       };
-      const limited = createRateLimit({ env: "test", logger });
+      const limited = createRateLimit({
+        env: "test",
+        logger,
+      });
 
       try {
         const req = new Request("http://localhost/api%0Ainjected%0Dline");
@@ -94,7 +123,9 @@ describe("createRateLimit (factory API)", () => {
 
     it("fails open on internal errors", async () => {
       rateLimit.reset();
-      const production = createRateLimit({ env: "production" });
+      const production = createRateLimit({
+        env: "production",
+      });
 
       const result = await production.checkRateLimit(mockRequest(), {
         tier: "moderate",

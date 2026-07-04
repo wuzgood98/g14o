@@ -1,0 +1,30 @@
+---
+title: API Reference
+description: Hono helpers for @g14o/ratelimit.
+---
+
+## Generics and Env typing
+
+`@g14o/ratelimit-hono` is generic over Hono's `Env` so `Bindings` and `Variables` flow into handler callbacks.
+
+| Symbol | Description |
+|--------|-------------|
+| `createRateLimit<E extends Env>(options)` | Factory. Pass your app's env (e.g. `AppEnv`) to bind types for the whole client. |
+| `HonoRateLimitClient<E>` | Client returned by the factory. All methods use `Context<E>`. |
+| `HonoRateLimitOptions<E>` | Per-call options. `identifierFn` and `skipRateLimit` receive `Context<E>`. |
+| `HonoHandler<E>` | Route handler passed to `withRateLimit` / `withUserRateLimit`. |
+| `Env` | Re-exported from `hono`. Use as the base for your `AppEnv` type. |
+
+`withRateLimit` and `withUserRateLimit` return `MiddlewareHandler<E>`, assignable to typed `app.get` / `app.post` routes.
+
+## CreateRateLimitOptions
+
+<OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="CreateRateLimitOptions" nameLabel="Option" />
+
+## HonoRateLimitClient
+
+<OptionsTable path="../../packages/ratelimit/hono/src/create-rate-limit-client.ts" name="HonoRateLimitClient" nameLabel="Prop" />
+
+## HonoRateLimitOptions
+
+<OptionsTable path="../../packages/ratelimit/hono/src/create-rate-limit-client.ts" name="HonoRateLimitOptions" nameLabel="Option" />

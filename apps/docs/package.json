@@ -1,6 +1,6 @@
 {
   "name": "docs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "type": "module",
   "private": true,
   "scripts": {
@@ -18,6 +18,8 @@
     "@g14o/paystack-better-auth": "workspace:*",
     "@g14o/ratelimit": "workspace:*",
     "@g14o/ratelimit-nextjs": "workspace:*",
+    "@g14o/ratelimit-express": "workspace:*",
+    "@g14o/ratelimit-hono": "workspace:*",
     "@openrouter/ai-sdk-provider": "^2.9.1",
     "@radix-ui/react-presence": "^1.1.6",
     "@upstash/ratelimit": "^2.0.8",

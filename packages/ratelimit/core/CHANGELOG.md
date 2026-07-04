@@ -1,5 +1,19 @@
 # @g14o/ratelimit
 
+## 0.3.1
+
+### Patch Changes
+
+- Restore Web `Request`/`Response` as default generics for `createRateLimit`, `RateLimitClient`, and `RateLimitOptions`. `RateLimitRequest`/`RateLimitResponse` remain the constraint bound for framework adapters (e.g. Express).
+
+## 0.3.0
+
+### Minor Changes
+
+- Add `RateLimitRequest` and `RateLimitResponse` minimal interfaces for framework adapters (Express, custom runtimes).
+- Export shared response helpers: `buildRateLimitHeaders`, `computeRetryAfterSeconds`, `buildRateLimitExceededBody`, `RETRY_AFTER_DELAY_MS`.
+- Widen `RateLimitClient`, `RateLimitOptions`, and `createRateLimit` generics from Web `Request`/`Response` to the new minimal types (Web `Request`/`Response` remain valid).
+
 ## 0.2.0
 
 ### Minor Changes

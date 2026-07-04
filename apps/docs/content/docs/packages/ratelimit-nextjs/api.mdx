@@ -3,10 +3,24 @@ title: API Reference
 description: Next.js helpers for @g14o/ratelimit.
 ---
 
+## Next.js types
+
+`@g14o/ratelimit-nextjs` binds `@g14o/ratelimit` to Next.js `NextRequest` / `NextResponse`.
+
+| Symbol | Description |
+|--------|-------------|
+| `createRateLimit(options)` | Factory returning a client typed for `NextRequest` / `NextResponse`. |
+| `RateLimitClient` | Alias of `RateLimitClient<NextRequest, NextResponse>` from core. |
+| `RateLimitOptions` | Per-call options. `identifierFn` and `skipRateLimit` receive `NextRequest`. |
+
 ## CreateRateLimitOptions
 
 <OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="CreateRateLimitOptions" nameLabel="Option" />
 
 ## RateLimitClient
 
-<OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="RateLimitClient" nameLabel="Prop" />
+<OptionsTable path="../../packages/ratelimit/nextjs/src/create-rate-limit-client.ts" name="RateLimitClient" nameLabel="Prop" />
+
+## RateLimitOptions
+
+<OptionsTable path="../../packages/ratelimit/nextjs/src/create-rate-limit-client.ts" name="RateLimitOptions" nameLabel="Option" />

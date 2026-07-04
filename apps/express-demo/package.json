@@ -1,0 +1,22 @@
+{
+  "name": "express-demo",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@g14o/ratelimit-express": "workspace:*",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.3",
+    "@types/node": "^22",
+    "@workspace/typescript-config": "workspace:*",
+    "tsx": "^4.20.5",
+    "typescript": "^5"
+  }
+}

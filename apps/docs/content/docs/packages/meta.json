@@ -4,6 +4,8 @@
     "cache",
     "ratelimit",
     "ratelimit-nextjs",
+    "ratelimit-express",
+    "ratelimit-hono",
     "env-core",
     "paystack",
     "paystack-better-auth"

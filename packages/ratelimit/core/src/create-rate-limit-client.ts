@@ -17,6 +17,8 @@ import {
   type RateLimitCheckResult,
   type RateLimiterAdapter,
   type RateLimitOptions,
+  type RateLimitRequest,
+  type RateLimitResponse,
   type RateLimitTier,
   resolveTierConfig,
   type TokenConfig,
@@ -24,6 +26,11 @@ import {
   validatePrefix,
 } from "./internals";
 import type { Duration } from "./parse-duration";
+import {
+  buildRateLimitExceededBody,
+  buildRateLimitHeaders,
+  computeRetryAfterSeconds,
+} from "./rate-limit-response";
 
 function sanitizeLogValue(value: string): string {
   return value.replace(/[\r\n]/g, "");
@@ -77,41 +84,80 @@ export interface CreateRateLimitOptions extends InMemoryEnvOptions {
   tiers?: RateLimitTiersOverride;
 }
 
-/** Rate limit client returned by {@link createRateLimit}. */
+/**
+ * Rate limit client returned by {@link createRateLimit}.
+ *
+ * @typeParam Req - Request type passed to handlers and `checkRateLimit`. Defaults to Web `Request`.
+ * @typeParam Res - Response type returned by wrapped handlers. Defaults to Web `Response`.
+ */
 export interface RateLimitClient<
-  Req extends Request = Request,
-  Res extends Response = Response,
+  Req extends RateLimitRequest = Request,
+  Res extends RateLimitResponse = Response,
 > {
-  /** Check the rate limit for a given request.
-   * @param req - The request to check the rate limit for.
-   * @param options - The options to check the rate limit for.
-   * @returns The result of the rate limit check.
+  /**
+   * Checks the rate limit for a request without wrapping a handler.
+   *
+   * Fails open on internal errors (returns `ok: true` with zeroed counters).
+   *
+   * @param req - Request to rate limit.
+   * @param options - Tier, prefix, identifier, or skip callback.
+   * @returns Discriminated {@link RateLimitCheckResult}; `ok: false` includes `status: 429`.
    */
   checkRateLimit: (
     req: Req,
     options?: RateLimitOptions<Req>
   ) => Promise<RateLimitCheckResult>;
-  /** Get the rate limiter for a given tier.
-   * @param tier - The tier to get the rate limiter for.
-   * @returns The rate limiter for the given tier.
+  /**
+   * Returns a cached rate limiter adapter for a tier.
+   *
+   * @param tier - Built-in tier name.
+   * @param prefixOverride - Optional Redis key prefix override for this limiter instance.
+   * @returns {@link RateLimiterAdapter} for direct `limit(identifier)` calls.
    */
-  getRateLimiter: (tier: RateLimitTier) => RateLimiterAdapter;
-  /** Reset the rate limit. */
+  getRateLimiter: (
+    tier: RateLimitTier,
+    prefixOverride?: string
+  ) => RateLimiterAdapter;
+  /**
+   * Clears in-memory limiter state and the adapter cache.
+   *
+   * Useful in tests; does not reset Upstash Redis counters.
+   */
   reset: () => void;
-  /** With rate limit.
-   * @param handler - The handler to wrap with rate limit.
-   * @param options - The options to wrap the handler with.
-   * @returns The wrapped handler.
+  /**
+   * Wraps an async handler with rate limiting.
+   *
+   * Returns `429` JSON with `Retry-After` and `X-RateLimit-*` headers when blocked.
+   * On success, attaches `X-RateLimit-*` headers to the handler response.
+   *
+   * @param handler - Route handler to wrap.
+   * @param options - Tier, prefix, identifier, or skip callback.
+   * @returns Wrapped handler with the same signature.
    */
   withRateLimit: <T extends (req: Req, ...args: any[]) => Promise<Res>>(
     handler: T,
     options?: RateLimitOptions<Req>
   ) => T;
-  /** With user rate limit.
-   * @param handler - The handler to wrap with user rate limit.
-   * @param getUserId - The function to get the user ID from the request.
-   * @param options - The options to wrap the handler with.
-   * @returns The wrapped handler.
+  /**
+   * Wraps a handler with per-user rate limiting.
+   *
+   * Uses `getUserId(req)` as the identifier; falls back to IP via {@link getDefaultIdentifier} when null.
+   *
+   * @param handler - Route handler to wrap.
+   * @param getUserId - Resolves the authenticated user ID from the request.
+   * @param options - Tier, prefix, or skip callback (`identifierFn` is managed internally).
+   * @returns Wrapped handler with the same signature.
+   *
+   * @example
+   * ```ts
+   * import { withUserRateLimit } from "@/lib/ratelimit";
+   *
+   * export const POST = withUserRateLimit(
+   *   (req) => Response.json({ message: "Hello, world!" }),
+   *   async (req) => req.headers.get("x-user-id"),
+   *   { tier: "moderate" }
+   * );
+   * ```
    */
   withUserRateLimit: <T extends (req: Req, ...args: any[]) => Promise<Res>>(
     handler: T,
@@ -177,16 +223,31 @@ function createRateLimitRuntime(
   };
 }
 
-const RETRY_AFTER_DELAY = 1000;
-
 /**
  * Creates a rate limit client with bound methods for `Request`/`Response` handlers.
  *
  * @param options - Redis credentials or client, logger, environment, and optional `tiers` overrides.
+ * @returns {@link RateLimitClient} instance.
+ *
+ * @example
+ * ```ts
+ * export const { withRateLimit, checkRateLimit } = createRateLimit({
+ *   redis: {
+ *     url: process.env.UPSTASH_REDIS_REST_URL!,
+ *     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+ *   },
+ *   logger,
+ * });
+ *
+ * export const POST = withRateLimit(
+ *   async (req) => Response.json({ ok: true }),
+ *   { tier: "moderate" }
+ * );
+ * ```
  */
 export function createRateLimit<
-  Req extends Request = Request,
-  Res extends Response = Response,
+  Req extends RateLimitRequest = Request,
+  Res extends RateLimitResponse = Response,
 >(options: CreateRateLimitOptions = {}): RateLimitClient<Req, Res> {
   const runtime = createRateLimitRuntime(options);
 
@@ -361,30 +422,19 @@ export function createRateLimit<
     (async (req: Req, ...args: any[]): Promise<Res> => {
       const rateLimitResult = await checkRateLimit(req, rateLimitOptions);
 
-      const headers = {
-        "X-RateLimit-Limit": rateLimitResult.limit.toString(),
-        "X-RateLimit-Remaining": rateLimitResult.remaining.toString(),
-        "X-RateLimit-Reset": rateLimitResult.reset.toString(),
-      };
+      const headers = buildRateLimitHeaders(rateLimitResult);
 
       if (!rateLimitResult.ok) {
-        const retryAfterSeconds = Math.max(
-          0,
-          Math.ceil((rateLimitResult.reset - Date.now()) / RETRY_AFTER_DELAY)
+        const retryAfterSeconds = computeRetryAfterSeconds(
+          rateLimitResult.reset
         );
-        return Response.json(
-          {
-            error: "Too many requests",
-            retryAfter: retryAfterSeconds,
+        return Response.json(buildRateLimitExceededBody(retryAfterSeconds), {
+          status: 429,
+          headers: {
+            ...headers,
+            "Retry-After": retryAfterSeconds.toString(),
           },
-          {
-            status: 429,
-            headers: {
-              ...headers,
-              "Retry-After": retryAfterSeconds.toString(),
-            },
-          }
-        ) as Res;
+        }) as unknown as Res;
       }
 
       const response = await handler(req, ...args);

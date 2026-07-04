@@ -139,6 +139,14 @@ jobs:
         if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
         run: pnpm --filter @g14o/ratelimit-nextjs test:integration
 
+      - name: Run ratelimit-hono integration tests
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        run: pnpm --filter @g14o/ratelimit-hono test:integration
+
+      - name: Run ratelimit-express integration tests
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        run: pnpm --filter @g14o/ratelimit-express test:integration
+
       - name: Run paystack integration tests
         if: env.PAYSTACK_SECRET_KEY != ''
         run: pnpm --filter @g14o/paystack test:integration
