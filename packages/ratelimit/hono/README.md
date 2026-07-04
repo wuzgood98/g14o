@@ -24,6 +24,7 @@ export const {
   middleware,
   withRateLimit,
   withUserRateLimit,
+  userMiddleware,
   checkRateLimit,
 } = createRateLimit<AppEnv>({
   redis: {
