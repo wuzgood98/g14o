@@ -299,3 +299,19 @@ export function getDefaultIdentifier<Req extends RateLimitRequest>(
     forwarded?.split(",")[0] || realIp || cfConnectingIp || "anonymous";
   return ip.trim();
 }
+
+/**
+ * Resolves a per-user rate-limit identifier with IP fallback.
+ *
+ * Uses `getUserId` when non-nullish; otherwise falls back to {@link getDefaultIdentifier}.
+ *
+ * @param userId - Authenticated user ID, or null/undefined when unauthenticated.
+ * @param req - Request with `headers.get()` for IP fallback.
+ * @returns Rate-limit identifier string.
+ */
+export function resolveUserIdentifier<Req extends RateLimitRequest>(
+  userId: string | null | undefined,
+  req: Req
+): string {
+  return userId ?? getDefaultIdentifier(req);
+}

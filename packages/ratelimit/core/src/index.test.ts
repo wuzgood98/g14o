@@ -7,6 +7,7 @@ import {
   type RateLimitClient,
   type RateLimitRequest,
   type RateLimitResponse,
+  resolveUserIdentifier,
   tokenConfigSnapshot,
 } from "./index";
 
@@ -323,6 +324,29 @@ describe("getDefaultIdentifier", () => {
 
   it("falls back to anonymous", () => {
     expect(getDefaultIdentifier(mockRequest())).toBe("anonymous");
+  });
+});
+
+describe("resolveUserIdentifier", () => {
+  it("falls back to getDefaultIdentifier when user id is null", () => {
+    expect(
+      resolveUserIdentifier(null, mockRequest({ "x-forwarded-for": "1.2.3.4" }))
+    ).toBe("1.2.3.4");
+  });
+
+  it("returns empty string without falling back to IP", () => {
+    expect(
+      resolveUserIdentifier("", mockRequest({ "x-forwarded-for": "1.2.3.4" }))
+    ).toBe("");
+  });
+
+  it("returns the user id when present", () => {
+    expect(
+      resolveUserIdentifier(
+        "user-42",
+        mockRequest({ "x-forwarded-for": "1.2.3.4" })
+      )
+    ).toBe("user-42");
   });
 });
 

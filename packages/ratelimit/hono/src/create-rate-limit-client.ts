@@ -4,12 +4,12 @@
 import {
   type CreateRateLimitOptions,
   createRateLimit as createCoreRateLimit,
-  getDefaultIdentifier,
   type RateLimitCheckResult,
   type RateLimiterAdapter,
   type RateLimitOptions,
   type RateLimitRequest,
   type RateLimitTier,
+  resolveUserIdentifier,
 } from "@g14o/ratelimit";
 import type { Context, Env, MiddlewareHandler } from "hono";
 import {
@@ -156,6 +156,12 @@ function toCoreOptions<E extends Env>(
   };
 }
 
+function createUserIdentifierFn<E extends Env>(
+  getUserId: (c: Context<E>) => Promise<string | null>
+): (c: Context<E>) => Promise<string> {
+  return async (c) => resolveUserIdentifier(await getUserId(c), c.req.raw);
+}
+
 /**
  * Creates a rate limit client with middleware and handler wrappers for Hono.
  *
@@ -222,10 +228,7 @@ export function createRateLimit<E extends Env = Env>(
   ): MiddlewareHandler<E> =>
     middleware({
       ...rateLimitOptions,
-      identifierFn: async (c) => {
-        const userId = await getUserId(c);
-        return userId || getDefaultIdentifier(c.req.raw);
-      },
+      identifierFn: createUserIdentifierFn(getUserId),
     });
 
   const withRateLimit = (
@@ -248,10 +251,7 @@ export function createRateLimit<E extends Env = Env>(
   ): MiddlewareHandler<E> =>
     withRateLimit(handler, {
       ...rateLimitOptions,
-      identifierFn: async (c) => {
-        const userId = await getUserId(c);
-        return userId || getDefaultIdentifier(c.req.raw);
-      },
+      identifierFn: createUserIdentifierFn(getUserId),
     });
 
   return {

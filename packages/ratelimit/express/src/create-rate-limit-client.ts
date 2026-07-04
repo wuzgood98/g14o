@@ -4,12 +4,12 @@
 import {
   type CreateRateLimitOptions,
   createRateLimit as createCoreRateLimit,
-  getDefaultIdentifier,
   type RateLimitCheckResult,
   type RateLimiterAdapter,
   type RateLimitOptions,
   type RateLimitRequest,
   type RateLimitTier,
+  resolveUserIdentifier,
 } from "@g14o/ratelimit";
 import type {
   RequestHandler as ExpressRequestHandler,
@@ -160,6 +160,13 @@ function toCoreOptions(
   };
 }
 
+function createUserIdentifierFn(
+  getUserId: (req: Request) => Promise<string | null>
+): (req: Request) => Promise<string> {
+  return async (req) =>
+    resolveUserIdentifier(await getUserId(req), adaptExpressRequest(req));
+}
+
 /**
  * Creates a rate limit client with middleware and handler wrappers for Express.
  *
@@ -232,10 +239,7 @@ export function createRateLimit(
   ): RequestHandler =>
     middleware({
       ...rateLimitOptions,
-      identifierFn: async (req) => {
-        const userId = await getUserId(req);
-        return userId || getDefaultIdentifier(adaptExpressRequest(req));
-      },
+      identifierFn: createUserIdentifierFn(getUserId),
     });
 
   const withRateLimit =
@@ -262,10 +266,7 @@ export function createRateLimit(
   ): RequestHandler =>
     withRateLimit(handler, {
       ...rateLimitOptions,
-      identifierFn: async (req) => {
-        const userId = await getUserId(req);
-        return userId || getDefaultIdentifier(adaptExpressRequest(req));
-      },
+      identifierFn: createUserIdentifierFn(getUserId),
     });
 
   return {

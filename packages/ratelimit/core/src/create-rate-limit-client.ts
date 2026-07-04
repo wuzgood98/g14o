@@ -21,6 +21,7 @@ import {
   type RateLimitResponse,
   type RateLimitTier,
   resolveTierConfig,
+  resolveUserIdentifier,
   type TokenConfig,
   tokenConfig,
   validatePrefix,
@@ -480,10 +481,8 @@ export function createRateLimit<
   ): T =>
     withRateLimit(handler, {
       ...rateLimitOptions,
-      identifierFn: async (req) => {
-        const userId = await getUserId(req);
-        return userId || getDefaultIdentifier(req);
-      },
+      identifierFn: async (req) =>
+        resolveUserIdentifier(await getUserId(req), req),
     });
 
   return {
