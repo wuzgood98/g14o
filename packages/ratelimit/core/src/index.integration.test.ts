@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createRateLimit } from "./index";
+import { createRateLimit, type RateLimitClient } from "./index";
 import {
   createTestRedis,
   getTestRedisCredentials,
@@ -43,7 +43,7 @@ async function expectEventuallyBlocked(
 
 describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
   describe("credentials path", () => {
-    let rateLimit: ReturnType<typeof createRateLimit>;
+    let rateLimit: RateLimitClient;
 
     beforeEach(() => {
       rateLimit = createIsolatedRateLimit();

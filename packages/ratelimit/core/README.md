@@ -2,9 +2,9 @@
 
 > Documentation: [docs.g14o.dev/packages/ratelimit](https://docs.g14o.dev/packages/ratelimit)
 
-Framework-agnostic rate limiting with Upstash Redis. Works with any runtime that uses Web `Request` / `Response` (Next.js App Router, Hono, Cloudflare Workers, etc.).
+Framework-agnostic rate limiting with Upstash Redis. Works with any runtime that uses Web `Request` / `Response` (Next.js App Router, Hono, Cloudflare Workers, etc.) or adapters built on `RateLimitRequest` / `RateLimitResponse`.
 
-`RateLimitClient` and `RateLimitOptions` accept optional type parameters for framework-specific request/response types (defaults: `Request` / `Response`).
+`RateLimitClient` and `RateLimitOptions` accept optional type parameters for framework-specific request/response types (defaults: Web `Request` / `Response`; constraint: `RateLimitRequest` / `RateLimitResponse` for custom adapters).
 
 ## Install
 
@@ -64,12 +64,18 @@ export async function POST(req: Request) {
 
 ### Per-user rate limit
 
+Use a verified identity from your auth provider — not client-controlled headers.
+
 ```ts
 import { withUserRateLimit } from "@/lib/ratelimit";
+import { getSession } from "@/lib/auth";
 
 export const POST = withUserRateLimit(
   async (req) => Response.json({ ok: true }),
-  async (req) => req.headers.get("x-user-id"),
+  async (req) => {
+    const session = await getSession(req);
+    return session?.user.id ?? null;
+  },
   { tier: "auth" }
 );
 ```
@@ -127,11 +133,34 @@ Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect 
 
 For Next.js route handlers with `NextRequest` / `NextResponse` types, use [@g14o/ratelimit-nextjs](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/nextjs).
 
+For Express middleware and route handlers, use [@g14o/ratelimit-express](https://docs.g14o.dev/packages/ratelimit-express).
+
+For Hono middleware and route handlers, use [@g14o/ratelimit-hono](https://docs.g14o.dev/packages/ratelimit-hono).
+
+### Custom framework adapters
+
+Implement `RateLimitRequest` (`url` + `headers.get()`) for any HTTP framework:
+
+```ts
+import { createRateLimit, type RateLimitRequest } from "@g14o/ratelimit";
+
+function adaptMyRequest(req: MyRequest): RateLimitRequest {
+  return {
+    url: req.fullUrl,
+    headers: { get: (name) => req.header(name) ?? null },
+  };
+}
+
+const { checkRateLimit } = createRateLimit<RateLimitRequest, never>({ env: "test" });
+```
+
 ## Import paths
 
 | Use case | Import |
 |----------|--------|
-| Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit"` |
+| Rate limit (Next.js) | `import { createRateLimit } from "@g14o/ratelimit-nextjs"` |
+| Rate limit (Express) | `import { createRateLimit } from "@g14o/ratelimit-express"` |
+| Rate limit (Hono) | `import { createRateLimit } from "@g14o/ratelimit-hono"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |
 
 ## Next.js alternative
@@ -141,3 +170,19 @@ pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
 ```
 
 Import rate limiting from `@g14o/ratelimit-nextjs` (uses `next/server` types).
+
+## Express alternative
+
+```bash
+pnpm add @g14o/ratelimit-express @upstash/redis @upstash/ratelimit express
+```
+
+Import rate limiting from `@g14o/ratelimit-express` (middleware and route wrappers).
+
+## Hono alternative
+
+```bash
+pnpm add @g14o/ratelimit-hono @upstash/redis @upstash/ratelimit hono
+```
+
+Import rate limiting from `@g14o/ratelimit-hono` (middleware and route wrappers).

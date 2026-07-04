@@ -1,0 +1,22 @@
+{
+  "name": "hono-demo",
+  "version": "0.0.1",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@g14o/ratelimit-hono": "workspace:*",
+    "@hono/node-server": "^1.19.14",
+    "hono": "^4.12.27"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@workspace/typescript-config": "workspace:*",
+    "tsx": "^4.20.5",
+    "typescript": "^5"
+  }
+}

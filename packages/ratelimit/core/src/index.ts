@@ -20,11 +20,21 @@ export {
   type RateLimitCheckResult,
   type RateLimiterAdapter,
   type RateLimitOptions,
+  type RateLimitRequest,
+  type RateLimitResponse,
   type RateLimitResultData,
   type RateLimitTier,
   type ReadonlyTokenConfigMap,
+  resolveUserIdentifier,
   type TokenConfig,
   tokenConfigSnapshot,
 } from "./internals";
 export type { Duration, Unit } from "./parse-duration";
 export { parseDurationToMs } from "./parse-duration";
+export {
+  applyRateLimitHeadersToResponse,
+  buildRateLimitExceededBody,
+  buildRateLimitHeaders,
+  computeRetryAfterSeconds,
+  RETRY_AFTER_DELAY_MS,
+} from "./rate-limit-response";

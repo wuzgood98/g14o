@@ -47,13 +47,19 @@ export const POST = withRateLimit(
 
 ### Per-user limits
 
+Use a verified identity from your auth provider — not client-controlled headers.
+
 ```ts
 import { NextResponse } from "next/server";
 import { withUserRateLimit } from "@/lib/rate-limit";
+import { getSession } from "@/lib/auth";
 
 export const POST = withUserRateLimit(
   async (req) => NextResponse.json({ ok: true }),
-  async (req) => req.headers.get("x-user-id"),
+  async (req) => {
+    const session = await getSession(req);
+    return session?.user.id ?? null;
+  },
   { tier: "write" }
 );
 ```
@@ -64,9 +70,13 @@ During `next build`, limits use an in-memory backend by default (`inMemoryDuring
 
 Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
 
-## Framework-agnostic alternative
+## Framework alternatives
 
-For Hono, Workers, or other Web `Request` / `Response` runtimes, use [@g14o/ratelimit](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core) directly.
+For Web `Request`/`Response` runtimes without Hono, use [@g14o/ratelimit](https://github.com/wuzgood98/g14o/tree/main/packages/ratelimit/core) directly.
+
+For Express, use [@g14o/ratelimit-express](https://docs.g14o.dev/packages/ratelimit-express).
+
+For Hono, use [@g14o/ratelimit-hono](https://docs.g14o.dev/packages/ratelimit-hono).
 
 ## Import map
 

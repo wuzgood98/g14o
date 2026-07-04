@@ -8,6 +8,8 @@ description: Documentation for the @g14o/* npm packages — cache, rate limiting
 - [**@g14o/cache**](/docs/packages/cache) — `createCache()` / `withCache()` with Upstash Redis
 - [**@g14o/ratelimit**](/docs/packages/ratelimit) — framework-agnostic rate limiting (`Request` / `Response`)
 - [**@g14o/ratelimit-nextjs**](/docs/packages/ratelimit-nextjs) — Next.js rate limiting (`NextRequest` / `NextResponse`)
+- [**@g14o/ratelimit-express**](/docs/packages/ratelimit-express) — Express rate limiting (middleware and route wrappers)
+- [**@g14o/ratelimit-hono**](/docs/packages/ratelimit-hono) — Hono rate limiting (middleware and route wrappers)
 - [**@g14o/env-core**](/docs/packages/env-core) — typesafe environment variables via Standard Schema
 - [**@g14o/paystack**](/docs/packages/paystack) — typed Paystack REST SDK
 - [**@g14o/paystack-better-auth**](/docs/packages/paystack-better-auth) — Paystack billing plugin for Better Auth
@@ -18,6 +20,8 @@ description: Documentation for the @g14o/* npm packages — cache, rate limiting
 pnpm add @g14o/cache @upstash/redis
 pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
 pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
+pnpm add @g14o/ratelimit-express @upstash/redis @upstash/ratelimit express
+pnpm add @g14o/ratelimit-hono @upstash/redis @upstash/ratelimit hono
 pnpm add @g14o/env-core zod
 pnpm add @g14o/paystack zod
 pnpm add @g14o/paystack @g14o/paystack-better-auth better-auth zod

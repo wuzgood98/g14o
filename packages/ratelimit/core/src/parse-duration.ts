@@ -1,4 +1,11 @@
+/** Supported duration units for {@link Duration} strings. */
 export type Unit = "ms" | "s" | "m" | "h" | "d";
+
+/**
+ * Upstash-style duration string (e.g. `"60 s"`, `"15m"`, `"1 h"`).
+ *
+ * Accepts an optional space between the number and unit.
+ */
 export type Duration = `${number} ${Unit}` | `${number}${Unit}`;
 
 const DURATION_UNITS: Record<Unit, number> = {
@@ -13,6 +20,10 @@ const DURATION_REGEX = /^(\d+)\s*(ms|s|m|h|d)$/i;
 
 /**
  * Parses Upstash-style duration strings into milliseconds.
+ *
+ * @param window - Duration string such as `"60 s"` or `"15m"`.
+ * @returns Duration in milliseconds.
+ * @throws When the format or unit is invalid.
  */
 export function parseDurationToMs(window: Duration): number {
   const match = String(window).trim().match(DURATION_REGEX);

@@ -86,6 +86,22 @@ const standalonePackages = [
     distFile: "dist/index.mjs",
     exports: ["createRateLimit", "parseDurationToMs"],
   },
+  {
+    filter: "@g14o/ratelimit-express",
+    importPath: "@g14o/ratelimit-express",
+    distFile: "dist/index.mjs",
+    exports: ["createRateLimit", "parseDurationToMs", "adaptExpressRequest"],
+  },
+  {
+    filter: "@g14o/ratelimit-hono",
+    importPath: "@g14o/ratelimit-hono",
+    distFile: "dist/index.mjs",
+    exports: [
+      "createRateLimit",
+      "parseDurationToMs",
+      "rateLimitExceededResponse",
+    ],
+  },
 ];
 
 const packDir = mkdtempSync(join(tmpdir(), "g14o-pack-"));
@@ -137,6 +153,8 @@ try {
           ...tarballByScope,
           "@upstash/ratelimit": "^2.0.5",
           "@upstash/redis": "^1.34.0",
+          express: "^5.1.0",
+          hono: "^4.12.27",
           react: "19.2.7",
           next: "16.2.6",
         },

@@ -1,0 +1,52 @@
+---
+title: Overview
+description: Hono rate limiting with Upstash Redis for middleware and route handlers.
+---
+
+Hono rate limiting with Upstash Redis. Middleware and route handler wrappers over [@g14o/ratelimit](/docs/packages/ratelimit).
+
+## Install
+
+```bash
+pnpm add @g14o/ratelimit-hono @upstash/redis @upstash/ratelimit hono
+```
+
+`@upstash/redis` and `@upstash/ratelimit` are optional peers (in-memory fallback without Redis). `hono` is required.
+
+## Quick start
+
+Define your app's Hono `Env`, then pass it to the factory so handlers get a typed `Context`:
+
+```ts title="src/types.ts"
+export interface Bindings {
+  TOKEN: string;
+}
+
+export interface Variables {
+  user: User;
+}
+
+export type AppEnv = { Bindings: Bindings; Variables: Variables };
+```
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-hono";
+import { env } from "./env";
+import type { AppEnv } from "../types";
+
+export const { middleware, withRateLimit, checkRateLimit } =
+  createRateLimit<AppEnv>({
+    redis: {
+      url: env.UPSTASH_REDIS_REST_URL,
+      token: env.UPSTASH_REDIS_REST_TOKEN,
+    },
+  });
+```
+
+Import helpers from `lib/ratelimit.ts` in route modules or inline on your app — `c.env` and `c.get(...)` are typed automatically. See [Setup](/docs/packages/ratelimit-hono/setup) for full examples.
+
+## Framework alternatives
+
+- Web `Request` / `Response`: [@g14o/ratelimit](/docs/packages/ratelimit)
+- Next.js `NextRequest` / `NextResponse`: [@g14o/ratelimit-nextjs](/docs/packages/ratelimit-nextjs)
+- Express `Request` / `Response`: [@g14o/ratelimit-express](/docs/packages/ratelimit-express)

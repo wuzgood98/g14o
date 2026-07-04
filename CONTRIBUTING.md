@@ -29,7 +29,7 @@ pnpm typecheck
 pnpm test:dist      # smoke published tarballs (scripts/smoke-dist.mjs)
 ```
 
-`@g14o/cache` lists `@upstash/redis` as an **optional peer** (devDependency in `packages/cache` satisfies it for local work). `pnpm test:dist` installs Upstash and `next` peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
+`@g14o/cache` lists `@upstash/redis` as an **optional peer** (devDependency in `packages/cache` satisfies it for local work). `pnpm test:dist` installs Upstash, `next`, `express`, and `hono` peers in a smoke consumer. Apps using cache/ratelimit must declare the peers in their own `package.json`.
 
 Optional Upstash integration tests (skipped when credentials are missing):
 

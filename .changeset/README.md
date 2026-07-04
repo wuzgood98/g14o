@@ -19,6 +19,8 @@ Published packages (separate fixed groups in [`.changeset/config.json`](config.j
 - `@g14o/cache`
 - `@g14o/ratelimit`
 - `@g14o/ratelimit-nextjs`
+- `@g14o/ratelimit-express`
+- `@g14o/ratelimit-hono`
 - `@g14o/paystack`
 - `@g14o/paystack-better-auth`
 
@@ -31,6 +33,8 @@ pnpm release:publish:env     # publish @g14o/env-core to npm
 pnpm release:publish:cache   # publish @g14o/cache to npm
 pnpm release:publish:ratelimit # publish @g14o/ratelimit to npm
 pnpm release:publish:ratelimit-nextjs # publish @g14o/ratelimit-nextjs to npm
+pnpm release:publish:ratelimit-express # publish @g14o/ratelimit-express to npm
+pnpm release:publish:ratelimit-hono # publish @g14o/ratelimit-hono to npm
 pnpm release:publish:paystack # publish @g14o/paystack to npm
 pnpm release:publish:paystack-better-auth # publish @g14o/paystack-better-auth to npm
 ```

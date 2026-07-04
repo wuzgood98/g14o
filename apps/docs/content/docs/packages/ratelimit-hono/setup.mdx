@@ -1,0 +1,120 @@
+---
+title: Setup
+description: Hono middleware, route wrappers, and per-user rate limiting.
+---
+
+## Typing Bindings and Variables
+
+Pass your app's Hono `Env` to `createRateLimit` so `Context` in middleware and handler callbacks includes typed `Bindings` and `Variables`:
+
+```ts title="src/types.ts"
+export interface Bindings {
+  TOKEN: string;
+}
+
+export interface Variables {
+  user: User;
+}
+
+export type AppEnv = { Bindings: Bindings; Variables: Variables };
+```
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-hono";
+import { env } from "./env";
+import type { AppEnv } from "../types";
+
+export const {
+  middleware,
+  withRateLimit,
+  withUserRateLimit,
+  userMiddleware,
+  checkRateLimit,
+} = createRateLimit<AppEnv>({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+});
+```
+
+Bind `AppEnv` once at the factory. All exported helpers (`withRateLimit`, `middleware`, `identifierFn` callbacks, etc.) use `Context<AppEnv>`.
+
+## Create a client
+
+Same as above — export the helpers you need from a single `lib/ratelimit.ts` module.
+
+## Route middleware (idiomatic Hono)
+
+```ts title="src/server.ts"
+import { Hono } from "hono";
+import { middleware } from "./lib/ratelimit";
+import type { AppEnv } from "./types";
+
+const app = new Hono<AppEnv>();
+
+app.get(
+  "/api/status",
+  middleware({ tier: "lenient" }),
+  (c) => c.json({ ok: true })
+);
+```
+
+## Wrapped route handler
+
+`withRateLimit` returns a `MiddlewareHandler` assignable to typed `app.*` routes. Handler callbacks receive your app's `Context`:
+
+```ts title="src/server.ts"
+import { withRateLimit } from "./lib/ratelimit";
+
+app.post(
+  "/api/chat",
+  withRateLimit(
+    (c) => {
+      const user = c.get("user");
+      const token = c.env.TOKEN;
+      return c.json({ ok: true, user, token });
+    },
+    { tier: "moderate", prefix: "@ratelimit:chat" }
+  )
+);
+```
+
+Works the same in route modules — import `withRateLimit` from `lib/ratelimit.ts`.
+
+## Per-user limits
+
+Use a verified identity from upstream auth middleware (session, JWT, etc.) — set on `Variables.user`, not client-controlled headers.
+
+```ts title="src/routes/user-action.ts"
+import { Hono } from "hono";
+import { userMiddleware } from "../lib/ratelimit";
+import type { AppEnv } from "../types";
+
+const app = new Hono<AppEnv>();
+
+app.post(
+  "/api/user-action",
+  userMiddleware(async (c) => c.get("user")?.id ?? null, {
+    tier: "auth",
+  }),
+  (c) => c.json({ ok: true })
+);
+```
+
+## Manual check
+
+Use `checkRateLimit` when you need full control over the response:
+
+```ts title="src/routes/custom.ts"
+import { checkRateLimit } from "../lib/ratelimit";
+import type { Context } from "../types";
+
+export async function customHandler(c: Context) {
+  const result = await checkRateLimit(c, { tier: "strict" });
+  if (!result.ok) {
+    return c.json({ error: "Too many requests" }, 429);
+  }
+  return c.json({ ok: true });
+}
+```

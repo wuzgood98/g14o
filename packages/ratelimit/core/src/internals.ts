@@ -4,8 +4,11 @@ type TokenTier = "strict" | "moderate" | "lenient" | "auth" | "write";
 
 /** Resolved rate-limit settings for one tier (limit, window, Redis prefix). */
 export interface TokenConfig {
+  /** Max requests allowed within `window`. */
   limit: number;
+  /** Redis key prefix for this tier. */
   prefix: string;
+  /** Sliding window length (Upstash-style, e.g. `"60 s"`, `"15 m"`). */
   window: Duration;
 }
 
@@ -41,8 +44,10 @@ export const tokenConfig: Record<TokenTier, TokenConfig> = {
   },
 };
 
+/** Built-in rate limit tier names. */
 export type RateLimitTier = TokenTier;
 
+/** Read-only map of frozen {@link TokenConfig} entries per tier. */
 export type ReadonlyTokenConfigMap = Readonly<
   Record<RateLimitTier, Readonly<TokenConfig>>
 >;
@@ -59,7 +64,7 @@ export function getTokenConfigReadonly(): ReadonlyTokenConfigMap {
   );
 }
 
-/** Frozen defaults for public export; internal code must use `tokenConfig`. */
+/** Frozen built-in tier defaults for public inspection. Internal code must use `tokenConfig`. */
 export const tokenConfigSnapshot: ReadonlyTokenConfigMap =
   getTokenConfigReadonly();
 
@@ -111,18 +116,55 @@ export function resolveTierConfig(
   return config;
 }
 
+/** Result of a single `limit(identifier)` call on a {@link RateLimiterAdapter}. */
 export interface RateLimitResultData {
+  /** Configured max requests in the window. */
   limit: number;
+  /** Requests remaining in the current window. */
   remaining: number;
+  /** Unix timestamp (ms) when the window resets. */
   reset: number;
+  /** Whether the request is allowed. */
   success: boolean;
 }
 
+/**
+ * Low-level rate limiter backend (in-memory or Upstash).
+ *
+ * Use via {@link RateLimitClient.getRateLimiter} for custom flows.
+ */
 export interface RateLimiterAdapter {
+  /**
+   * Consumes one request against `identifier`.
+   *
+   * @param identifier - Client IP, user ID, API key, or other stable key.
+   * @returns Limit state after this call.
+   */
   limit(identifier: string): Promise<RateLimitResultData>;
 }
 
-export interface RateLimitOptions<Req extends Request = Request> {
+/**
+ * Minimal request shape for rate limiting.
+ *
+ * Satisfied by Web `Request`, `NextRequest`, and Express (via an adapter).
+ */
+export interface RateLimitRequest {
+  /** Header lookup; used for IP extraction and custom identifiers. */
+  headers: { get(name: string): string | null };
+  /** Full request URL; used for logging. */
+  url: string;
+}
+
+/**
+ * Minimal response shape for {@link RateLimitClient.withRateLimit} header attachment.
+ */
+export interface RateLimitResponse {
+  /** Mutable response headers. */
+  headers: { set(name: string, value: string): void };
+}
+
+/** Per-call options for {@link RateLimitClient.checkRateLimit} and wrapper methods. */
+export interface RateLimitOptions<Req extends RateLimitRequest = Request> {
   /**
    * Function to get the identifier for the request. Defaults to the IP address of the request.
    * @example
@@ -151,6 +193,11 @@ export interface RateLimitOptions<Req extends Request = Request> {
   tier?: RateLimitTier;
 }
 
+/**
+ * Result of {@link RateLimitClient.checkRateLimit}.
+ *
+ * When `ok` is `false`, `status` is always `429`.
+ */
 export type RateLimitCheckResult =
   | { ok: true; remaining: number; limit: number; reset: number }
   | {
@@ -233,7 +280,17 @@ export class InMemoryRateLimiter implements RateLimiterAdapter {
   }
 }
 
-export function getDefaultIdentifier<Req extends Request>(req: Req): string {
+/**
+ * Resolves a rate-limit identifier from request headers.
+ *
+ * Precedence: `x-forwarded-for` (first IP) → `x-real-ip` → `cf-connecting-ip` → `"anonymous"`.
+ *
+ * @param req - Request with `headers.get()`.
+ * @returns Trimmed identifier string.
+ */
+export function getDefaultIdentifier<Req extends RateLimitRequest>(
+  req: Req
+): string {
   const forwarded = req.headers.get("x-forwarded-for");
   const realIp = req.headers.get("x-real-ip");
   const cfConnectingIp = req.headers.get("cf-connecting-ip");
@@ -241,4 +298,20 @@ export function getDefaultIdentifier<Req extends Request>(req: Req): string {
   const ip =
     forwarded?.split(",")[0] || realIp || cfConnectingIp || "anonymous";
   return ip.trim();
+}
+
+/**
+ * Resolves a per-user rate-limit identifier with IP fallback.
+ *
+ * Uses `getUserId` when non-nullish; otherwise falls back to {@link getDefaultIdentifier}.
+ *
+ * @param userId - Authenticated user ID, or null/undefined when unauthenticated.
+ * @param req - Request with `headers.get()` for IP fallback.
+ * @returns Rate-limit identifier string.
+ */
+export function resolveUserIdentifier<Req extends RateLimitRequest>(
+  userId: string | null | undefined,
+  req: Req
+): string {
+  return userId ?? getDefaultIdentifier(req);
 }

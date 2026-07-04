@@ -1,0 +1,89 @@
+---
+title: Setup
+description: Express middleware, route wrappers, and per-user rate limiting.
+---
+
+## Create a client
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-express";
+
+export const {
+  middleware,
+  withRateLimit,
+  withUserRateLimit,
+  userMiddleware,
+  checkRateLimit,
+} = createRateLimit({
+  redis: {
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  },
+});
+```
+
+## Route middleware (idiomatic Express)
+
+```ts title="src/routes/status.ts"
+import express from "express";
+import { middleware } from "../lib/ratelimit";
+
+const router = express.Router();
+
+router.get(
+  "/api/status",
+  middleware({ tier: "lenient" }),
+  (_req, res) => res.json({ ok: true })
+);
+```
+
+## Wrapped route handler
+
+```ts title="src/routes/chat.ts"
+import express from "express";
+import { withRateLimit } from "../lib/ratelimit";
+
+const router = express.Router();
+
+router.post(
+  "/api/chat",
+  withRateLimit((_req, res) => res.json({ ok: true }), {
+    tier: "moderate",
+    prefix: "@ratelimit:chat",
+  })
+);
+```
+
+## Per-user limits
+
+Use a verified identity from upstream auth middleware (session, JWT, Passport, etc.) — not client-controlled headers.
+
+```ts title="src/routes/user-action.ts"
+import express from "express";
+import { userMiddleware } from "../lib/ratelimit";
+
+const router = express.Router();
+
+router.post(
+  "/api/user-action",
+  userMiddleware(async (req) => req.user?.id ?? null, { tier: "auth" }),
+  (_req, res) => res.json({ ok: true })
+);
+```
+
+## Manual check
+
+Use `checkRateLimit` when you need full control over the response:
+
+```ts title="src/routes/custom.ts"
+import type { Request, Response } from "express";
+import { checkRateLimit } from "../lib/ratelimit";
+
+export async function customHandler(req: Request, res: Response) {
+  const result = await checkRateLimit(req, { tier: "strict" });
+  if (!result.ok) {
+    return res.status(429).json({ error: "Too many requests" });
+  }
+  res.json({ ok: true });
+}
+```

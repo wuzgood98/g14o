@@ -1,0 +1,36 @@
+---
+title: Overview
+description: Express.js rate limiting with Upstash Redis for middleware and route handlers.
+---
+
+Express.js rate limiting with Upstash Redis. Middleware and route handler wrappers over [@g14o/ratelimit](/docs/packages/ratelimit).
+
+## Install
+
+```bash
+pnpm add @g14o/ratelimit-express @upstash/redis @upstash/ratelimit express
+```
+
+`@upstash/redis` and `@upstash/ratelimit` are optional peers (in-memory fallback without Redis). `express` is required.
+
+## Quick start
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-express";
+
+export const { middleware, withRateLimit, checkRateLimit } = createRateLimit({
+  redis: {
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  },
+});
+```
+
+## Demo
+
+See the [express-demo](https://github.com/wuzgood98/g14o/tree/main/apps/express-demo) app in the monorepo (`pnpm demo:express`).
+
+## Framework alternatives
+
+- Web `Request` / `Response`: [@g14o/ratelimit](/docs/packages/ratelimit)
+- Next.js `NextRequest` / `NextResponse`: [@g14o/ratelimit-nextjs](/docs/packages/ratelimit-nextjs)
