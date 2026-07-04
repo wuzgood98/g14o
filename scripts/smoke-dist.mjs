@@ -96,7 +96,11 @@ const standalonePackages = [
     filter: "@g14o/ratelimit-hono",
     importPath: "@g14o/ratelimit-hono",
     distFile: "dist/index.mjs",
-    exports: ["createRateLimit", "parseDurationToMs", "rateLimitExceededResponse"],
+    exports: [
+      "createRateLimit",
+      "parseDurationToMs",
+      "rateLimitExceededResponse",
+    ],
   },
 ];
 
