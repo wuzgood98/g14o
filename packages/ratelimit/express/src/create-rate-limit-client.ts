@@ -51,8 +51,18 @@ export interface ExpressRateLimitOptions {
    * ```
    */
   prefix?: string;
-  /** Skip rate limit for this request. */
-  skipRateLimit?: (req: Request) => boolean | Promise<boolean>;
+  /**
+   * Skip rate limit for this request.
+   * @example
+   * ```ts
+   * { skipRateLimit: true }
+   * ```
+   * @example
+   * ```ts
+   * { skipRateLimit: (req) => req.get("x-internal") === "1" }
+   * ```
+   */
+  skipRateLimit?: boolean | ((req: Request) => boolean | Promise<boolean>);
   /**
    * Rate limit tier to use. Defaults to `"moderate"`.
    * @example
@@ -152,11 +162,21 @@ function toCoreOptions(
   options: ExpressRateLimitOptions = {}
 ): RateLimitOptions<RateLimitRequest> {
   const { identifierFn, skipRateLimit, tier, prefix } = options;
+
+  let mappedSkipRateLimit: RateLimitOptions<RateLimitRequest>["skipRateLimit"];
+  if (skipRateLimit === undefined) {
+    mappedSkipRateLimit = undefined;
+  } else if (typeof skipRateLimit === "function") {
+    mappedSkipRateLimit = async () => skipRateLimit(req);
+  } else {
+    mappedSkipRateLimit = skipRateLimit;
+  }
+
   return {
     tier,
     prefix,
     identifierFn: identifierFn ? async () => identifierFn(req) : undefined,
-    skipRateLimit: skipRateLimit ? async () => skipRateLimit(req) : undefined,
+    skipRateLimit: mappedSkipRateLimit,
   };
 }
 

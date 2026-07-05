@@ -103,6 +103,16 @@ describe("createRateLimit (Express factory API)", () => {
       }
     });
 
+    it("skips when skipRateLimit is true", async () => {
+      const result = await rateLimit.checkRateLimit(mockExpressRequest(), {
+        skipRateLimit: true,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.remaining).toBe(999_999);
+      }
+    });
+
     it("passes native Express req to identifierFn", async () => {
       const identifierFn = vi.fn((req: Request) => {
         expect(req.originalUrl).toBe("/api/custom");

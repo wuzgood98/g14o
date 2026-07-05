@@ -22,6 +22,8 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
 
 ## App Router route
 
+Built-in tier limits are listed in [@g14o/ratelimit setup — default tiers](/docs/packages/ratelimit/setup#default-tiers).
+
 ```ts title="app/api/chat/route.ts"
 import { NextResponse } from "next/server";
 import { withRateLimit } from "@/lib/rate-limit";

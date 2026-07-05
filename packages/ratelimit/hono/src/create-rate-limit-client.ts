@@ -38,8 +38,18 @@ export interface HonoRateLimitOptions<E extends Env = Env> {
    * ```
    */
   prefix?: string;
-  /** Skip rate limit for this request. */
-  skipRateLimit?: (c: Context<E>) => boolean | Promise<boolean>;
+  /**
+   * Skip rate limit for this request.
+   * @example
+   * ```ts
+   * { skipRateLimit: true }
+   * ```
+   * @example
+   * ```ts
+   * { skipRateLimit: (c) => c.req.header("x-internal") === "1" }
+   * ```
+   */
+  skipRateLimit?: boolean | ((c: Context<E>) => boolean | Promise<boolean>);
   /**
    * Rate limit tier to use. Defaults to `"moderate"`.
    * @example
@@ -148,11 +158,21 @@ function toCoreOptions<E extends Env>(
   options: HonoRateLimitOptions<E> = {}
 ): RateLimitOptions<RateLimitRequest> {
   const { identifierFn, skipRateLimit, tier, prefix } = options;
+
+  let mappedSkipRateLimit: RateLimitOptions<RateLimitRequest>["skipRateLimit"];
+  if (skipRateLimit === undefined) {
+    mappedSkipRateLimit = undefined;
+  } else if (typeof skipRateLimit === "function") {
+    mappedSkipRateLimit = async () => skipRateLimit(c);
+  } else {
+    mappedSkipRateLimit = skipRateLimit;
+  }
+
   return {
     tier,
     prefix,
     identifierFn: identifierFn ? async () => identifierFn(c) : undefined,
-    skipRateLimit: skipRateLimit ? async () => skipRateLimit(c) : undefined,
+    skipRateLimit: mappedSkipRateLimit,
   };
 }
 

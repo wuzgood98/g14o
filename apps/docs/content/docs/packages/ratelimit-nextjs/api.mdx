@@ -11,7 +11,7 @@ description: Next.js helpers for @g14o/ratelimit.
 |--------|-------------|
 | `createRateLimit(options)` | Factory returning a client typed for `NextRequest` / `NextResponse`. |
 | `RateLimitClient` | Alias of `RateLimitClient<NextRequest, NextResponse>` from core. |
-| `RateLimitOptions` | Per-call options. `identifierFn` and `skipRateLimit` receive `NextRequest`. |
+| `RateLimitOptions` | Per-call options. `identifierFn` and `skipRateLimit` (boolean or callback) receive `NextRequest`. Global `skipRateLimit` on `CreateRateLimitOptions` is boolean-only. |
 
 ## CreateRateLimitOptions
 

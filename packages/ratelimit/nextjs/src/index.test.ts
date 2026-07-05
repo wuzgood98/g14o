@@ -59,6 +59,16 @@ describe("createRateLimit (factory API)", () => {
       }
     });
 
+    it("skips when skipRateLimit is true", async () => {
+      const result = await rateLimit.checkRateLimit(mockRequest(), {
+        skipRateLimit: true,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.remaining).toBe(999_999);
+      }
+    });
+
     it("strips CR/LF from req.url and identifier in log messages", async () => {
       const logger = {
         info: vi.fn(),

@@ -14,3 +14,24 @@ description: Types for createRateLimit and rate limit tiers.
 ## RateLimitTierConfig
 
 <OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="RateLimitTierConfig" nameLabel="Option" />
+
+## Default tier config
+
+Built-in limits are defined in core and exposed for inspection at runtime. Values always match the [default tiers table](/docs/packages/ratelimit/setup#default-tiers).
+
+| Symbol | Description |
+|--------|-------------|
+| `tokenConfigSnapshot` | Frozen built-in defaults per tier (`limit`, `window`, `prefix`). |
+| `getTokenConfigReadonly()` | Same data as `tokenConfigSnapshot`, returned as a new frozen clone. |
+| `RateLimitTier` | Union of built-in tier names: `"strict"`, `"moderate"`, `"lenient"`, `"auth"`, `"write"`. |
+| `TokenConfig` | Resolved settings for one tier. |
+| `ReadonlyTokenConfigMap` | Read-only map of `TokenConfig` entries keyed by `RateLimitTier`. |
+
+```ts
+import { tokenConfigSnapshot } from "@g14o/ratelimit";
+
+console.log(tokenConfigSnapshot.auth);
+// { limit: 5, window: "15 m", prefix: "@ratelimit:auth" }
+```
+
+Also exported from `@g14o/ratelimit-nextjs`, `@g14o/ratelimit-express`, and `@g14o/ratelimit-hono`.
