@@ -43,6 +43,26 @@ export function applyRateLimitHeadersToContext<E extends Env>(
 }
 
 /**
+ * Attaches `X-RateLimit-*` headers via Hono's `c.header()` without replacing `c.res`.
+ *
+ * Call **before** `next()` in middleware so handlers can read `c.res.headers` during
+ * execution. Hono merges these prepared headers into the
+ * handler response. Do not call after `next()` from middleware — a second pass can
+ * drop the handler JSON body under `@hono/node-server`.
+ *
+ * @param c - Hono context.
+ * @param result - Limit, remaining, and reset from a check result.
+ */
+export function applyRateLimitHeadersViaContext<E extends Env>(
+  c: Context<E>,
+  result: Pick<RateLimitCheckResult, "limit" | "remaining" | "reset">
+): void {
+  for (const [key, value] of Object.entries(buildRateLimitHeaders(result))) {
+    c.header(key, value);
+  }
+}
+
+/**
  * Builds a `429` Web `Response` with standard rate-limit headers and body.
  *
  * @param result - Failed check result (`ok: false`).

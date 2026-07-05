@@ -32,6 +32,7 @@ export type { Env } from "hono";
 export {
   applyRateLimitHeadersToContext,
   applyRateLimitHeadersToResponse,
+  applyRateLimitHeadersViaContext,
   rateLimitExceededResponse,
 } from "./apply-rate-limit-response";
 export type {

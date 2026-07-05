@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   applyRateLimitHeadersToContext,
   applyRateLimitHeadersToResponse,
+  applyRateLimitHeadersViaContext,
 } from "./apply-rate-limit-response";
 
 const rateLimitResult = {
@@ -33,6 +34,27 @@ describe("applyRateLimitHeadersToResponse", () => {
 
     expect(updated.status).toBe(201);
     expect(await updated.json()).toEqual({ ok: true });
+  });
+});
+
+describe("applyRateLimitHeadersViaContext", () => {
+  it("sets rate-limit headers via c.header without replacing c.res", () => {
+    const res = new Response(JSON.stringify({ ok: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+    const c = {
+      res,
+      header: (name: string, value: string) => {
+        res.headers.set(name, value);
+      },
+    } as unknown as Context;
+
+    applyRateLimitHeadersViaContext(c, rateLimitResult);
+
+    expect(c.res).toBe(res);
+    expect(c.res.headers.get("X-RateLimit-Limit")).toBe("10");
+    expect(c.res.headers.get("X-RateLimit-Remaining")).toBe("7");
   });
 });
 
