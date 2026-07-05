@@ -1,5 +1,11 @@
 # @g14o/ratelimit-hono
 
+## 0.2.1
+
+### Patch Changes
+
+- 22cd7a2: Fix empty response bodies from `middleware` and `userMiddleware`. Apply rate-limit headers with `c.header()` before `next()` only; re-applying after `next()` could drop the handler JSON body.
+
 ## 0.2.0
 
 ### Minor Changes
