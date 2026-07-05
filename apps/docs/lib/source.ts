@@ -2,7 +2,7 @@ import { docs } from "collections/server";
 import { loader } from "fumadocs-core/source";
 
 export const source = loader({
-  baseUrl: "/docs",
+  baseUrl: "/",
   source: docs.toFumadocsSource(),
 });
 
@@ -11,6 +11,6 @@ export function getPageImage(page: (typeof source)["$inferPage"]) {
 
   return {
     segments,
-    url: `/og/docs/${segments.join("/")}`,
+    url: `/og/${segments.join("/")}`,
   };
 }

@@ -17,11 +17,11 @@ const paystack = new Paystack({
 
 `secretKey` is required for server-side API calls and webhook HMAC verification. Optional settings include `baseUrl`, `fetch`, `maxRetries` (default `3`), and `timeoutMs` (default `30000`). When set, `publicKey` is also exposed as `paystack.publicKey` for Paystack Popup integrations.
 
-See [API reference](/docs/packages/paystack/api) for the full `PaystackClientOptions` table.
+See [API reference](/packages/paystack/api) for the full `PaystackClientOptions` table.
 
 ## Payment flow
 
-`transactions.initialize` only **starts** checkout. Always confirm payment server-side with `transactions.verify` or a [`charge.success` webhook](/docs/packages/paystack/webhooks) before delivering value.
+`transactions.initialize` only **starts** checkout. Always confirm payment server-side with `transactions.verify` or a [`charge.success` webhook](/packages/paystack/webhooks) before delivering value.
 
 ```mermaid
 flowchart LR
@@ -58,7 +58,7 @@ const checkout = await paystack.transactions.initialize({
 
 Pass an optional `plan` code to start a subscription checkout, or `reference` to use your own transaction reference.
 
-Param types: [InitializeTransactionParams](/docs/packages/paystack/api#initializetransactionparams).
+Param types: [InitializeTransactionParams](/packages/paystack/api#initializetransactionparams).
 
 ### Verify payment
 
@@ -81,7 +81,7 @@ const tx = await paystack.transactions.chargeAuthorization({
 });
 ```
 
-Param types: [ChargeAuthorizationParams](/docs/packages/paystack/api#chargeauthorizationparams).
+Param types: [ChargeAuthorizationParams](/packages/paystack/api#chargeauthorizationparams).
 
 ## Customers
 
@@ -111,7 +111,7 @@ await paystack.customers.update(customer.customer_code, {
 
 `PaystackCustomer` includes `customer_code`, `authorizations[]` (saved cards), and metadata — useful before calling `chargeAuthorization` or `subscriptions.create`.
 
-Param types: [CreateCustomerParams](/docs/packages/paystack/api#createcustomerparams).
+Param types: [CreateCustomerParams](/packages/paystack/api#createcustomerparams).
 
 ## Plans
 
@@ -137,7 +137,7 @@ const plans = await paystack.plans.list({ perPage: 10, page: 1 });
 
 Monthly and annual billing require **separate plan codes** — create distinct plans per interval.
 
-Param types: [CreatePlanParams](/docs/packages/paystack/api#createplanparams).
+Param types: [CreatePlanParams](/packages/paystack/api#createplanparams).
 
 ## Subscriptions
 
@@ -171,7 +171,7 @@ const active = await paystack.subscriptions.list({
 });
 ```
 
-Param types: [CreateSubscriptionParams](/docs/packages/paystack/api#createsubscriptionparams), [DisableSubscriptionParams](/docs/packages/paystack/api#disablesubscriptionparams).
+Param types: [CreateSubscriptionParams](/packages/paystack/api#createsubscriptionparams), [DisableSubscriptionParams](/packages/paystack/api#disablesubscriptionparams).
 
 ## End-to-end workflow
 
@@ -212,6 +212,6 @@ The client throws structured errors for API failures, validation, network issues
 | `PaystackError` | `PAYSTACK_RATE_LIMIT` | Rate limited |
 | `PaystackError` | `PAYSTACK_TIMEOUT` | Request timed out |
 
-Webhook-specific errors (`WebhookVerificationError`, `WEBHOOK_PROCESSING_ERROR`) are documented on the [Webhooks](/docs/packages/paystack/webhooks) page.
+Webhook-specific errors (`WebhookVerificationError`, `WEBHOOK_PROCESSING_ERROR`) are documented on the [Webhooks](/packages/paystack/webhooks) page.
 
-See [API reference](/docs/packages/paystack/api) for full type tables.
+See [API reference](/packages/paystack/api) for full type tables.

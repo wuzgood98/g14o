@@ -14,7 +14,7 @@ export default function HomePage() {
       </p>
       <Link
         className="inline-flex items-center rounded-lg bg-fd-primary px-5 py-2.5 font-medium text-fd-primary-foreground text-sm transition-colors hover:opacity-90"
-        href="/docs"
+        href="/introduction"
       >
         Browse documentation
       </Link>

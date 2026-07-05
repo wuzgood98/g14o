@@ -3,7 +3,7 @@ title: Overview
 description: Hono rate limiting with Upstash Redis for middleware and route handlers.
 ---
 
-Hono rate limiting with Upstash Redis. Middleware and route handler wrappers over [@g14o/ratelimit](/docs/packages/ratelimit).
+Hono rate limiting with Upstash Redis. Middleware and route handler wrappers over [@g14o/ratelimit](/packages/ratelimit).
 
 ## Install
 
@@ -43,10 +43,10 @@ export const { middleware, withRateLimit, checkRateLimit } =
   });
 ```
 
-Import helpers from `lib/ratelimit.ts` in route modules or inline on your app — `c.env` and `c.get(...)` are typed automatically. See [Setup](/docs/packages/ratelimit-hono/setup) for full examples.
+Import helpers from `lib/ratelimit.ts` in route modules or inline on your app — `c.env` and `c.get(...)` are typed automatically. See [Setup](/packages/ratelimit-hono/setup) for full examples.
 
 ## Framework alternatives
 
-- Web `Request` / `Response`: [@g14o/ratelimit](/docs/packages/ratelimit)
-- Next.js `NextRequest` / `NextResponse`: [@g14o/ratelimit-nextjs](/docs/packages/ratelimit-nextjs)
-- Express `Request` / `Response`: [@g14o/ratelimit-express](/docs/packages/ratelimit-express)
+- Web `Request` / `Response`: [@g14o/ratelimit](/packages/ratelimit)
+- Next.js `NextRequest` / `NextResponse`: [@g14o/ratelimit-nextjs](/packages/ratelimit-nextjs)
+- Express `Request` / `Response`: [@g14o/ratelimit-express](/packages/ratelimit-express)

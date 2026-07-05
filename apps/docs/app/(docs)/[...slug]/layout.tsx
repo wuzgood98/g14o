@@ -9,11 +9,16 @@ import {
 import { cn } from "@/lib/cn";
 import { env } from "@/lib/env";
 import { baseOptions } from "@/lib/layout.shared";
+import { siteConfig } from "@/lib/site-config";
 import { source } from "@/lib/source";
 
-export default function Layout({ children }: LayoutProps<"/docs">) {
+export default function Layout({ children }: LayoutProps<"/[...slug]">) {
   return (
-    <DocsLayout {...baseOptions()} tree={source.getPageTree()}>
+    <DocsLayout
+      {...baseOptions()}
+      githubUrl={siteConfig.githubUrl}
+      tree={source.getPageTree()}
+    >
       {env.ENABLE_AI_CHAT && (
         <AISearch>
           <AISearchPanel />
