@@ -1,6 +1,6 @@
 {
   "name": "@g14o/ratelimit-nextjs",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Next.js rate limiting with Upstash Redis — NextRequest/NextResponse types over @g14o/ratelimit.",
   "type": "module",
   "sideEffects": false,
