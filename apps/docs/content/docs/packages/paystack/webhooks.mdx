@@ -88,7 +88,7 @@ if (result.duplicate) {
 }
 ```
 
-Options: [ProcessWebhookDeliveryRequestOptions](/docs/packages/paystack/api#processwebhookdeliveryrequestoptions), [WebhookDeliveryStore](/docs/packages/paystack/api#webhookdeliverystore).
+Options: [ProcessWebhookDeliveryRequestOptions](/packages/paystack/api#processwebhookdeliveryrequestoptions), [WebhookDeliveryStore](/packages/paystack/api#webhookdeliverystore).
 
 ### Two-step flow
 
@@ -156,11 +156,11 @@ Exported data types include `ChargeSuccessData`, `TransferData`, `SubscriptionCr
 - Read **`x-paystack-signature`** from headers; never parse JSON before verification.
 - In Next.js, avoid middleware that consumes the request body before the route handler.
 - Respond with **200** quickly; defer heavy work to a queue after verification.
-- For idempotency, implement `WebhookDeliveryStore` or use [@g14o/paystack-better-auth](/docs/packages/paystack-better-auth/webhooks) built-in persistence.
+- For idempotency, implement `WebhookDeliveryStore` or use [@g14o/paystack-better-auth](/packages/paystack-better-auth/webhooks) built-in persistence.
 
 ## Better Auth webhooks
 
-When using [@g14o/paystack-better-auth](/docs/packages/paystack-better-auth), configure your Paystack dashboard webhook URL to:
+When using [@g14o/paystack-better-auth](/packages/paystack-better-auth), configure your Paystack dashboard webhook URL to:
 
 ```
 https://your-domain.com/api/auth/paystack/webhook

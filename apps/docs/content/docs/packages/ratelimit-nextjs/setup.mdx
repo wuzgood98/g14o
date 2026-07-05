@@ -22,7 +22,7 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
 
 ## App Router route
 
-Built-in tier limits are listed in [@g14o/ratelimit setup — default tiers](/docs/packages/ratelimit/setup#default-tiers).
+Built-in tier limits are listed in [@g14o/ratelimit setup — default tiers](/packages/ratelimit/setup#default-tiers).
 
 ```ts title="app/api/chat/route.ts"
 import { NextResponse } from "next/server";
@@ -70,4 +70,4 @@ export async function POST(req: NextRequest) {
 }
 ```
 
-See [@g14o/ratelimit middleware patterns](/docs/packages/ratelimit/middleware) for more examples (adapt `Response` to `NextResponse`).
+See [@g14o/ratelimit middleware patterns](/packages/ratelimit/middleware) for more examples (adapt `Response` to `NextResponse`).

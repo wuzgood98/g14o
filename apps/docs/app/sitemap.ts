@@ -16,7 +16,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     { url: url("/"), changeFrequency: "monthly", priority: 1 },
-    { url: url("/docs"), changeFrequency: "weekly", priority: 0.9 },
+    { url: url("/introduction"), changeFrequency: "weekly", priority: 0.9 },
     { url: url("/llms.txt"), changeFrequency: "weekly", priority: 0.9 },
     { url: url("/llms-full.txt"), changeFrequency: "weekly", priority: 0.8 },
     ...pages,

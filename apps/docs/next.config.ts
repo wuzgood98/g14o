@@ -8,8 +8,22 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: "/docs/:path*.md",
-        destination: "/llms.mdx/docs/:path*",
+        source: "/:path*.md",
+        destination: "/llms.mdx/:path*",
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      {
+        source: "/docs",
+        destination: "/introduction",
+        permanent: true,
+      },
+      {
+        source: "/docs/:path*",
+        destination: "/:path*",
+        permanent: true,
       },
     ];
   },
