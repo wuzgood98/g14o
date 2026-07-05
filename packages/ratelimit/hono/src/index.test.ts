@@ -33,13 +33,17 @@ function mockContext(
   const headerMap = Object.fromEntries(
     Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value])
   );
+  const res = new Response(null, { status: 200 });
 
   return {
     req: {
       raw,
       header: (name: string) => headerMap[name.toLowerCase()] ?? undefined,
     },
-    res: new Response(null, { status: 200 }),
+    res,
+    header: (name: string, value: string) => {
+      res.headers.set(name, value);
+    },
   } as unknown as Context;
 }
 

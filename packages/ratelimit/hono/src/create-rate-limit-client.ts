@@ -13,8 +13,8 @@ import {
 } from "@g14o/ratelimit";
 import type { Context, Env, MiddlewareHandler } from "hono";
 import {
-  applyRateLimitHeadersToContext,
   applyRateLimitHeadersToResponse,
+  applyRateLimitHeadersViaContext,
   rateLimitExceededResponse,
 } from "./apply-rate-limit-response";
 
@@ -237,9 +237,9 @@ export function createRateLimit<E extends Env = Env>(
       if (!outcome.allowed) {
         return outcome.response;
       }
-      applyRateLimitHeadersToContext(c, outcome.result);
+      // Headers before next() only — re-applying after next() can clear the handler body.
+      applyRateLimitHeadersViaContext(c, outcome.result);
       await next();
-      applyRateLimitHeadersToContext(c, outcome.result);
     }) as MiddlewareHandler<E>;
 
   const userMiddleware = (
