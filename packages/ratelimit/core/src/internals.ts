@@ -163,6 +163,46 @@ export interface RateLimitResponse {
   headers: { set(name: string, value: string): void };
 }
 
+/** Per-call skip option — boolean or request-aware callback. */
+export type SkipRateLimitOption<Req extends RateLimitRequest = Request> =
+  | boolean
+  | ((req: Req) => boolean | Promise<boolean>);
+
+/**
+ * Resolves a per-call {@link SkipRateLimitOption} for a request.
+ *
+ * @returns `false` when `skip` is `undefined` or `false`.
+ */
+export function resolveSkipRateLimitOption<Req extends RateLimitRequest>(
+  skip: SkipRateLimitOption<Req> | undefined,
+  req: Req
+): boolean | Promise<boolean> {
+  if (skip === undefined || skip === false) {
+    return false;
+  }
+  if (typeof skip === "boolean") {
+    return skip;
+  }
+  return skip(req);
+}
+
+/**
+ * Combines global and per-call skip flags (OR semantics).
+ *
+ * Global skip is boolean-only (no request at client creation).
+ */
+export async function shouldSkipRateLimit<Req extends RateLimitRequest>(
+  globalSkip: boolean | undefined,
+  perCallSkip: SkipRateLimitOption<Req> | undefined,
+  req: Req
+): Promise<boolean> {
+  if (globalSkip === true) {
+    return true;
+  }
+  const perCallResult = resolveSkipRateLimitOption(perCallSkip, req);
+  return await perCallResult;
+}
+
 /** Per-call options for {@link RateLimitClient.checkRateLimit} and wrapper methods. */
 export interface RateLimitOptions<Req extends RateLimitRequest = Request> {
   /**
@@ -181,8 +221,18 @@ export interface RateLimitOptions<Req extends RateLimitRequest = Request> {
    * ```
    */
   prefix?: string;
-  /** Skip rate limit for this request. */
-  skipRateLimit?: (req: Req) => boolean | Promise<boolean>;
+  /**
+   * Skip rate limit for this request.
+   * @example
+   * ```ts
+   * { skipRateLimit: true }
+   * ```
+   * @example
+   * ```ts
+   * { skipRateLimit: (req) => req.headers.get("x-internal") === "1" }
+   * ```
+   */
+  skipRateLimit?: SkipRateLimitOption<Req>;
   /**
    * Rate limit tier to use. Defaults to "moderate".
    * @example

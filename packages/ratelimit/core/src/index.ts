@@ -26,6 +26,8 @@ export {
   type RateLimitTier,
   type ReadonlyTokenConfigMap,
   resolveUserIdentifier,
+  type SkipRateLimitOption,
+  shouldSkipRateLimit,
   type TokenConfig,
   tokenConfigSnapshot,
 } from "./internals";

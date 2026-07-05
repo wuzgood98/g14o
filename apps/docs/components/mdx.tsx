@@ -7,6 +7,7 @@ import type { MDXComponents } from "mdx/types";
 import type { ComponentProps } from "react";
 import { typeScriptGenerator } from "@/lib/typescript-generator";
 import { DatabaseTable } from "./database-table";
+import { DefaultTiersTable } from "./default-tiers-table";
 import { Mermaid } from "./mermaid";
 import { OptionsTable } from "./options-table";
 
@@ -17,6 +18,7 @@ export function getMDXComponents(components?: MDXComponents) {
     ...TabsComponents,
     Mermaid,
     DatabaseTable,
+    DefaultTiersTable,
 
     OptionsTable: (
       props: Omit<ComponentProps<typeof OptionsTable>, "generator">

@@ -20,9 +20,17 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   });
 ```
 
+## Default tiers
+
+Five built-in tiers ship with every client. Override any subset via `tiers` when creating the client — omitted tiers keep these defaults.
+
+<DefaultTiersTable />
+
+When `tier` is omitted on `withRateLimit` or `checkRateLimit`, **`moderate`** is used.
+
 ## Custom tiers
 
-Override built-in tier limits when creating the client:
+Override built-in tier limits when creating the client. Only the tiers you list are changed; the rest stay at the defaults above.
 
 ```ts title="lib/ratelimit.ts"
 export const { withRateLimit } = createRateLimit({
@@ -55,3 +63,37 @@ export const { withRateLimit } = createRateLimit({
 ```
 
 Import `isBuildLikePhase()` from `@g14o/ratelimit/config` if you need to detect build phase yourself.
+
+## Skip rate limiting
+
+Disable rate limiting globally when creating the client (e.g. load tests, CI):
+
+```ts title="lib/ratelimit.ts"
+export const { withRateLimit } = createRateLimit({
+  redis: {
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  },
+  skipRateLimit: process.env.CI === "true",
+});
+```
+
+Skip individual routes with per-call options:
+
+```ts
+// Always skip this route
+export const GET = withRateLimit(
+  async () => Response.json({ ok: true }),
+  { skipRateLimit: true }
+);
+
+// Request-aware skip
+export const POST = withRateLimit(
+  async (req) => Response.json({ ok: true }),
+  {
+    skipRateLimit: (req) => req.headers.get("x-internal") === "1",
+  }
+);
+```
+
+Global and per-call `skipRateLimit` use OR semantics — either can skip the request.

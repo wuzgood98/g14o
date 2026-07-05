@@ -78,6 +78,16 @@ describe("createRateLimit (Hono factory API)", () => {
       }
     });
 
+    it("skips when skipRateLimit is true", async () => {
+      const result = await rateLimit.checkRateLimit(mockContext(), {
+        skipRateLimit: true,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.remaining).toBe(999_999);
+      }
+    });
+
     it("passes native Hono context to identifierFn", async () => {
       const identifierFn = vi.fn((ctx: Context) => {
         expect(ctx.req.raw.url).toBe("http://localhost/api/custom");

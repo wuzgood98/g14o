@@ -22,6 +22,7 @@ import {
   type RateLimitTier,
   resolveTierConfig,
   resolveUserIdentifier,
+  shouldSkipRateLimit,
   type TokenConfig,
   tokenConfig,
   validatePrefix,
@@ -74,6 +75,17 @@ export interface CreateRateLimitOptions extends InMemoryEnvOptions {
    * Upstash credentials or a pre-built Redis client (e.g. `Redis.fromEnv()`).
    */
   redis?: RedisConfig;
+  /**
+   * When `true`, skip rate limiting for every request from this client.
+   * Evaluated at client creation — no request is available. Use per-call
+   * `skipRateLimit` for request-aware skip logic.
+   *
+   * @example
+   * ```ts
+   * createRateLimit({ skipRateLimit: process.env.CI === "true" })
+   * ```
+   */
+  skipRateLimit?: boolean;
   /**
    * Override built-in tier limits/windows/prefixes. Each tier key is optional;
    * each field inside a tier is optional and merged onto factory defaults.
@@ -204,6 +216,7 @@ interface RateLimitRuntime {
   inMemoryDuringBuild: boolean;
   logger: Logger;
   resolveRedis: () => Redis | null;
+  skipRateLimit?: boolean;
   tiers?: RateLimitTiersOverride;
 }
 
@@ -219,6 +232,7 @@ function createRateLimitRuntime(
     envName,
     inMemoryDuringBuild,
     logger,
+    skipRateLimit: options.skipRateLimit,
     tiers: options.tiers,
     resolveRedis: () => {
       if (redis === undefined) {
@@ -358,7 +372,9 @@ export function createRateLimit<
     const logUrl = sanitizeLogValue(req.url);
 
     try {
-      if (skipRateLimit && (await skipRateLimit(req))) {
+      if (
+        await shouldSkipRateLimit(runtime.skipRateLimit, skipRateLimit, req)
+      ) {
         logger.info(`Rate limit skipped for request: ${logUrl}`);
         return {
           ok: true,

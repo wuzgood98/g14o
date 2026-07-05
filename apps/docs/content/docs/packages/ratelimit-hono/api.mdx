@@ -11,7 +11,7 @@ description: Hono helpers for @g14o/ratelimit.
 |--------|-------------|
 | `createRateLimit<E extends Env>(options)` | Factory. Pass your app's env (e.g. `AppEnv`) to bind types for the whole client. |
 | `HonoRateLimitClient<E>` | Client returned by the factory. All methods use `Context<E>`. |
-| `HonoRateLimitOptions<E>` | Per-call options. `identifierFn` and `skipRateLimit` receive `Context<E>`. |
+| `HonoRateLimitOptions<E>` | Per-call options. `identifierFn` and `skipRateLimit` (boolean or callback) receive `Context<E>`. Global `skipRateLimit` on `CreateRateLimitOptions` is boolean-only. |
 | `HonoHandler<E>` | Route handler passed to `withRateLimit` / `withUserRateLimit`. |
 | `Env` | Re-exported from `hono`. Use as the base for your `AppEnv` type. |
 

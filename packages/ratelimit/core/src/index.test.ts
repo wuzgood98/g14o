@@ -62,6 +62,98 @@ describe("createRateLimit (factory API)", () => {
       }
     });
 
+    it("skips when skipRateLimit is true", async () => {
+      const result = await rateLimit.checkRateLimit(mockRequest(), {
+        skipRateLimit: true,
+      });
+      expect(result.ok).toBe(true);
+      if (result.ok) {
+        expect(result.remaining).toBe(999_999);
+      }
+    });
+
+    it("enforces limit when skipRateLimit is false", async () => {
+      const req = mockRequest({ "x-forwarded-for": "skip-false-client" });
+      const options = { tier: "strict" as const, skipRateLimit: false };
+
+      for (let i = 0; i < 5; i++) {
+        const result = await rateLimit.checkRateLimit(req, options);
+        expect(result.ok).toBe(true);
+      }
+
+      const blocked = await rateLimit.checkRateLimit(req, options);
+      expect(blocked.ok).toBe(false);
+    });
+
+    it("skips when global skipRateLimit is true", async () => {
+      const globalSkip = createRateLimit({ env: "test", skipRateLimit: true });
+      try {
+        const result = await globalSkip.checkRateLimit(mockRequest(), {
+          tier: "strict",
+        });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.remaining).toBe(999_999);
+        }
+      } finally {
+        globalSkip.reset();
+      }
+    });
+
+    it("enforces limit when global skipRateLimit is false", async () => {
+      const noGlobalSkip = createRateLimit({
+        env: "test",
+        skipRateLimit: false,
+      });
+      try {
+        const req = mockRequest({ "x-forwarded-for": "global-false-client" });
+        const options = { tier: "strict" as const };
+
+        for (let i = 0; i < 5; i++) {
+          const result = await noGlobalSkip.checkRateLimit(req, options);
+          expect(result.ok).toBe(true);
+        }
+
+        const blocked = await noGlobalSkip.checkRateLimit(req, options);
+        expect(blocked.ok).toBe(false);
+      } finally {
+        noGlobalSkip.reset();
+      }
+    });
+
+    it("skips when per-call skipRateLimit is true and global is false", async () => {
+      const noGlobalSkip = createRateLimit({
+        env: "test",
+        skipRateLimit: false,
+      });
+      try {
+        const result = await noGlobalSkip.checkRateLimit(mockRequest(), {
+          skipRateLimit: true,
+        });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.remaining).toBe(999_999);
+        }
+      } finally {
+        noGlobalSkip.reset();
+      }
+    });
+
+    it("skips when global skipRateLimit is true and per-call is false", async () => {
+      const globalSkip = createRateLimit({ env: "test", skipRateLimit: true });
+      try {
+        const result = await globalSkip.checkRateLimit(mockRequest(), {
+          skipRateLimit: false,
+        });
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.remaining).toBe(999_999);
+        }
+      } finally {
+        globalSkip.reset();
+      }
+    });
+
     it("accepts duck-typed RateLimitRequest objects", async () => {
       const duckTyped = {
         url: "http://localhost/api/custom",
