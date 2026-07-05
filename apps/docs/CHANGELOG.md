@@ -5,7 +5,6 @@
 ### Patch Changes
 
 - Updated dependencies [5d595e5]
-- Updated dependencies [5d595e5]
   - @g14o/ratelimit@0.4.0
   - @g14o/ratelimit-nextjs@0.2.0
   - @g14o/ratelimit-express@0.2.0

@@ -10,7 +10,6 @@
 
 - 5d595e5: Document built-in tier default limits, windows, prefixes, and runtime inspection via `tokenConfigSnapshot`.
 - Updated dependencies [5d595e5]
-- Updated dependencies [5d595e5]
   - @g14o/ratelimit@0.4.0
 
 ## 0.1.2
