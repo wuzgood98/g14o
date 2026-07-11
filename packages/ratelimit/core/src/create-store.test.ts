@@ -131,7 +131,7 @@ describe("createStore", () => {
       const req = mockRequest({ "x-forwarded-for": "custom-store-client" });
       const options = { tier: "strict" as const };
 
-      for (let i = 0; i < 5; i++) {
+      for (const _ of Array.from({ length: 5 })) {
         const result = await rateLimit.checkRateLimit(req, options);
         expect(result.ok).toBe(true);
       }
@@ -187,7 +187,7 @@ describe("defineStore", () => {
       const req = mockRequest({ "x-forwarded-for": "define-store-client" });
       const options = { tier: "strict" as const };
 
-      for (let i = 0; i < 5; i++) {
+      for (const _ of Array.from({ length: 5 })) {
         expect(await rateLimit.checkRateLimit(req, options)).toMatchObject({
           ok: true,
         });
