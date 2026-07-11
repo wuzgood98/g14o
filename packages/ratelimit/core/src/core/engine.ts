@@ -310,7 +310,7 @@ export function createRateLimit<
       limiter = getFallbackMemoryStore().createLimiter(config);
     } else {
       throw new Error(
-        "Redis is required for production rate limiting. Pass createRateLimit({ redis: { url, token } }) or redis: Redis.fromEnv()."
+        "Redis is required for production rate limiting. Pass createRateLimit({ store: redisStore(client) }), or createRateLimit({ redis: { url, token } }), or redis: Redis.fromEnv() for legacy Upstash credentials."
       );
     }
 
