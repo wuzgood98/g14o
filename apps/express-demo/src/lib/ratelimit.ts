@@ -1,10 +1,17 @@
 import { createRateLimit } from "@g14o/ratelimit-express";
-import { memoryStore } from "@g14o/ratelimit-express/memory";
+import { redisStore } from "@g14o/ratelimit-express/redis";
+import { createClient } from "redis";
+
+const redisUrl = process.env.REDIS_URL;
+if (!redisUrl) {
+  throw new Error("REDIS_URL is not set");
+}
+const redis = createClient({ url: redisUrl });
+await redis.connect();
 
 export const { middleware, withRateLimit, userMiddleware, checkRateLimit } =
   createRateLimit({
-    env: process.env.NODE_ENV === "production" ? "production" : "development",
-    store: memoryStore(),
+    store: redisStore(redis),
     hooks: {
       onFailure: (result) => {
         console.error(result, "Rate limit failure");

@@ -254,6 +254,12 @@ importers:
       express:
         specifier: ^5.1.0
         version: 5.2.1
+      ioredis:
+        specifier: ^5.11.1
+        version: 5.11.1
+      redis:
+        specifier: ^5.12.1
+        version: 5.12.1(@opentelemetry/api@1.9.1)
     devDependencies:
       '@types/express':
         specifier: ^5.0.3
