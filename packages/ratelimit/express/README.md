@@ -96,4 +96,5 @@ For Hono, use [@g14o/ratelimit-hono](https://docs.g14o.dev/packages/ratelimit-ho
 | Custom store helpers | `import { createStore, defineStore } from "@g14o/ratelimit-express"` |
 | In-memory store | `import { memoryStore } from "@g14o/ratelimit-express/memory"` |
 | Upstash store | `import { upstashStore } from "@g14o/ratelimit-express/upstash"` |
+| Redis store (node-redis / ioredis) | `import { redisStore } from "@g14o/ratelimit/redis"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |
