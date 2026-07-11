@@ -25,6 +25,8 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
 ```ts title="lib/ratelimit.ts"
 import { createRateLimit } from "@g14o/ratelimit-nextjs";
 import { upstashStore } from "@g14o/ratelimit-nextjs/upstash";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
 
 export const { withRateLimit } = createRateLimit({
   store: upstashStore({
