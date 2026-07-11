@@ -88,21 +88,24 @@ describe.skipIf(!hasRedisUrl())("Redis integration", () => {
         },
       });
       rateLimit.reset();
-
       const identifier = `g14o-redis-io-it-${randomUUID()}`;
       const req = new Request("http://localhost/api");
       const options = {
         tier: "strict" as const,
         identifierFn: async () => identifier,
       };
-
       for (let i = 0; i < STRICT_TIER_LIMIT; i++) {
         const result = await rateLimit.checkRateLimit(req, options);
         expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.remaining).toBe(STRICT_TIER_LIMIT - i - 1);
+        }
       }
-
       const blocked = await rateLimit.checkRateLimit(req, options);
       expect(blocked.ok).toBe(false);
+      if (!blocked.ok) {
+        expect(blocked.status).toBe(429);
+      }
     });
   });
 
