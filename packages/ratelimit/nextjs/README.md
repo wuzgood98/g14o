@@ -83,4 +83,8 @@ For Hono, use [@g14o/ratelimit-hono](https://docs.g14o.dev/packages/ratelimit-ho
 | Use case | Import |
 |----------|--------|
 | Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit-nextjs"` |
+| Custom store helpers | `import { createStore, defineStore } from "@g14o/ratelimit-nextjs"` |
+| In-memory store | `import { memoryStore } from "@g14o/ratelimit-nextjs/memory"` |
+| Upstash store | `import { upstashStore } from "@g14o/ratelimit-nextjs/upstash"` |
+| Redis store (node-redis / ioredis) | `import { redisStore } from "@g14o/ratelimit/redis"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |

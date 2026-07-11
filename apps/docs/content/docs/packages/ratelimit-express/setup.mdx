@@ -22,6 +22,22 @@ export const {
 });
 ```
 
+### Store configuration (recommended)
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-express";
+import { upstashStore } from "@g14o/ratelimit-express/upstash";
+
+export const { middleware, withRateLimit } = createRateLimit({
+  store: upstashStore({
+    url: process.env.UPSTASH_REDIS_REST_URL!,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+  }),
+});
+```
+
+Store helpers (`memoryStore`, `upstashStore`, `createStore`, `defineStore`) are exported from `@g14o/ratelimit-express` and its `/memory` and `/upstash` subpaths. `store` and `redis` are mutually exclusive.
+
 ## Route middleware (idiomatic Express)
 
 Built-in tier limits are listed in [@g14o/ratelimit setup — default tiers](/packages/ratelimit/setup#default-tiers).

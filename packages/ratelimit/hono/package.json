@@ -60,12 +60,36 @@
       "dev-source": "./src/index.ts",
       "types": "./dist/index.d.mts",
       "default": "./dist/index.mjs"
+    },
+    "./memory": {
+      "dev-source": "./src/store/memory.ts",
+      "types": "./dist/store/memory.d.mts",
+      "default": "./dist/store/memory.mjs"
+    },
+    "./upstash": {
+      "dev-source": "./src/store/upstash.ts",
+      "types": "./dist/store/upstash.d.mts",
+      "default": "./dist/store/upstash.mjs"
+    },
+    "./redis": {
+      "dev-source": "./src/store/redis.ts",
+      "types": "./dist/store/redis.d.mts",
+      "default": "./dist/store/redis.mjs"
     }
   },
   "typesVersions": {
     "*": {
       "*": [
         "./dist/index.d.mts"
+      ],
+      "memory": [
+        "./dist/store/memory.d.mts"
+      ],
+      "upstash": [
+        "./dist/store/upstash.d.mts"
+      ],
+      "redis": [
+        "./dist/store/redis.d.mts"
       ]
     }
   },

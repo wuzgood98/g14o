@@ -24,7 +24,8 @@
         "UPSTASH_REDIS_REST_TOKEN",
         "OPENROUTER_API_KEY",
         "OPENROUTER_MODEL",
-        "ENABLE_AI_CHAT"
+        "ENABLE_AI_CHAT",
+        "REDIS_URL"
       ]
     },
     "//#check": {},
@@ -36,7 +37,7 @@
     },
     "test": {
       "dependsOn": ["^build"],
-      "passThroughEnv": ["PAYSTACK_SECRET_KEY"]
+      "passThroughEnv": ["PAYSTACK_SECRET_KEY", "REDIS_URL"]
     },
     "test:integration": {
       "dependsOn": [],

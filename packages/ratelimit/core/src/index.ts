@@ -9,6 +9,11 @@
 export type {
   CreateRateLimitOptions,
   RateLimitClient,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
   RateLimitTierConfig,
   RateLimitTiersOverride,
 } from "./create-rate-limit-client";
@@ -40,3 +45,19 @@ export {
   computeRetryAfterSeconds,
   RETRY_AFTER_DELAY_MS,
 } from "./rate-limit-response";
+export {
+  createStore,
+  defineStore,
+  type StorePrimitives,
+} from "./store/create-store";
+export type {
+  RateLimitStore,
+  RateLimitStoreConfig,
+  RateLimitStoreLimiter,
+} from "./store/interface";
+export type {
+  IoRedisLike,
+  NodeRedisLike,
+  RedisStoreOptions,
+} from "./store/redis";
+export { redisStore } from "./store/redis";

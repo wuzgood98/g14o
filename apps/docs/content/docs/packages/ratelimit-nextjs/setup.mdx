@@ -20,6 +20,25 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   });
 ```
 
+### Store configuration (recommended)
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-nextjs";
+import { upstashStore } from "@g14o/ratelimit-nextjs/upstash";
+import { env } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
+export const { withRateLimit } = createRateLimit({
+  store: upstashStore({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  }),
+  logger,
+});
+```
+
+Store helpers (`memoryStore`, `upstashStore`, `createStore`, `defineStore`) are exported from `@g14o/ratelimit-nextjs` and its `/memory` and `/upstash` subpaths. `store` and `redis` are mutually exclusive.
+
 ## App Router route
 
 Built-in tier limits are listed in [@g14o/ratelimit setup — default tiers](/packages/ratelimit/setup#default-tiers).

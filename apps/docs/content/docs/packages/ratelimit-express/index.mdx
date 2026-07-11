@@ -34,3 +34,14 @@ See the [express-demo](https://github.com/wuzgood98/g14o/tree/main/apps/express-
 
 - Web `Request` / `Response`: [@g14o/ratelimit](/packages/ratelimit)
 - Next.js `NextRequest` / `NextResponse`: [@g14o/ratelimit-nextjs](/packages/ratelimit-nextjs)
+
+## Import paths
+
+| Use case | Import |
+|----------|--------|
+| Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit-express"` |
+| Custom store helpers | `import { createStore, defineStore } from "@g14o/ratelimit-express"` |
+| In-memory store | `import { memoryStore } from "@g14o/ratelimit-express/memory"` |
+| Upstash store | `import { upstashStore } from "@g14o/ratelimit-express/upstash"` |
+| Redis store (node-redis / ioredis) | `import { redisStore } from "@g14o/ratelimit-express/redis"` |
+| Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |

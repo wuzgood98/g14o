@@ -1,14 +1,21 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Express handler wrappers use dynamic args */
 /** biome-ignore-all lint/style/noExportedImports: Exporting types */
 
+import type {
+  CreateRateLimitOptions,
+  RateLimitCheckResult,
+  RateLimiterAdapter,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitOptions,
+  RateLimitRequest,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
+  RateLimitTier,
+} from "@g14o/ratelimit";
 import {
-  type CreateRateLimitOptions,
   createRateLimit as createCoreRateLimit,
-  type RateLimitCheckResult,
-  type RateLimiterAdapter,
-  type RateLimitOptions,
-  type RateLimitRequest,
-  type RateLimitTier,
   resolveUserIdentifier,
 } from "@g14o/ratelimit";
 import type {
@@ -31,7 +38,14 @@ import {
  */
 export type RequestHandler = ExpressRequestHandler;
 
-export type { CreateRateLimitOptions };
+export type {
+  CreateRateLimitOptions,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
+};
 
 /** Per-call rate limit options with Express-native `Request` callbacks. */
 export interface ExpressRateLimitOptions {
@@ -213,7 +227,7 @@ function createUserIdentifierFn(
  * ```
  */
 export function createRateLimit(
-  options: CreateRateLimitOptions = {}
+  options: CreateRateLimitOptions<RateLimitRequest> = {}
 ): ExpressRateLimitClient {
   const core = createCoreRateLimit<RateLimitRequest, never>(options);
 

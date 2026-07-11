@@ -5,15 +5,118 @@ description: Types for createRateLimit and rate limit tiers.
 
 ## CreateRateLimitOptions
 
-<OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="CreateRateLimitOptions" nameLabel="Option" />
+<OptionsTable path="../../packages/ratelimit/core/src/core/engine.ts" name="CreateRateLimitOptions" nameLabel="Option" />
 
 ## RateLimitClient
 
-<OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="RateLimitClient" nameLabel="Prop" />
+<OptionsTable path="../../packages/ratelimit/core/src/core/engine.ts" name="RateLimitClient" nameLabel="Prop" />
 
 ## RateLimitTierConfig
 
-<OptionsTable path="../../packages/ratelimit/core/src/create-rate-limit-client.ts" name="RateLimitTierConfig" nameLabel="Option" />
+<OptionsTable path="../../packages/ratelimit/core/src/core/engine.ts" name="RateLimitTierConfig" nameLabel="Option" />
+
+## Lifecycle hooks
+
+Pass `hooks` on `createRateLimit` for observability and side effects. Hooks fire on the `checkRateLimit` path (including `withRateLimit` and `withUserRateLimit`). Skipped requests (`skipRateLimit`) do not fire hooks.
+
+| Hook | When it fires |
+|------|---------------|
+| `onSuccess` | Request allowed |
+| `onLimitExceeded` | Request blocked with 429 |
+| `onStoreError` | Store or internal check threw (fail-open path) |
+| `onFailure` | Umbrella — also fires on blocked or errored outcomes; use `reason` (`"limit_exceeded"` \| `"store_error"`) |
+| `onReset` | `reset()` called |
+
+Hooks may be async. They are **awaited** before the response proceeds; hook errors are **logged and swallowed** so they never affect rate limiting or fail-open. `onReset` is fired from the synchronous `reset()` method and is not awaited by callers.
+
+<OptionsTable path="../../packages/ratelimit/core/src/core/hooks.ts" name="RateLimitHooks" nameLabel="Hook" />
+
+### Hook context types
+
+| Type | Fields |
+|------|--------|
+| `RateLimitHookContext` | `req`, `tier`, `identifier`, `limit`, `remaining`, `reset` |
+| `RateLimitStoreErrorContext` | `req`, `tier`, `identifier?`, `error` |
+| `RateLimitFailureContext` | Above fields plus `reason: "limit_exceeded" \| "store_error"` |
+| `RateLimitResetContext` | `clearedKeys` |
+
+## Store API
+
+| Symbol | Import | Description |
+|--------|--------|-------------|
+| `RateLimitStore` | `@g14o/ratelimit` | Storage backend interface. Implement for custom stores. |
+| `RateLimitStoreLimiter` | `@g14o/ratelimit` | Tier-scoped limiter with `limit(identifier)`. |
+| `RateLimitStoreConfig` | `@g14o/ratelimit` | `limit`, `window`, and `prefix` passed to `createLimiter`. |
+| `memoryStore` | `@g14o/ratelimit/memory` | In-process sliding window store. Opt-in for production. |
+| `upstashStore` | `@g14o/ratelimit/upstash` | Upstash Redis store (distributed). Accepts `{ url, token }` or `{ redis }`. |
+| `redisStore` | `@g14o/ratelimit/redis` | Self-hosted Redis store (node-redis or ioredis client). Sliding-window log via Lua. |
+| `NodeRedisLike` | `@g14o/ratelimit/redis` | Structural type for node-redis clients accepted by `redisStore`. |
+| `IoRedisLike` | `@g14o/ratelimit/redis` | Structural type for ioredis clients accepted by `redisStore`. |
+| `createStore` | `@g14o/ratelimit` | Build a store from atomic `increment` primitives (fixed-window). |
+| `defineStore` | `@g14o/ratelimit` | Identity helper for implementing `RateLimitStore` directly (sliding-window or custom). |
+| `StorePrimitives` | `@g14o/ratelimit` | Type for `createStore` increment/reset primitives. |
+
+```ts
+import { upstashStore } from "@g14o/ratelimit/upstash";
+import { memoryStore } from "@g14o/ratelimit/memory";
+import { redisStore } from "@g14o/ratelimit/redis";
+import { Redis } from "@upstash/redis";
+import { createClient } from "redis";
+
+// Flat credentials
+const distributed = upstashStore({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+// Pre-built client
+const fromEnv = upstashStore({ redis: Redis.fromEnv() });
+
+const local = memoryStore();
+
+// Self-hosted Redis (node-redis)
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
+const tcpRedis = redisStore(redis);
+```
+
+### Custom stores
+
+`createStore` uses a **fixed-window** counter — suitable when your backend exposes atomic increment (Redis `INCR`+`PEXPIRE`, etc.). For **sliding-window** semantics, implement `RateLimitStore` via `defineStore`.
+
+```ts
+import { createStore, defineStore } from "@g14o/ratelimit";
+
+// Fixed-window from primitives
+const redisStore = createStore({
+  async increment(key, windowMs) {
+    const count = await redis.incr(key);
+    if (count === 1) await redis.pexpire(key, windowMs);
+    const ttl = await redis.pttl(key);
+    return { count, reset: Date.now() + Math.max(ttl, 0) };
+  },
+});
+
+// Full control (sliding-window or custom)
+const customStore = defineStore({
+  createLimiter(config) {
+    return {
+      async limit(identifier) {
+        return { success: true, limit: config.limit, remaining: 9, reset: Date.now() };
+      },
+    };
+  },
+});
+```
+
+Store resolution when using `createRateLimit`:
+
+`store` and `redis` are **mutually exclusive** — pass one or neither, not both. Use `store: upstashStore({ url, token })` instead of combining `store` with the legacy `redis` option.
+
+1. `options.store` — explicit backend, honored in every environment including development
+2. `options.redis` — legacy Upstash credentials (internally creates an Upstash store)
+3. No store configured — automatic in-memory in `development`, `test`, and build phases
+4. No store in production runtime — fails open on errors; use `store: memoryStore()` or configure Redis
 
 ## Default tier config
 
