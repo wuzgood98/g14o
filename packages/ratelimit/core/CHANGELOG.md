@@ -1,5 +1,11 @@
 # @g14o/ratelimit
 
+## 0.5.0
+
+### Minor Changes
+
+- Add modular store architecture with `memoryStore`, `upstashStore`, and `redisStore` (node-redis / ioredis). Introduce `createStore` / `defineStore` for custom backends, optional async lifecycle hooks on `createRateLimit`, and compile-time/runtime mutual exclusivity between `store` and legacy `redis`. Re-export store helpers and `/memory`, `/upstash`, `/redis` subpaths from framework adapters. Legacy `redis: { url, token }` remains supported.
+
 ## 0.4.0
 
 ### Minor Changes
