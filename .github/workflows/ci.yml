@@ -85,6 +85,7 @@ jobs:
           OPENROUTER_API_KEY: sk_test_1234567890
           OPENROUTER_MODEL: gpt-4o-mini
           ENABLE_AI_CHAT: true
+          REDIS_URL: redis://default:test-password@localhost:6379
         run: pnpm build
 
       - name: Check
@@ -113,6 +114,7 @@ jobs:
       PAYSTACK_SECRET_KEY: ${{ secrets.PAYSTACK_SECRET_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+      REDIS_URL: ${{ secrets.REDIS_URL }}
     steps:
       - uses: actions/checkout@v4
 
@@ -132,19 +134,19 @@ jobs:
         run: pnpm --filter @g14o/cache test:integration
 
       - name: Run ratelimit integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit test:integration
 
       - name: Run ratelimit-nextjs integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-nextjs test:integration
 
       - name: Run ratelimit-hono integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-hono test:integration
 
       - name: Run ratelimit-express integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-express test:integration
 
       - name: Run paystack integration tests

@@ -119,4 +119,7 @@ For Express, use [@g14o/ratelimit-express](https://docs.g14o.dev/packages/rateli
 |----------|--------|
 | Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit-hono"` |
 | Hono Env type | `import type { Env } from "@g14o/ratelimit-hono"` |
+| Custom store helpers | `import { createStore, defineStore } from "@g14o/ratelimit-hono"` |
+| In-memory store | `import { memoryStore } from "@g14o/ratelimit-hono/memory"` |
+| Upstash store | `import { upstashStore } from "@g14o/ratelimit-hono/upstash"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |

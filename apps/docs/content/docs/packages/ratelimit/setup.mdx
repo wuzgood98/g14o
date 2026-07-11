@@ -20,6 +20,192 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   });
 ```
 
+## Store configuration (recommended)
+
+Use an explicit store for new projects. The legacy `redis` option remains fully supported. **`store` and `redis` are mutually exclusive** — pass one or neither, not both.
+
+### Upstash Redis
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit";
+import { upstashStore } from "@g14o/ratelimit/upstash";
+import { logger } from "@/lib/logger";
+import { env } from "@/lib/env";
+
+const store = upstashStore({
+  url: env.UPSTASH_REDIS_REST_URL,
+  token: env.UPSTASH_REDIS_REST_TOKEN,
+});
+
+export const { withRateLimit } = createRateLimit({ store, logger });
+```
+
+For a pre-built Redis client, use the wrapped form:
+
+```ts
+import { Redis } from "@upstash/redis";
+
+const store = upstashStore({ redis: Redis.fromEnv() });
+```
+
+### In-memory store
+
+`memoryStore()` works in any environment, including production. Counters are per-process and not shared across replicas — suitable for single-instance deployments, local development, and tests.
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit";
+import { memoryStore } from "@g14o/ratelimit/memory";
+
+export const { withRateLimit } = createRateLimit({
+  store: memoryStore(),
+});
+```
+
+In `development`, `test`, and static build phases, the engine uses an in-memory backend automatically **only when no `store` or `redis` is configured**. An explicit `store: upstashStore({ url, token })` is honored in every environment, including local development for testing against real Redis.
+
+Pass `store: memoryStore()` explicitly when you want in-process limiting in production. Using Upstash during `next build` with an explicit store may trigger prerender warnings (same caveat as `inMemoryDuringBuild: false`).
+
+### Redis (node-redis / ioredis)
+
+Use `redisStore()` for self-hosted or managed Redis (AWS ElastiCache, Redis Cloud, Docker, etc.). It implements the same sliding-window log algorithm as `memoryStore()` using atomic Lua scripts on Redis sorted sets.
+
+Install one Redis client peer:
+
+```bash
+# node-redis (recommended for new projects)
+pnpm add redis
+
+# or ioredis
+pnpm add ioredis
+```
+
+**node-redis:**
+
+```ts title="lib/ratelimit.ts"
+import { createClient } from "redis";
+import { createRateLimit } from "@g14o/ratelimit";
+import { redisStore } from "@g14o/ratelimit/redis";
+import { env } from "@/lib/env";
+
+const redis = createClient({ url: env.REDIS_URL });
+await redis.connect();
+
+export const { withRateLimit } = createRateLimit({
+  store: redisStore(redis),
+});
+```
+
+**ioredis:**
+
+```ts title="lib/ratelimit.ts"
+import Redis from "ioredis";
+import { createRateLimit } from "@g14o/ratelimit";
+import { redisStore } from "@g14o/ratelimit/redis";
+import { env } from "@/lib/env";
+
+const redis = new Redis(env.REDIS_URL);
+
+export const { withRateLimit } = createRateLimit({
+  store: redisStore(redis),
+});
+```
+
+Framework packages re-export the same store:
+
+```ts
+import { redisStore } from "@g14o/ratelimit-express/redis";
+import { redisStore } from "@g14o/ratelimit-hono/redis";
+import { redisStore } from "@g14o/ratelimit-nextjs/redis";
+```
+
+**Prefixes:** Each tier has a built-in prefix (`@ratelimit:<tier>`). Override via `tiers` or per-call `prefix`. Redis keys are `${prefix}:${identifier}`.
+
+**Performance:** One round trip per `limit()` call (Lua script via `EVALSHA`, with `EVAL` fallback on `NOSCRIPT`). Keys auto-expire via `PEXPIRE` refreshed on each request.
+
+**Production recommendations:**
+
+- Reuse a single connected Redis client instance across your app.
+- Use Redis in production with `env: "production"` and an explicit `store`.
+- Prefer a connection pool or shared client for serverless — avoid creating a new client per request.
+
+**Common pitfalls:**
+
+- `rateLimit.reset()` clears the in-process limiter cache only — it does **not** delete Redis keys. Use Redis `DEL` or `FLUSHDB` in tests if you need a full reset.
+- `redisStore()` requires a connected node-redis client (`await redis.connect()`). ioredis connects automatically.
+- The legacy `redis: { url, token }` option is for **Upstash REST** only. Use `redisStore()` for TCP Redis clients.
+
+### Custom stores
+
+Two ways to build your own backend (Redis, Postgres, Cloudflare KV, etc.):
+
+**Option 1 — `createStore` (convenience):** wrap an atomic `increment(key, windowMs)` primitive. Uses a fixed-window counter (differs from the sliding-window algorithm in `memoryStore` and `upstashStore`).
+
+```ts
+import { createRateLimit, createStore } from "@g14o/ratelimit";
+
+const store = createStore({
+  async increment(key, windowMs) {
+    const count = await redis.incr(key);
+    if (count === 1) await redis.pexpire(key, windowMs);
+    const ttl = await redis.pttl(key);
+    return { count, reset: Date.now() + Math.max(ttl, 0) };
+  },
+});
+
+export const { withRateLimit } = createRateLimit({ store });
+```
+
+**Option 2 — `defineStore` (full control):** implement the `RateLimitStore` interface directly for sliding-window or custom algorithms.
+
+```ts
+import { createRateLimit, defineStore } from "@g14o/ratelimit";
+
+const store = defineStore({
+  createLimiter(config) {
+    return {
+      async limit(identifier) {
+        // your persistence + windowing logic
+        return { success, limit: config.limit, remaining, reset };
+      },
+    };
+  },
+});
+
+export const { withRateLimit } = createRateLimit({ store });
+```
+
+## Lifecycle hooks
+
+Attach optional hooks for metrics, logging, or alerting. Hooks are awaited; errors are swallowed so they never break rate limiting.
+
+```ts
+import { createRateLimit } from "@g14o/ratelimit";
+import { upstashStore } from "@g14o/ratelimit/upstash";
+
+export const { withRateLimit } = createRateLimit({
+  store: upstashStore({ url, token }),
+  hooks: {
+    onSuccess({ identifier, tier, remaining }) {
+      metrics.increment("ratelimit.allowed", { tier });
+    },
+    onLimitExceeded({ identifier, tier }) {
+      metrics.increment("ratelimit.blocked", { tier });
+    },
+    onStoreError({ error, tier }) {
+      logger.error(error, `Rate limit store error (tier: ${tier})`);
+    },
+    onFailure({ reason, tier }) {
+      metrics.increment("ratelimit.failure", { tier, reason });
+    },
+    onReset({ clearedKeys }) {
+      logger.debug(`Cleared ${clearedKeys.length} limiter cache entries`);
+    },
+  },
+});
+```
+
+`onFailure` is an umbrella hook that also fires when a request is blocked or the store errors. Use `reason` to distinguish `"limit_exceeded"` from `"store_error"`.
+
 ## Default tiers
 
 Five built-in tiers ship with every client. Override any subset via `tiers` when creating the client — omitted tiers keep these defaults.
@@ -47,7 +233,7 @@ export const { withRateLimit } = createRateLimit({
 
 ## Build vs runtime
 
-By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` during `next build` / export), rate limiting uses an in-memory backend so prerender does not call Upstash.
+By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` during `next build` / export), rate limiting uses an in-memory backend when no `store` or `redis` is configured, so prerender does not call Upstash. An explicit store is always used, including during build.
 
 ```ts title="lib/ratelimit.ts"
 import { createRateLimit } from "@g14o/ratelimit";

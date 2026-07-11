@@ -40,6 +40,22 @@ export const {
 
 Bind `AppEnv` once at the factory. All exported helpers (`withRateLimit`, `middleware`, `identifierFn` callbacks, etc.) use `Context<AppEnv>`.
 
+### Store configuration (recommended)
+
+```ts title="lib/ratelimit.ts"
+import { createRateLimit } from "@g14o/ratelimit-hono";
+import { upstashStore } from "@g14o/ratelimit-hono/upstash";
+
+export const { middleware, withRateLimit } = createRateLimit<AppEnv>({
+  store: upstashStore({
+    url: env.UPSTASH_REDIS_REST_URL,
+    token: env.UPSTASH_REDIS_REST_TOKEN,
+  }),
+});
+```
+
+Store helpers (`memoryStore`, `upstashStore`, `createStore`, `defineStore`) are exported from `@g14o/ratelimit-hono` and its `/memory` and `/upstash` subpaths. `store` and `redis` are mutually exclusive.
+
 ## Create a client
 
 Same as above — export the helpers you need from a single `lib/ratelimit.ts` module.

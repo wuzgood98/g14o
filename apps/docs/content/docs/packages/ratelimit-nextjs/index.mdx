@@ -37,3 +37,14 @@ For plain `Request` / `Response`, use [@g14o/ratelimit](/packages/ratelimit).
 For Express middleware and route handlers, use [@g14o/ratelimit-express](/packages/ratelimit-express).
 
 For Hono middleware and route handlers, use [@g14o/ratelimit-hono](/packages/ratelimit-hono).
+
+## Import paths
+
+| Use case | Import |
+|----------|--------|
+| Rate limit factory | `import { createRateLimit } from "@g14o/ratelimit-nextjs"` |
+| Custom store helpers | `import { createStore, defineStore } from "@g14o/ratelimit-nextjs"` |
+| In-memory store | `import { memoryStore } from "@g14o/ratelimit-nextjs/memory"` |
+| Upstash store | `import { upstashStore } from "@g14o/ratelimit-nextjs/upstash"` |
+| Redis store (node-redis / ioredis) | `import { redisStore } from "@g14o/ratelimit-nextjs/redis"` |
+| Redis / env helpers | `import { createRedisClient, isBuildLikePhase } from "@g14o/ratelimit/config"` |

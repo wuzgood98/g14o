@@ -2,5 +2,20 @@
   "extends": "@workspace/typescript-config/base.json",
   "compilerOptions": {
     "strictNullChecks": true
-  }
+  },
+  "include": [
+    // Only include files that are in the root directory. All other files are included by the references.
+    "./*.ts",
+    "./*.js"
+  ],
+  "references": [
+    { "path": "./packages/ratelimit/core/tsconfig.json" },
+    { "path": "./packages/ratelimit/express/tsconfig.json" },
+    { "path": "./packages/ratelimit/hono/tsconfig.json" },
+    { "path": "./packages/ratelimit/nextjs/tsconfig.json" },
+    { "path": "./packages/cache/tsconfig.json" },
+    { "path": "./packages/paystack/tsconfig.json" },
+    { "path": "./packages/paystack-better-auth/tsconfig.json" },
+    { "path": "./packages/env-core/tsconfig.json" }
+  ]
 }

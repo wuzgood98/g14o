@@ -6,6 +6,7 @@ import {
   getTestRedisCredentials,
   hasUpstashCredentials,
 } from "./integration-env";
+import { upstashStore } from "./store/upstash";
 
 const STRICT_TIER_LIMIT = 5;
 
@@ -131,6 +132,39 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
         identifierFn: async () => identifier,
       });
       expect(result.ok).toBe(true);
+    });
+  });
+
+  describe("upstashStore path", () => {
+    it("enforces strict tier via store option", async () => {
+      const runId = randomUUID();
+      const rateLimit = createRateLimit({
+        env: "production",
+        store: upstashStore({ redis: getTestRedisCredentials() }),
+        tiers: {
+          strict: { prefix: `@ratelimit:it-store-${runId}` },
+        },
+      });
+      rateLimit.reset();
+
+      const identifier = `g14o-it-rl-store-${randomUUID()}`;
+      const req = mockRequest();
+      const options = {
+        tier: "strict" as const,
+        identifierFn: async () => identifier,
+      };
+
+      for (let i = 0; i < STRICT_TIER_LIMIT; i++) {
+        const result = await rateLimit.checkRateLimit(req, options);
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+          expect(result.remaining).toBe(STRICT_TIER_LIMIT - i - 1);
+        }
+      }
+
+      await expectEventuallyBlocked(() =>
+        rateLimit.checkRateLimit(req, options)
+      );
     });
   });
 });

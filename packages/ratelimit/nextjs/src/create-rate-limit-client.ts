@@ -1,14 +1,26 @@
 /** biome-ignore-all lint/style/noExportedImports: it's required for the type */
 
-import {
-  type RateLimitClient as CoreRateLimitClient,
-  type RateLimitOptions as CoreRateLimitOptions,
-  type CreateRateLimitOptions,
-  createRateLimit as createCoreRateLimit,
+import type {
+  RateLimitClient as CoreRateLimitClient,
+  RateLimitOptions as CoreRateLimitOptions,
+  CreateRateLimitOptions,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
 } from "@g14o/ratelimit";
+import { createRateLimit as createCoreRateLimit } from "@g14o/ratelimit";
 import type { NextRequest, NextResponse } from "next/server";
 
-export type { CreateRateLimitOptions };
+export type {
+  CreateRateLimitOptions,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
+};
 
 /**
  * Rate limit client typed for Next.js `NextRequest` / `NextResponse` handlers.
@@ -44,7 +56,7 @@ export type RateLimitOptions = CoreRateLimitOptions<NextRequest>;
  * ```
  */
 export function createRateLimit(
-  options: CreateRateLimitOptions = {}
+  options: CreateRateLimitOptions<NextRequest> = {}
 ): RateLimitClient {
   return createCoreRateLimit<NextRequest, NextResponse>(options);
 }

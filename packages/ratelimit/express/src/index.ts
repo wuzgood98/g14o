@@ -7,11 +7,19 @@
  * @packageDocumentation
  */
 
-export type { Duration, Unit } from "@g14o/ratelimit";
+export type {
+  Duration,
+  RateLimitStore,
+  RateLimitStoreConfig,
+  RateLimitStoreLimiter,
+  Unit,
+} from "@g14o/ratelimit";
 export {
   buildRateLimitExceededBody,
   buildRateLimitHeaders,
   computeRetryAfterSeconds,
+  createStore,
+  defineStore,
   getDefaultIdentifier,
   getTokenConfigReadonly,
   parseDurationToMs,
@@ -25,6 +33,7 @@ export {
   type RateLimitTiersOverride,
   RETRY_AFTER_DELAY_MS,
   type ReadonlyTokenConfigMap,
+  type StorePrimitives,
   type TokenConfig,
   tokenConfigSnapshot,
 } from "@g14o/ratelimit";

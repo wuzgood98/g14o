@@ -1,14 +1,21 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: Hono handler wrappers use dynamic args */
 /** biome-ignore-all lint/style/noExportedImports: Exporting types */
 
+import type {
+  CreateRateLimitOptions,
+  RateLimitCheckResult,
+  RateLimiterAdapter,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitOptions,
+  RateLimitRequest,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
+  RateLimitTier,
+} from "@g14o/ratelimit";
 import {
-  type CreateRateLimitOptions,
   createRateLimit as createCoreRateLimit,
-  type RateLimitCheckResult,
-  type RateLimiterAdapter,
-  type RateLimitOptions,
-  type RateLimitRequest,
-  type RateLimitTier,
   resolveUserIdentifier,
 } from "@g14o/ratelimit";
 import type { Context, Env, MiddlewareHandler } from "hono";
@@ -18,7 +25,14 @@ import {
   rateLimitExceededResponse,
 } from "./apply-rate-limit-response";
 
-export type { CreateRateLimitOptions };
+export type {
+  CreateRateLimitOptions,
+  RateLimitFailureContext,
+  RateLimitHookContext,
+  RateLimitHooks,
+  RateLimitResetContext,
+  RateLimitStoreErrorContext,
+};
 
 /** Per-call rate limit options with Hono-native `Context` callbacks. */
 export interface HonoRateLimitOptions<E extends Env = Env> {
@@ -205,7 +219,7 @@ function createUserIdentifierFn<E extends Env>(
  * ```
  */
 export function createRateLimit<E extends Env = Env>(
-  options: CreateRateLimitOptions = {}
+  options: CreateRateLimitOptions<RateLimitRequest> = {}
 ): HonoRateLimitClient<E> {
   const core = createCoreRateLimit<RateLimitRequest, never>(options);
 
