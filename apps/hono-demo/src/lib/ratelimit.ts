@@ -19,7 +19,6 @@ function getStore(): RateLimitStore {
 
 export const { middleware, withRateLimit, userMiddleware, checkRateLimit } =
   createRateLimit<AppEnv>({
-    env: process.env.NODE_ENV === "production" ? "production" : "development",
     store: getStore(),
     hooks: {
       onFailure: (result) => {
