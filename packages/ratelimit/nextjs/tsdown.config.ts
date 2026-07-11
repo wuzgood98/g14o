@@ -9,7 +9,7 @@ export default defineConfig({
   },
   sourcemap: false,
   treeshake: true,
-  minify: true,
+  minify: false,
   entry: [
     "./src/index.ts",
     "./src/store/memory.ts",

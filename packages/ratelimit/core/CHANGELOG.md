@@ -1,5 +1,11 @@
 # @g14o/ratelimit
 
+## 0.5.1
+
+### Patch Changes
+
+- Ship non-minified dist output for npm supply-chain visibility (Socket Security).
+
 ## 0.5.0
 
 ### Minor Changes

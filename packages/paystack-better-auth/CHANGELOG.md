@@ -1,5 +1,13 @@
 # @g14o/paystack-better-auth
 
+## 0.3.1
+
+### Patch Changes
+
+- Ship non-minified dist output for npm supply-chain visibility (Socket Security).
+- Updated dependencies
+  - @g14o/paystack@0.1.2
+
 ## 0.3.0
 
 ### Minor Changes

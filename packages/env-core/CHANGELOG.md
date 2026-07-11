@@ -1,5 +1,11 @@
 # @g14o/env-core
 
+## 0.2.1
+
+### Patch Changes
+
+- Ship non-minified dist output for npm supply-chain visibility (Socket Security).
+
 ## 0.2.0
 
 ### Minor Changes

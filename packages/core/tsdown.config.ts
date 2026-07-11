@@ -8,7 +8,7 @@ export default defineConfig({
   },
   sourcemap: false,
   treeshake: true,
-  minify: true,
+  minify: false,
   target: false,
   fixedExtension: false,
   root: "src",

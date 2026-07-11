@@ -1,6 +1,6 @@
 {
   "name": "@g14o/core",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Core utilities and shared types for Next.js apps.",
   "type": "module",
   "sideEffects": false,
