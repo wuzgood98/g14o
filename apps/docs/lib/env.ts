@@ -8,9 +8,12 @@ export const env = createEnv({
     UPSTASH_REDIS_REST_URL: z.string().min(1),
     UPSTASH_REDIS_REST_TOKEN: z.string().min(1),
     ENABLE_AI_CHAT: z.string().transform((val) => val === "true"),
-    REDIS_URL: z.url().regex(/^redis(s)?:\/\/.+$/, {
-      message: "Must be a valid redis:// or rediss:// URL",
-    }),
+    REDIS_URL: z
+      .url()
+      .regex(/^redis(s)?:\/\/.+$/, {
+        message: "Must be a valid redis:// or rediss:// URL",
+      })
+      .optional(),
   },
   client: {
     NEXT_PUBLIC_APP_URL: z.url(),
