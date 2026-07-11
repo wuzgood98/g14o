@@ -7,16 +7,13 @@ export default defineConfig({
     tsconfig: "tsconfig.build.json",
     incremental: true,
   },
-  sourcemap: false,
   treeshake: true,
-  minify: false,
   entry: [
     "./src/index.ts",
     "./src/store/memory.ts",
     "./src/store/upstash.ts",
     "./src/store/redis.ts",
   ],
-  clean: true,
   deps: {
     onlyBundle: false,
   },

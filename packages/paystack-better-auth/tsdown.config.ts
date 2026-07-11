@@ -11,8 +11,5 @@ export default defineConfig({
     incremental: true,
   },
   treeshake: true,
-  minify: false,
-  sourcemap: false,
-  clean: true,
   entry: ["./src/index.ts", "./src/client.ts"],
 });
