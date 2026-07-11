@@ -8,6 +8,8 @@ export default defineConfig({
     incremental: true,
   },
   treeshake: true,
+  target: false,
+  fixedExtension: false,
   root: "src",
   entry: {
     utils: "src/utils.ts",
