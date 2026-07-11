@@ -1,0 +1,7 @@
+version: 2
+issueRules:
+  # Redis server-side Lua scripting (EVAL/EVALSHA via the redis/ioredis
+  # clients) in packages/ratelimit/core/src/store/redis.ts is flagged as
+  # dynamic code execution. It is NOT JavaScript eval(). Reviewed false
+  # positive - see SECURITY.md.
+  usesEval: false
