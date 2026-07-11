@@ -1,6 +1,6 @@
 {
   "name": "@g14o/ratelimit-hono",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Hono rate limiting with Upstash Redis — middleware and route wrappers over @g14o/ratelimit.",
   "type": "module",
   "sideEffects": false,
