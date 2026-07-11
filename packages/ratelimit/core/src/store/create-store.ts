@@ -87,10 +87,8 @@ export function createStore(primitives: StorePrimitives): RateLimitStore {
         },
         reset: primitives.reset
           ? () => {
-              const resetResult = primitives.reset?.();
-              if (resetResult instanceof Promise) {
-                resetResult.catch(() => undefined);
-              }
+              // biome-ignore lint/complexity/noVoid: fire-and-forget async reset
+              void primitives.reset?.();
             }
           : undefined,
       };

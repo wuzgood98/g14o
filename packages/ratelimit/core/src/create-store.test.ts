@@ -80,6 +80,47 @@ describe("createStore", () => {
     expect((await limiter.limit("client-a")).success).toBe(true);
   });
 
+  it("surfaces synchronous reset failures", () => {
+    const store = createStore({
+      increment: async () => ({ count: 1, reset: Date.now() + 60_000 }),
+      reset: () => {
+        throw new Error("sync reset failed");
+      },
+    });
+    const limiter = store.createLimiter({
+      limit: 1,
+      window: "60 s",
+      prefix: "@ratelimit:custom",
+    });
+
+    expect(() => limiter.reset?.()).toThrow("sync reset failed");
+  });
+
+  it("surfaces asynchronous reset failures as unhandled rejections", async () => {
+    const resetError = new Error("async reset failed");
+    const unhandledRejection = new Promise<unknown>((resolve) => {
+      const handler = (reason: unknown) => {
+        process.off("unhandledRejection", handler);
+        resolve(reason);
+      };
+      process.on("unhandledRejection", handler);
+    });
+
+    const store = createStore({
+      increment: async () => ({ count: 1, reset: Date.now() + 60_000 }),
+      reset: () => Promise.reject(resetError),
+    });
+    const limiter = store.createLimiter({
+      limit: 1,
+      window: "60 s",
+      prefix: "@ratelimit:custom",
+    });
+
+    limiter.reset?.();
+
+    await expect(unhandledRejection).resolves.toBe(resetError);
+  });
+
   it("works end-to-end with createRateLimit in production", async () => {
     const rateLimit = createRateLimit({
       env: "production",
