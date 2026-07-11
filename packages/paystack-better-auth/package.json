@@ -1,6 +1,6 @@
 {
   "name": "@g14o/paystack-better-auth",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Paystack billing plugin for Better Auth — subscriptions, checkout, webhooks, and customer management.",
   "type": "module",
   "sideEffects": false,
@@ -26,7 +26,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "peerDependencies": {
-    "@g14o/paystack": "^0.1.0",
+    "@g14o/paystack": "^0.1.2",
     "better-auth": "^1.6.20",
     "zod": "^4.0.0"
   },

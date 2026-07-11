@@ -1,6 +1,6 @@
 {
   "name": "@g14o/paystack",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Typed Paystack REST SDK with retries, Zod-validated responses, and webhook verification.",
   "type": "module",
   "sideEffects": false,

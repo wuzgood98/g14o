@@ -5,10 +5,9 @@ export default defineConfig({
   dts: {
     sourcemap: false,
     tsconfig: "tsconfig.build.json",
+    incremental: true,
   },
-  sourcemap: false,
   treeshake: true,
-  minify: true,
   target: false,
   fixedExtension: false,
   root: "src",
@@ -17,7 +16,6 @@ export default defineConfig({
     types: "src/types.ts",
     config: "src/config.ts",
   },
-  clean: true,
   deps: {
     neverBundle: ["@upstash/redis"],
     skipNodeModulesBundle: true,

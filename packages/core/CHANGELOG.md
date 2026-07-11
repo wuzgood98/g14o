@@ -1,5 +1,11 @@
 # @g14o/core
 
+## 1.2.1
+
+### Patch Changes
+
+- Ship non-minified dist output for npm supply-chain visibility (Socket Security).
+
 ## 1.2.0
 
 ### Minor Changes

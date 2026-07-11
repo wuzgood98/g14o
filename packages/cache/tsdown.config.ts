@@ -7,11 +7,8 @@ export default defineConfig({
     tsconfig: "tsconfig.build.json",
     incremental: true,
   },
-  sourcemap: false,
   treeshake: true,
-  minify: true,
   entry: ["./src/index.ts", "./src/config.ts"],
-  clean: true,
   deps: {
     onlyBundle: false,
   },
