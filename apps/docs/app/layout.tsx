@@ -28,6 +28,14 @@ export const metadata: Metadata = {
     description: siteConfig.description,
     images: [`${siteConfig.baseUrl}/og.png`],
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
 };
 
 export default function Layout({ children }: LayoutProps<"/">) {
