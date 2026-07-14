@@ -8,7 +8,14 @@ export default defineConfig({
     incremental: true,
   },
   treeshake: true,
-  entry: ["./src/index.ts", "./src/config.ts", "./src/types.ts"],
+  entry: [
+    "./src/index.ts",
+    "./src/config.ts",
+    "./src/types.ts",
+    "./src/store/memory.ts",
+    "./src/store/upstash.ts",
+    "./src/store/redis.ts",
+  ],
   deps: {
     onlyBundle: false,
   },

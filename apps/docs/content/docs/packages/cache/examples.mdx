@@ -1,18 +1,14 @@
 ---
 title: Examples
-description: withCache, cache keys, invalidation, and parameterized caching.
+description: withCache, cache keys, invalidation, SWR, and negative caching.
 ---
 
 ## Wrap a server function with withCache
 
-Functions passed to `withCache` must return `{ ok: true, data }` or `{ ok: false, error, status }`:
+`withCache` accepts any async function. For `Result`-shaped returns, successes are cached by default.
 
 ```ts title="lib/users.ts"
 import { withCache } from "@/lib/cache";
-
-async function getUsers() {
-  return fetchUsersFromDb();
-}
 
 export const getUsersCached = withCache(getUsers, {
   ttl: "medium",
@@ -20,9 +16,40 @@ export const getUsersCached = withCache(getUsers, {
 });
 ```
 
+Plain return values (non-`Result`) are cached when not `undefined`.
+
+## Stale-while-revalidate
+
+Serve stale data while refreshing in the background:
+
+```ts
+withCache(getUsers, {
+  ttl: "medium",
+  staleWhileRevalidate: 60,
+});
+```
+
+## Negative caching (opt-in)
+
+Cache failed `Result` values to avoid hammering upstream on repeated misses:
+
+```ts
+withCache(getUser, {
+  cacheFailures: true,
+});
+```
+
+Custom failure TTL:
+
+```ts
+withCache(getUser, {
+  cacheFailures: { enabled: true, ttl: "medium" },
+});
+```
+
 ## Parameterized cache with a custom key
 
-```ts title="lib/users.ts"
+```ts
 import { createListCacheKey } from "@g14o/cache";
 import { withCache } from "@/lib/cache";
 
@@ -35,11 +62,11 @@ export const listUsersCached = withCache(listUsers, {
 
 ## Invalidate after a mutation
 
-```ts title="lib/users.ts"
+```ts
 import { createEntityCacheKey } from "@g14o/cache";
 import { invalidateCache, invalidateCacheKey } from "@/lib/cache";
 
 await updateUser(id, data);
 await invalidateCacheKey(createEntityCacheKey("user", id));
-await invalidateCache("*", { prefix: "users" }); // list keys matching users:*
+await invalidateCache("*", { prefix: "users" });
 ```

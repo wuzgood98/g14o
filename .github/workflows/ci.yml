@@ -130,23 +130,33 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Run cache integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != ''
+        if: >-
+          (env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '') ||
+          env.REDIS_URL != ''
         run: pnpm --filter @g14o/cache test:integration
 
       - name: Run ratelimit integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
+        if: >-
+          (env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '') ||
+          env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit test:integration
 
       - name: Run ratelimit-nextjs integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
+        if: >-
+          (env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '') ||
+          env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-nextjs test:integration
 
       - name: Run ratelimit-hono integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
+        if: >-
+          (env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '') ||
+          env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-hono test:integration
 
       - name: Run ratelimit-express integration tests
-        if: env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '' && env.REDIS_URL != ''
+        if: >-
+          (env.UPSTASH_REDIS_REST_URL != '' && env.UPSTASH_REDIS_REST_TOKEN != '') ||
+          env.REDIS_URL != ''
         run: pnpm --filter @g14o/ratelimit-express test:integration
 
       - name: Run paystack integration tests

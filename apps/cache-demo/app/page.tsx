@@ -1,9 +1,21 @@
-import { getCategoriesCached, getFeaturedCached } from "@/lib/landing";
+import {
+  getCategoriesCached,
+  getCategoriesCachedNoResultType,
+  getFeaturedCached,
+  getFeaturedCachedNoResultType,
+} from "@/lib/landing";
 
 export default async function Page() {
-  const [categoriesResult, featuredResult] = await Promise.all([
+  const [
+    categoriesResult,
+    featuredResult,
+    categoriesNoResultTypeResult,
+    featuredNoResultTypeResult,
+  ] = await Promise.all([
     getCategoriesCached(),
     getFeaturedCached(),
+    getCategoriesCachedNoResultType(),
+    getFeaturedCachedNoResultType(),
   ]);
 
   const categories = categoriesResult.ok ? categoriesResult.data : [];
@@ -36,6 +48,23 @@ export default async function Page() {
         </ul>
       </section>
 
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Categories (no result type)</h2>
+        <ul>
+          {categoriesNoResultTypeResult.map((category) => (
+            <li key={category.id}>{category.name}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section style={{ marginTop: "1.5rem" }}>
+        <h2>Featured (no result type)</h2>
+        <ul>
+          {featuredNoResultTypeResult.map((item) => (
+            <li key={item.id}>{item.title}</li>
+          ))}
+        </ul>
+      </section>
       <p style={{ marginTop: "2rem", color: "#666", fontSize: 14 }}>
         Runtime adapter: <a href="/api/cache-info">GET /api/cache-info</a>
       </p>

@@ -1,32 +1,69 @@
 ---
 title: Setup
-description: Configure createCache with Redis, TTL overrides, and build-phase behavior.
+description: Configure createCache with stores, TTL overrides, and build-phase behavior.
 ---
 
-## Basic setup
+## Basic setup (Upstash)
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@g14o/cache";
+import { upstashStore } from "@g14o/cache/upstash";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
-  redis: {
+  store: upstashStore({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
-  },
+  }),
   logger,
 });
 ```
 
+## node-redis / ioredis
+
+```ts
+import { createCache } from "@g14o/cache";
+import { redisStore } from "@g14o/cache/redis";
+import { createClient } from "redis";
+
+const redis = createClient({ url: process.env.REDIS_URL });
+await redis.connect();
+
+export const { withCache } = createCache({ store: redisStore(redis) });
+```
+
+## Custom store
+
+```ts
+import { createStore } from "@g14o/cache";
+
+const store = createStore({
+  async read(key) { /* string | null */ },
+  async write(key, value, ttlSeconds) { /* persist */ },
+  async remove(...keys) { return 0; },
+  async list(pattern) { return []; },
+});
+
+createCache({ store });
+```
+
 ## Custom TTL
 
-```ts title="lib/cache.ts"
-export const { withCache, getTTL } = createCache({
-  redis: {
-    url: env.UPSTASH_REDIS_REST_URL,
-    token: env.UPSTASH_REDIS_REST_TOKEN,
-  },
+Flat form (applies to the active environment):
+
+```ts
+createCache({
+  store: upstashStore({ url, token }),
+  ttl: { short: 30, long: 900 },
+});
+```
+
+Per-environment overrides:
+
+```ts
+createCache({
+  store: upstashStore({ url, token }),
   ttl: {
     development: { short: 30, long: 900 },
     production: { medium: 3600 },
@@ -34,35 +71,23 @@ export const { withCache, getTTL } = createCache({
 });
 ```
 
-## Shared Redis client
+## Default key strategy
 
-Reuse an existing `@upstash/redis` client across your app:
-
-```ts title="lib/redis.ts"
-import { Redis } from "@upstash/redis";
-
-export const redis = Redis.fromEnv();
-```
-
-```ts title="lib/cache.ts"
-import { createCache } from "@g14o/cache";
-import { redis } from "@/lib/redis";
-import { logger } from "@/lib/logger";
-
-export const { withCache, invalidateCache, invalidateCacheKey } = createCache({ redis, logger });
-```
-
-## Build vs runtime
-
-By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` to `phase-production-build` or `phase-export` during `next build` / export), cache uses an in-memory adapter so prerender does not call Upstash. At runtime in production, Redis is used when configured.
-
-To opt into Redis during builds (debugging only):
+Set a client-level key generator (overridable per `withCache` call):
 
 ```ts
 createCache({
-  redis: { url: "...", token: "..." },
-  inMemoryDuringBuild: false,
+  store: upstashStore({ url, token }),
+  keyGenerator: (prefix, fnName, args) => `${prefix}:${fnName}:${JSON.stringify(args)}`,
 });
 ```
 
-Import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase in your own code.
+## Legacy `redis` option
+
+Still supported; wraps `upstashStore` internally. Prefer `store: upstashStore(...)` for new code.
+
+## Build vs runtime
+
+When no `store` is configured, dev/test/build use in-memory cache. Production requires an explicit store.
+
+Import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase.

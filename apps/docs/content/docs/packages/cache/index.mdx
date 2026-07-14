@@ -1,9 +1,9 @@
 ---
 title: Overview
-description: Framework-agnostic Redis-backed caching with in-memory fallbacks for development and static build phases.
+description: Framework-agnostic caching with pluggable stores and in-memory dev/build fallbacks.
 ---
 
-Framework-agnostic Redis-backed caching with in-memory fallbacks for development and static build phases. Works with any Node.js server runtime (Next.js App Router, Hono, etc.).
+Framework-agnostic caching with pluggable stores (memory, Upstash, node-redis/ioredis). In-memory fallbacks apply automatically in development, test, and static build phases.
 
 ## Install
 
@@ -11,22 +11,21 @@ Framework-agnostic Redis-backed caching with in-memory fallbacks for development
 pnpm add @g14o/cache @upstash/redis
 ```
 
-`@upstash/redis` is a peer dependency — add it when using Redis-backed cache in production.
+Install only the peer matching your store backend.
 
 ## Quick start
 
-Create an app-owned client in `lib/cache.ts`:
-
 ```ts title="lib/cache.ts"
 import { createCache } from "@g14o/cache";
+import { upstashStore } from "@g14o/cache/upstash";
 import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
-  redis: {
+  store: upstashStore({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
-  },
+  }),
   logger,
 });
 ```
@@ -35,15 +34,12 @@ export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
 
 | Use case | Import |
 |----------|--------|
-| Cache factory and helpers | `import { createCache, createListCacheKey, withCache } from "@g14o/cache"` |
-| Redis / env helpers | `import { createRedisClient, isBuildLikePhase, type Logger } from "@g14o/cache/config"` |
+| Cache factory and helpers | `@g14o/cache` |
+| Memory / Upstash / Redis stores | `@g14o/cache/memory`, `@g14o/cache/upstash`, `@g14o/cache/redis` |
+| Redis / env helpers | `@g14o/cache/config` |
 
 ## Next steps
 
-- [Setup](/packages/cache/setup) — TTL overrides and shared Redis client
-- [Examples](/packages/cache/examples) — `withCache`, invalidation, build vs runtime
+- [Setup](/packages/cache/setup) — stores, TTL overrides, build behavior
+- [Examples](/packages/cache/examples) — `withCache`, SWR, negative caching
 - [API reference](/packages/cache/api)
-
-## Next.js
-
-`@g14o/cache` works in Next.js App Router route handlers and server components. For build-phase behavior, see `inMemoryDuringBuild` in the factory options and `isBuildLikePhase()` from `@g14o/cache/config`.
