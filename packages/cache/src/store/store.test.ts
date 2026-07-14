@@ -135,7 +135,7 @@ describe("createStore undefined serialization", () => {
       },
       {
         serialize: () => undefined as unknown as string,
-        deserialize: () => "deserialized",
+        deserialize: <T>(_raw: string): T => "deserialized" as T,
       }
     );
 
