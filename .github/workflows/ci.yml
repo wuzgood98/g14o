@@ -100,9 +100,6 @@ jobs:
       - name: Test dist
         run: pnpm test:dist
 
-      - name: Build cache demo
-        run: pnpm demo:cache:build
-
   integration:
     runs-on: ubuntu-latest
     if: >-
