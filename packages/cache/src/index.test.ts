@@ -242,6 +242,56 @@ describe("createCache (factory API)", () => {
       vi.useRealTimers();
       swrCache.reset();
     });
+
+    it("deduplicates concurrent stale background refreshes", async () => {
+      vi.useFakeTimers();
+      let resolveRefresh: (() => void) | undefined;
+      const refreshGate = new Promise<void>((resolve) => {
+        resolveRefresh = resolve;
+      });
+      const fn = vi.fn(async () => {
+        if (fn.mock.calls.length > 1) {
+          await refreshGate;
+        }
+        return { value: fn.mock.calls.length };
+      });
+
+      const swrCache = createCache({ env: "test" });
+      const cached = swrCache.withCache(fn, {
+        prefix: "swr-dedupe",
+        keyGenerator: () => "item",
+        ttl: "short",
+        staleWhileRevalidate: 30,
+      });
+
+      const first = await cached();
+      expect(first).toEqual({ value: 1 });
+
+      vi.advanceTimersByTime(61_000);
+
+      const [second, third] = await Promise.all([cached(), cached()]);
+      expect(second).toEqual({ value: 1 });
+      expect(third).toEqual({ value: 1 });
+      expect(fn).toHaveBeenCalledTimes(2);
+
+      resolveRefresh?.();
+      await vi.waitFor(async () => {
+        const refreshed = await cached();
+        expect(refreshed).toEqual({ value: 2 });
+        expect(fn).toHaveBeenCalledTimes(2);
+      });
+
+      vi.advanceTimersByTime(61_000);
+      const fourth = await cached();
+      expect(fourth).toEqual({ value: 2 });
+
+      await vi.waitFor(() => {
+        expect(fn).toHaveBeenCalledTimes(3);
+      });
+
+      vi.useRealTimers();
+      swrCache.reset();
+    });
   });
 
   describe("invalidateCache", () => {
