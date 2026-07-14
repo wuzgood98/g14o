@@ -48,6 +48,8 @@ const store = createStore({
 createCache({ store });
 ```
 
+Defaults to JSON serialize/deserialize. `undefined` round-trips via a string sentinel. Optional `serialize` / `deserialize` / `prefix` are supported; a serializer that returns `undefined` is coerced to the sentinel before `write()`.
+
 ## Custom TTL
 
 Flat form (applies to the active environment):

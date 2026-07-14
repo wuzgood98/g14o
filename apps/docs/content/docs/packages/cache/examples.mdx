@@ -16,7 +16,7 @@ export const getUsersCached = withCache(getUsers, {
 });
 ```
 
-Plain return values (non-`Result`) are cached when not `undefined`.
+Plain return values (non-`Result`) are cached, including `undefined`. Bare `null` is not cached (`get` uses `null` for missing keys).
 
 ## Stale-while-revalidate
 

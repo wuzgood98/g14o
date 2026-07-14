@@ -121,6 +121,20 @@ describe("createCache (factory API)", () => {
       expect(fn).toHaveBeenCalledTimes(2);
     });
 
+    it("caches undefined return values", async () => {
+      const fn = vi.fn(async () => undefined);
+      const cached = cache.withCache(fn, {
+        prefix: "undefined-plain",
+        keyGenerator: () => "one",
+      });
+
+      const first = await cached();
+      const second = await cached();
+      expect(first).toBeUndefined();
+      expect(second).toBeUndefined();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
     it("caches failed Result values when cacheFailures is enabled", async () => {
       const fn = vi.fn(() =>
         Promise.resolve({

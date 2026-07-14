@@ -83,3 +83,56 @@ describe("createStore prefix wrapper", () => {
     expect(keys).toEqual(["user:1"]);
   });
 });
+
+describe("createStore undefined serialization", () => {
+  it("writes a raw string for undefined and round-trips", async () => {
+    rawMap.clear();
+    const store = createMapStore();
+
+    await store.set("undef", undefined);
+    const entry = rawMap.get("undef");
+    expect(entry).toBeDefined();
+    expect(typeof entry?.raw).toBe("string");
+    expect(await store.get("undef")).toBeUndefined();
+  });
+
+  it("round-trips null distinctly from undefined", async () => {
+    rawMap.clear();
+    const store = createMapStore();
+
+    await store.set("nil", null);
+    expect(await store.get("nil")).toBeNull();
+
+    await store.set("undef", undefined);
+    expect(await store.get("undef")).toBeUndefined();
+  });
+
+  it("coerces a custom serialize returning undefined to a string write", async () => {
+    rawMap.clear();
+    const store = createStore(
+      {
+        read(key) {
+          return rawMap.get(key)?.raw ?? null;
+        },
+        write(key, value) {
+          rawMap.set(key, { raw: value, expiresAt: null });
+        },
+        remove(...keys) {
+          return keys.filter((key) => rawMap.delete(key)).length;
+        },
+        list() {
+          return Array.from(rawMap.keys());
+        },
+      },
+      {
+        serialize: () => undefined as unknown as string,
+        deserialize: () => "deserialized",
+      }
+    );
+
+    await store.set("custom", { any: true });
+    const entry = rawMap.get("custom");
+    expect(typeof entry?.raw).toBe("string");
+    expect(await store.get("custom")).toBe("deserialized");
+  });
+});
