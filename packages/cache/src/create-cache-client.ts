@@ -570,9 +570,10 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
       return { ok: true, data: undefined };
     }
     if (cacheStore?.clear) {
+      const { logger } = runtime;
       // biome-ignore lint/complexity/noVoid: fire-and-forget async clear
-      void Promise.resolve(cacheStore.clear()).catch(() => {
-        /* ignore clear errors */
+      void Promise.resolve(cacheStore.clear()).catch((error) => {
+        logger.warn(error, "Background cache clear failed");
       });
       return { ok: true, data: undefined };
     }
