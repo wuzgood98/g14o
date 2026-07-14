@@ -15,6 +15,7 @@ export class InMemoryCache implements CacheStore {
       () => this.cleanup(),
       CACHE_CLEANUP_INTERVAL
     );
+    this.cleanupInterval.unref();
   }
 
   private cleanup() {
