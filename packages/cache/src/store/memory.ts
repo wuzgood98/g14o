@@ -1,3 +1,4 @@
+import { globToRegExp } from "./glob";
 import type { CacheStore } from "./interface";
 
 const CACHE_CLEANUP_INTERVAL = 60_000;
@@ -55,9 +56,7 @@ export class InMemoryCache implements CacheStore {
   }
 
   keys(pattern: string): string[] {
-    const regexPattern = pattern.replace(/\*/g, ".*").replace(/\?/g, ".");
-    const regex = new RegExp(`^${regexPattern}$`);
-
+    const regex = globToRegExp(pattern);
     return Array.from(this.cache.keys()).filter((key) => regex.test(key));
   }
 
