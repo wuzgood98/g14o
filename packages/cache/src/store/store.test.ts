@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createStore } from "./create-store";
+import { globToRegExp } from "./glob";
 import { memoryStore } from "./memory";
 import { describeStore } from "./store-contract";
 
@@ -32,8 +33,7 @@ function createMapStore() {
       return deleted;
     },
     list(pattern) {
-      const regexPattern = pattern.replace(/\*/g, ".*").replace(/\?/g, ".");
-      const regex = new RegExp(`^${regexPattern}$`);
+      const regex = globToRegExp(pattern);
       const now = Date.now();
       return Array.from(rawMap.entries())
         .filter(([, entry]) => !entry.expiresAt || entry.expiresAt > now)
@@ -48,6 +48,17 @@ describeStore("memoryStore", () => memoryStore());
 describeStore("createStore (raw Map primitives)", () => {
   rawMap.clear();
   return createMapStore();
+});
+
+describe("globToRegExp literal metacharacters", () => {
+  it("treats dots as literals while preserving wildcards", async () => {
+    const store = memoryStore();
+    await store.set("user.v1:a", { id: "a" });
+    await store.set("userXv1:a", { id: "x" });
+
+    const keys = await store.keys("user.v1:*");
+    expect(keys).toEqual(["user.v1:a"]);
+  });
 });
 
 describe("createStore prefix wrapper", () => {
@@ -66,9 +77,7 @@ describe("createStore prefix wrapper", () => {
           return keys.filter((key) => rawMap.delete(key)).length;
         },
         list(pattern) {
-          const regex = new RegExp(
-            `^${pattern.replace(/\*/g, ".*").replace(/\?/g, ".")}$`
-          );
+          const regex = globToRegExp(pattern);
           return Array.from(rawMap.keys()).filter((key) => regex.test(key));
         },
       },
