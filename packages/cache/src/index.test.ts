@@ -109,6 +109,18 @@ describe("createCache (factory API)", () => {
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
+    it("does not cache null return values", async () => {
+      const fn = vi.fn(async () => null);
+      const cached = cache.withCache(fn, {
+        prefix: "null-plain",
+        keyGenerator: () => "one",
+      });
+
+      await cached();
+      await cached();
+      expect(fn).toHaveBeenCalledTimes(2);
+    });
+
     it("caches failed Result values when cacheFailures is enabled", async () => {
       const fn = vi.fn(() =>
         Promise.resolve({
