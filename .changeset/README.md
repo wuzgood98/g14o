@@ -14,7 +14,6 @@ Describe the change and choose patch, minor, or major. Commit the generated `.ch
 
 Published packages (separate fixed groups in [`.changeset/config.json`](config.json)):
 
-- `@g14o/core`
 - `@g14o/env-core`
 - `@g14o/cache`
 - `@g14o/ratelimit`
@@ -28,7 +27,6 @@ Published packages (separate fixed groups in [`.changeset/config.json`](config.j
 
 ```bash
 pnpm version-packages        # bump versioned packages, update CHANGELOGs, refresh pnpm-lock.yaml
-pnpm release:publish:core    # publish @g14o/core to npm
 pnpm release:publish:env     # publish @g14o/env-core to npm
 pnpm release:publish:cache   # publish @g14o/cache to npm
 pnpm release:publish:ratelimit # publish @g14o/ratelimit to npm

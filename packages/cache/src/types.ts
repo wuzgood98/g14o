@@ -20,90 +20,6 @@ export type Result<T, E extends Error = Error> =
   | { ok: false; error: E; status: number };
 
 /**
- * Pagination metadata attached to offset/page-based list responses.
- */
-export interface PaginationMeta {
-  /** Whether another page exists after the current page. */
-  hasNextPage: boolean;
-  /** Whether a page exists before the current page. */
-  hasPreviousPage: boolean;
-  /** Maximum number of items returned per page. */
-  limit: number;
-  /** Current page number (1-based). */
-  page: number;
-  /** Total number of items across all pages. */
-  total: number;
-  /** Total number of pages given `limit` and `total`. */
-  totalPages: number;
-}
-
-/**
- * Paginated list payload with items and {@link PaginationMeta}.
- *
- * @typeParam T - Element type of each item in `data`.
- */
-export interface PaginatedResponse<T> {
-  /** Items for the current page. */
-  data: T[];
-  /** Pagination metadata for the current page. */
-  meta: PaginationMeta;
-}
-
-/**
- * {@link Result} wrapping a {@link PaginatedResponse}.
- *
- * @typeParam T - Element type of each item in the paginated `data` array.
- */
-export type PaginatedResult<T> = Result<PaginatedResponse<T>, Error>;
-
-/**
- * Query parameters for offset/page-based pagination.
- */
-export interface PaginationOptions {
-  /** Number of items per page. */
-  limit?: number;
-  /** Zero-based offset from the start of the collection (alternative to `page`). */
-  offset?: number;
-  /** Page number (1-based). */
-  page?: number;
-}
-
-/**
- * Metadata for cursor-based (keyset) pagination.
- */
-export interface CursorPaginationMeta {
-  /** Whether more items exist after this cursor. */
-  hasNextPage: boolean;
-  /**
-   * Opaque cursor for the next page, or `null` when there is no next page.
-   * Pass this value to subsequent requests to continue listing.
-   */
-  nextCursor: string | null;
-}
-
-/**
- * Cursor-paginated list payload with items and {@link CursorPaginationMeta}.
- *
- * @typeParam T - Element type of each item in `data`.
- */
-export interface CursorPaginationResponse<T> {
-  /** Items for the current cursor window. */
-  data: T[];
-  /** Cursor pagination metadata. */
-  meta: CursorPaginationMeta;
-}
-
-/**
- * {@link Result} wrapping a {@link CursorPaginationResponse}.
- *
- * @typeParam T - Element type of each item in the cursor-paginated `data` array.
- */
-export type CursorPaginationResult<T> = Result<
-  CursorPaginationResponse<T>,
-  Error
->;
-
-/**
  * Logger interface used by `@g14o/cache`.
  */
 export interface Logger {
@@ -127,7 +43,7 @@ export interface InMemoryEnvOptions {
    */
   env?: Environment;
   /**
-   * When `true` (default), use in-memory cache/rate-limit backends during static
+   * When `true` (default), use in-memory cache and rate-limit backends during static
    * build phases (`phase-production-build`, `phase-export` via `NEXT_PHASE`).
    *
    * @default true

@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/wuzgood98/g14o/actions/workflows/ci.yml/badge.svg)
 
-Monorepo for [`@g14o/*`](packages/core) npm packages.
+Monorepo for [`@g14o/*`](packages/cache) npm packages.
 
 ## What it provides
 

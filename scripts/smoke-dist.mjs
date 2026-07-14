@@ -22,25 +22,6 @@ function tarballToPackageName(filename) {
   throw new Error(`Unrecognized packed tarball name: ${filename}`);
 }
 
-const coreSubpaths = [
-  {
-    importPath: "@g14o/core",
-    distFile: "dist/utils.js",
-    exports: ["parseNumber", "stringifyParams", "fetcher"],
-  },
-  {
-    importPath: "@g14o/core/config",
-    distFile: "dist/config.js",
-    exports: ["createRedisClient", "resolveRedisClient"],
-  },
-  {
-    importPath: "@g14o/core/types",
-    distFile: "dist/types.d.ts",
-    exports: ["Logger", "InMemoryEnvOptions"],
-    typesOnlyInNode: true,
-  },
-];
-
 function smokeSchema(validate) {
   return { "~standard": { version: 1, vendor: "smoke", validate } };
 }
@@ -109,7 +90,6 @@ const consumerDir = mkdtempSync(join(tmpdir(), "g14o-consumer-"));
 
 try {
   const filters = [
-    "@g14o/core",
     envCoreSmoke.filter,
     ...standalonePackages.map((p) => p.filter),
   ];
@@ -160,7 +140,6 @@ try {
         },
         pnpm: {
           overrides: {
-            "@g14o/core": tarballByScope["@g14o/core"],
             "@g14o/ratelimit": tarballByScope["@g14o/ratelimit"],
           },
         },
@@ -174,64 +153,6 @@ try {
     cwd: consumerDir,
     stdio: "inherit",
   });
-
-  const coreRoot = join(consumerDir, "node_modules", "@g14o", "core");
-  const corePkg = JSON.parse(
-    readFileSync(join(coreRoot, "package.json"), "utf8")
-  );
-
-  if (corePkg.dependencies && Object.keys(corePkg.dependencies).length > 0) {
-    throw new Error(
-      `@g14o/core: expected no runtime dependencies (got ${JSON.stringify(corePkg.dependencies)})`
-    );
-  }
-
-  for (const {
-    importPath,
-    distFile,
-    exports: names,
-    typesOnlyInNode,
-  } of coreSubpaths) {
-    const entryPath = join(coreRoot, distFile);
-    if (!existsSync(entryPath)) {
-      throw new Error(`${importPath}: missing packed entry ${distFile}`);
-    }
-
-    const exportKey =
-      importPath === "@g14o/core" ? "." : importPath.replace("@g14o/core", ".");
-    const packedExport =
-      exportKey === "." ? corePkg.exports?.["."] : corePkg.exports?.[exportKey];
-    const importTarget =
-      typeof packedExport === "string" ? packedExport : packedExport?.import;
-    if (!importTarget?.includes("dist")) {
-      throw new Error(
-        `${importPath}: packed export must point at dist (got ${JSON.stringify(packedExport)})`
-      );
-    }
-
-    if (typesOnlyInNode) {
-      const dtsPath = join(coreRoot, distFile.replace(".js", ".d.ts"));
-      const dts = readFileSync(dtsPath, "utf8");
-      for (const name of names) {
-        if (!dts.includes(name)) {
-          throw new Error(
-            `${importPath}: expected export "${name}" in ${dtsPath}`
-          );
-        }
-      }
-    } else {
-      const mod = await import(pathToFileURL(entryPath).href);
-      for (const name of names) {
-        if (typeof mod[name] !== "function") {
-          throw new Error(
-            `${importPath}: expected function export "${name}" in packed tarball`
-          );
-        }
-      }
-    }
-
-    console.log(`${importPath}: packed smoke OK (${names.join(", ")})`);
-  }
 
   {
     const { importPath, distFile } = envCoreSmoke;
@@ -373,12 +294,6 @@ try {
     const packedPkg = JSON.parse(
       readFileSync(join(pkgRoot, "package.json"), "utf8")
     );
-
-    if (packedPkg.dependencies?.["@g14o/core"]) {
-      throw new Error(
-        `${importPath}: expected no @g14o/core runtime dependency (got ${JSON.stringify(packedPkg.dependencies)})`
-      );
-    }
 
     const rootExport = packedPkg.exports?.["."];
     const importTarget =

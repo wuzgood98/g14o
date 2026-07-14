@@ -860,19 +860,6 @@ export const markWebhookFailed = async (
   });
 };
 
-export const shouldProcessWebhook = async (
-  adapter: GenericEndpointContext["context"]["adapter"],
-  eventId: string
-): Promise<boolean> => {
-  const existing = await findWebhookEvent(adapter, eventId);
-
-  if (!existing) {
-    return true;
-  }
-
-  return asDbWebhookEvent(existing).status !== "processed";
-};
-
 export const reprocessWebhookEvent = async (
   adapter: GenericEndpointContext["context"]["adapter"],
   eventId: string

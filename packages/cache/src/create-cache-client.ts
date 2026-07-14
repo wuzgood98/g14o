@@ -72,8 +72,8 @@ export interface CacheClient {
    * @returns The TTL for the given duration.
    */
   getTTL: (duration: CacheDuration) => number;
-  /** Get the in-memory cache.
-   * @returns The in-memory cache.
+  /** Get the in-memory cache when the client is running in-memory.
+   * @returns The in-memory cache, or `null` when using Redis.
    */
   inMemoryCache: () => InMemoryCache | null;
   /** Invalidate the cache for a given pattern.

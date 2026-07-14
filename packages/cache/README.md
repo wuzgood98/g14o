@@ -121,13 +121,13 @@ createCache({
 ```
 
 You can also import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase in your own code.
-See [`@g14o/core`](../core/README.md) if you also need shared utilities and types.
 
 ## Import paths
 
 | Use case | Import |
 |----------|--------|
-| Cache factory and helpers | `import { createCache, createListCacheKey, withCache } from "@g14o/cache"` |
+| Cache factory and helpers | `import { createCache, createListCacheKey } from "@g14o/cache"` |
+| Shared types (`Result`, `Logger`, …) | `import type { Result, Logger } from "@g14o/cache/types"` |
 | Redis / env helpers | `import { createRedisClient, isBuildLikePhase, type Logger } from "@g14o/cache/config"` |
 
 ## Next.js

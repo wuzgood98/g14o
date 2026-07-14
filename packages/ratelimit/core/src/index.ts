@@ -32,7 +32,6 @@ export {
   type ReadonlyTokenConfigMap,
   resolveUserIdentifier,
   type SkipRateLimitOption,
-  shouldSkipRateLimit,
   type TokenConfig,
   tokenConfigSnapshot,
 } from "./internals";
@@ -55,9 +54,3 @@ export type {
   RateLimitStoreConfig,
   RateLimitStoreLimiter,
 } from "./store/interface";
-export type {
-  IoRedisLike,
-  NodeRedisLike,
-  RedisStoreOptions,
-} from "./store/redis";
-export { redisStore } from "./store/redis";
