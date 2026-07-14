@@ -63,6 +63,17 @@ const store = createStore({
 });
 ```
 
+By default, `createStore` JSON-serializes values. `undefined` (and other values that `JSON.stringify` cannot encode) are stored as a string sentinel and round-trip back to `undefined`. Pass custom `serialize` / `deserialize` if needed; serializers must return a `string` — if a custom serializer returns `undefined`, `createStore` coerces it to the undefined sentinel before `write()`.
+
+```ts
+createStore(primitives, {
+  serialize: (value) => { /* must return string */ },
+  deserialize: (raw) => { /* parse raw string */ },
+  prefix: "app",
+});
+```
+
+`null` return values from cached functions are not cached (`CacheStore.get` uses `null` for missing keys). `undefined` return values are cached and served as hits.
 ## Examples
 
 ### Wrap a server function with `withCache`

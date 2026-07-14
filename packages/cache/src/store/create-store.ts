@@ -34,8 +34,22 @@ export interface CreateStoreOptions {
   serialize?: (value: unknown) => string;
 }
 
-const defaultSerialize = (value: unknown): string => JSON.stringify(value);
-const defaultDeserialize = <T>(raw: string): T => JSON.parse(raw) as T;
+/** Raw sentinel so `undefined` survives string KV storage (JSON.stringify yields undefined). */
+const UNDEFINED_RAW = "__g14o_undefined__";
+
+const defaultSerialize = (value: unknown): string => {
+  if (value === undefined) {
+    return UNDEFINED_RAW;
+  }
+  return JSON.stringify(value) ?? UNDEFINED_RAW;
+};
+
+const defaultDeserialize = <T>(raw: string): T => {
+  if (raw === UNDEFINED_RAW) {
+    return undefined as T;
+  }
+  return JSON.parse(raw) as T;
+};
 
 async function resolve<T>(value: T | Promise<T>): Promise<T> {
   return await value;
@@ -95,7 +109,7 @@ export function createStore(
     },
 
     async set(key: string, value: unknown, ttl?: number): Promise<void> {
-      const raw = serialize(value);
+      const raw = serialize(value) ?? UNDEFINED_RAW;
       await resolve(primitives.write(prefixKey(key), raw, ttl));
     },
 
