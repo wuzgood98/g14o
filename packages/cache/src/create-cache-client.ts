@@ -221,7 +221,7 @@ function isNestedTtlOverride(
 }
 
 function shouldCacheValue(value: unknown, cacheFailures: boolean): boolean {
-  if (value === undefined) {
+  if (value === undefined || value === null) {
     return false;
   }
   if (isResultShape(value)) {
