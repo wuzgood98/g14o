@@ -1,5 +1,17 @@
 # docs
 
+## 0.0.8
+
+### Patch Changes
+
+- Updated dependencies [c5f775b]
+  - @g14o/cache@0.2.0
+  - @g14o/ratelimit@0.6.0
+  - @g14o/paystack-better-auth@0.4.0
+  - @g14o/ratelimit-express@0.3.2
+  - @g14o/ratelimit-hono@0.3.2
+  - @g14o/ratelimit-nextjs@0.3.2
+
 ## 0.0.7
 
 ### Patch Changes

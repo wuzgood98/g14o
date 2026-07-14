@@ -1,5 +1,11 @@
 # hono-demo
 
+## 0.0.6
+
+### Patch Changes
+
+- @g14o/ratelimit-hono@0.3.2
+
 ## 0.0.5
 
 ### Patch Changes

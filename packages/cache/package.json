@@ -1,6 +1,6 @@
 {
   "name": "@g14o/cache",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Framework-agnostic Redis-backed caching with in-memory dev/build fallbacks.",
   "type": "module",
   "sideEffects": false,
