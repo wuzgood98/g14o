@@ -17,12 +17,11 @@ export type {
 } from "./create-cache-client";
 /** biome-ignore lint/performance/noBarrelFile: public package entry re-export */
 export { createCache } from "./create-cache-client";
-export {
-  CACHE_TTL,
-  type CacheDuration,
-  type CacheOptions,
+export type {
+  CacheAdapter,
+  CacheDuration,
+  CacheOptions,
   InMemoryCache,
-  RedisCache,
 } from "./internals";
 
 const HASH_LENGTH = 16;
@@ -124,36 +123,6 @@ export function createCacheKey(
   }
 
   return fullKey;
-}
-
-export function createCacheKeyGenerator(
-  prefix: string,
-  options: CacheKeyOptions = {}
-): (params?: NormalizedParams) => string {
-  return (params?: NormalizedParams) =>
-    createCacheKey(prefix, params || {}, options);
-}
-
-export function createCacheKeyFromArgs(
-  prefix: string,
-  args: (string | number | boolean | undefined | null)[] = []
-): string {
-  const validArgs = args.filter(
-    (arg) =>
-      arg !== undefined &&
-      arg !== null &&
-      arg !== "" &&
-      !(isArray(arg) && arg.length === 0)
-  );
-
-  const stringArgs = validArgs.map((arg) => {
-    if (typeof arg === "object") {
-      return JSON.stringify(arg);
-    }
-    return String(arg);
-  });
-
-  return `${prefix}:${stringArgs.join(":")}`;
 }
 
 export function createEntityCacheKey(

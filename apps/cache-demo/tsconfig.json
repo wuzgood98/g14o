@@ -1,11 +1,9 @@
 {
   "extends": "@workspace/typescript-config/nextjs.json",
   "compilerOptions": {
+    "customConditions": ["dev-source"],
     "paths": {
-      "@/*": ["./*"],
-      "@g14o/cache": ["../../packages/cache/src/index.ts"],
-      "@g14o/cache/config": ["../../packages/cache/src/config.ts"],
-      "@g14o/cache/types": ["../../packages/cache/src/types.ts"]
+      "@/*": ["./*"]
     },
     "plugins": [
       {

@@ -141,17 +141,17 @@ Changeset files are committed manually with your PR ([`.changeset/config.json`](
 
 ## Changesets
 
-User-facing changes to **`@g14o/core`** or **`@g14o/env-core`** require a changeset. Those packages are versioned and published (see [`.changeset/config.json`](.changeset/config.json)).
+User-facing changes to published packages (for example **`@g14o/env-core`**, **`@g14o/cache`**, **`@g14o/ratelimit`**) require a changeset. Those packages are versioned and published (see [`.changeset/config.json`](.changeset/config.json)).
 
 1. Run `pnpm changeset` and describe your change (patch, minor, or major).
 2. Commit the generated `.changeset/*.md` file with your PR.
 
-Maintainers run `pnpm version-packages` and `pnpm release:publish:core` or `pnpm release:publish:env` during release — contributors do not need to bump versions manually.
+Maintainers run `pnpm version-packages` and the relevant `pnpm release:publish:*` scripts during release — contributors do not need to bump versions manually.
 
 ## Pull requests
 
 - Use conventional commit titles for PR commits (and squash-merge titles when applicable). See [Commit messages](#commit-messages).
-- Keep PRs focused; include tests for behavior changes in `packages/core`.
+- Keep PRs focused; include tests for behavior changes in the affected package under `packages/`.
 - Note if your change affects Next.js build vs runtime cache or rate-limit behavior.
 - Do not commit `.only` or `.skip` in tests.
 
@@ -159,15 +159,7 @@ Maintainers run `pnpm version-packages` and `pnpm release:publish:core` or `pnpm
 
 ```bash
 pnpm build
-pnpm version-packages   # bumps versioned packages; syncs shim workspace:^ ranges; updates lockfile
-
-# @g14o/core (skip if not versioned this cycle)
-pnpm release:publish:core
-git tag '@g14o/core@<core-version>'    # from packages/core/package.json
-git push origin main --follow-tags
-gh release create '@g14o/core@<core-version>' \
-  --title '@g14o/core v<core-version>' \
-  --notes-file packages/core/CHANGELOG.md
+pnpm version-packages   # bumps versioned packages; updates lockfile
 
 # @g14o/env-core (skip if not versioned this cycle)
 pnpm release:publish:env
@@ -187,13 +179,11 @@ gh release create '@g14o/cache@<cache-version>' \
 
 # @g14o/ratelimit (skip if not versioned this cycle)
 pnpm release:publish:ratelimit
-git tag '@g14o/ratelimit@<ratelimit-version>'   # from packages/ratelimit/package.json
+git tag '@g14o/ratelimit@<ratelimit-version>'   # from packages/ratelimit/core/package.json
 git push origin main --follow-tags
 gh release create '@g14o/ratelimit@<ratelimit-version>' \
   --title '@g14o/ratelimit v<ratelimit-version>' \
-  --notes-file packages/ratelimit/CHANGELOG.md
+  --notes-file packages/ratelimit/core/CHANGELOG.md
 ```
 
-Read `<core-version>`, `<env-version>`, `<cache-version>`, and `<ratelimit-version>` from each package’s `package.json` after `pnpm version-packages`. Only run the core, env, cache, or ratelimit block when that package was bumped in the changeset release (do not re-tag unchanged versions).
-
-Commit `packages/{cache,ratelimit,utils}/package.json` and `pnpm-lock.yaml` when the release changes shim `@g14o/core` specifiers.
+Read `<env-version>`, `<cache-version>`, and `<ratelimit-version>` from each package’s `package.json` after `pnpm version-packages`. Only run the env, cache, or ratelimit block when that package was bumped in the changeset release (do not re-tag unchanged versions).

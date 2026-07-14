@@ -355,36 +355,6 @@ export function mapTransactionStatus(
   return "pending";
 }
 
-export const STATUS_MAPPING_DOCUMENTATION: string = `
-Paystack -> Normalized status mapping:
-- active, non-renewing -> active (non-renewing sets cancelAtPeriodEnd)
-- attention -> past_due
-- cancelled, completed -> cancelled
-- pending, incomplete -> incomplete
-- charge.success -> active
-- invoice.payment_failed -> past_due
-- subscription.disable -> cancelled
-- subscription.not_renew -> active with cancelAtPeriodEnd=true
-`.trim();
-
-/**
- * Determines if a subscription is active or trialing.
- * @internal
- */
-export function isActiveOrTrialing(sub: { status: string }): boolean {
-  return sub.status === "active" || sub.status === "trialing";
-}
-
-/**
- * Determines if a subscription is pending cancel.
- * @internal
- */
-export function isPendingCancel(sub: {
-  cancelAtPeriodEnd?: boolean | null;
-}): boolean {
-  return !!sub.cancelAtPeriodEnd;
-}
-
 /**
  * Validates plugin options and returns a normalized context with a Paystack client
  * for API calls and webhook verification.

@@ -172,9 +172,6 @@ export interface CustomerCreateContext {
   };
 }
 
-/** @deprecated Use PaystackEventName from `@g14o/paystack`. */
-export type PaystackWebhookEventType = PaystackEventName;
-
 export type {
   ChargeSuccessData,
   InvoiceData,

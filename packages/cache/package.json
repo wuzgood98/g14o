@@ -55,6 +55,11 @@
       "dev-source": "./src/config.ts",
       "types": "./dist/config.d.mts",
       "default": "./dist/config.mjs"
+    },
+    "./types": {
+      "dev-source": "./src/types.ts",
+      "types": "./dist/types.d.mts",
+      "default": "./dist/types.mjs"
     }
   },
   "typesVersions": {
@@ -64,6 +69,9 @@
       ],
       "config": [
         "./dist/config.d.mts"
+      ],
+      "types": [
+        "./dist/types.d.mts"
       ]
     }
   },

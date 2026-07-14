@@ -3,7 +3,6 @@
   "changelog": "@changesets/cli/changelog",
   "commit": false,
   "fixed": [
-    ["@g14o/core"],
     ["@g14o/env-core"],
     ["@g14o/cache"],
     ["@g14o/ratelimit"],
