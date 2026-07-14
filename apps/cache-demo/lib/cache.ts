@@ -1,22 +1,24 @@
-import { type CacheClient, createCache } from "@g14o/cache";
+import { createCache } from "@g14o/cache";
+import { upstashStore } from "@g14o/cache/upstash";
 import { logger } from "@/lib/logger";
 
-// inMemoryDuringNextBuild defaults to true (in-memory during next build, Redis at runtime).
 const url = process.env.UPSTASH_REDIS_REST_URL;
 const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
-export const cacheClient: CacheClient = createCache({
-  redis:
-    url && token
-      ? {
-          url,
-          token,
-        }
-      : undefined,
-  logger,
-});
+if (!(url && token)) {
+  throw new Error(
+    "UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN must be set"
+  );
+}
 
-export const withCache: CacheClient["withCache"] = cacheClient.withCache;
-export const getCache: CacheClient["getCache"] = cacheClient.getCache;
-export const inMemoryCache: CacheClient["inMemoryCache"] =
-  cacheClient.inMemoryCache;
+export const { withCache, getCache, inMemoryCache } = createCache({
+  store: upstashStore({ url, token }),
+  logger,
+  staleWhileRevalidate: 300,
+  ttl: {
+    short: 300,
+    medium: 1800,
+    long: 3600,
+  },
+  cacheFailures: true,
+});

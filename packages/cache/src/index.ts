@@ -8,7 +8,6 @@
 import { createHash } from "node:crypto";
 import { isArray, isObject } from "./helpers";
 
-export type { Redis } from "@upstash/redis";
 export type {
   CacheClient,
   CacheEnvironmentTtlOverride,
@@ -18,11 +17,19 @@ export type {
 /** biome-ignore lint/performance/noBarrelFile: public package entry re-export */
 export { createCache } from "./create-cache-client";
 export type {
-  CacheAdapter,
   CacheDuration,
+  CacheFailuresConfig,
+  CacheFailuresOption,
   CacheOptions,
-  InMemoryCache,
 } from "./internals";
+export {
+  type CreateStoreOptions,
+  createStore,
+  defineStore,
+  type StorePrimitives,
+} from "./store/create-store";
+export type { CacheAdapter, CacheStore } from "./store/interface";
+export type { InMemoryCache } from "./store/memory";
 
 const HASH_LENGTH = 16;
 
@@ -51,11 +58,23 @@ export type NormalizedParams = Record<string, unknown>;
  * Options for deterministic cache key generation helpers.
  */
 export interface CacheKeyOptions {
-  /** When `true`, always includes `page` (default 1) and `limit` (default 10). Default `true`. */
+  /**
+   * When `true`, always includes `page` (default 1) and `limit` (default 10).
+   *
+   * @default true
+   */
   includePagination?: boolean;
-  /** Max key length before replacing the param segment with an MD5 hash. Default `150`. */
+  /**
+   * Max key length before replacing the param segment with an MD5 hash.
+   *
+   * @default 150
+   */
   maxLength?: number;
-  /** Separator between key segments. Default `":"`. */
+  /**
+   * Separator between key segments.
+   *
+   * @default ":"
+   */
   separator?: string;
 }
 

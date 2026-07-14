@@ -1,12 +1,26 @@
 import { randomUUID } from "node:crypto";
 import { Redis } from "@upstash/redis";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { RedisConfig } from "./config";
 import { type CacheTtlOverride, createCache } from "./index";
 import {
   getTestRedisCredentials,
   hasUpstashCredentials,
 } from "./integration-env";
+import { hasRedisUrl } from "./integration-redis-env";
+import type { IoRedisLike, NodeRedisLike } from "./store/redis";
+import { redisStore } from "./store/redis";
+import { describeStore } from "./store/store-contract";
+import { upstashStore } from "./store/upstash";
 
 function createIsolatedCache(
   ttl?: CacheTtlOverride,
@@ -23,8 +37,38 @@ function createIsolatedCache(
   return { cache, prefix };
 }
 
+function createIsolatedStoreCache(
+  ttl?: CacheTtlOverride,
+  redis: RedisConfig = getTestRedisCredentials()
+) {
+  const runId = randomUUID();
+  const prefix = `g14o-it-cache-store-${runId}`;
+  const cache = createCache({
+    env: "production",
+    store: upstashStore({ redis }),
+    ttl,
+  });
+  cache.reset();
+  return { cache, prefix };
+}
+
+function createIsolatedRedisStoreCache(
+  client: NodeRedisLike | IoRedisLike,
+  ttl?: CacheTtlOverride
+) {
+  const runId = randomUUID();
+  const prefix = `g14o-it-cache-redis-${runId}`;
+  const cache = createCache({
+    env: "production",
+    store: redisStore(client),
+    ttl,
+  });
+  cache.reset();
+  return { cache, prefix };
+}
+
 describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
-  describe("credentials path", () => {
+  describe("legacy redis option", () => {
     let cache: ReturnType<typeof createCache>;
     let testPrefix: string;
 
@@ -37,7 +81,7 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
       cache.reset();
     });
 
-    it("uses Redis adapter in production mode", async () => {
+    it("uses Redis store in production mode", async () => {
       expect(cache.inMemoryCache()).toBeNull();
 
       const store = cache.getCache();
@@ -93,8 +137,53 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
     });
   });
 
+  describe("store: upstashStore option", () => {
+    let cache: ReturnType<typeof createCache>;
+    let testPrefix: string;
+
+    beforeEach(() => {
+      ({ cache, prefix: testPrefix } = createIsolatedStoreCache());
+    });
+
+    afterEach(async () => {
+      await cache.invalidateCache("*", { prefix: testPrefix });
+      cache.reset();
+    });
+
+    describeStore("upstashStore", () =>
+      upstashStore({ redis: getTestRedisCredentials() })
+    );
+
+    it("uses explicit upstashStore in production mode", async () => {
+      expect(cache.inMemoryCache()).toBeNull();
+
+      const store = cache.getCache();
+      const key = `${testPrefix}:store-roundtrip`;
+      const payload = { ok: true as const, data: { id: "store" } };
+
+      await store.set(key, payload, 60);
+      expect(await store.get(key)).toEqual(payload);
+    });
+
+    it("caches successful results via withCache on upstashStore", async () => {
+      const fn = vi.fn(() =>
+        Promise.resolve({ ok: true as const, data: { value: 99 } })
+      );
+
+      const cached = cache.withCache(fn, {
+        prefix: testPrefix,
+        keyGenerator: () => "with-cache-store",
+        ttl: "short",
+      });
+
+      await cached();
+      await cached();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe("Redis.fromEnv() path", () => {
-    it("accepts a pre-built Redis client", async () => {
+    it("accepts a pre-built Redis client via legacy redis option", async () => {
       const { cache, prefix } = createIsolatedCache(undefined, Redis.fromEnv());
 
       const store = cache.getCache();
@@ -104,6 +193,154 @@ describe.skipIf(!hasUpstashCredentials())("Upstash Redis integration", () => {
 
       await cache.invalidateCacheKey(key);
       cache.reset();
+    });
+
+    it("accepts a pre-built Redis client via upstashStore", async () => {
+      const { cache, prefix } = createIsolatedStoreCache(
+        undefined,
+        Redis.fromEnv()
+      );
+
+      const store = cache.getCache();
+      const key = `${prefix}:from-env-store`;
+      await store.set(key, { ok: true, data: "env-store" }, 60);
+      expect(await store.get(key)).toEqual({ ok: true, data: "env-store" });
+
+      await cache.invalidateCacheKey(key);
+      cache.reset();
+    });
+  });
+});
+
+describe.skipIf(!hasRedisUrl())("Generic Redis integration", () => {
+  let createNodeRedisClient: typeof import("./integration-redis-clients")["createNodeRedisClient"];
+  let createIoRedisClient: typeof import("./integration-redis-clients")["createIoRedisClient"];
+
+  beforeAll(async () => {
+    const clients = await import("./integration-redis-clients");
+    createNodeRedisClient = clients.createNodeRedisClient;
+    createIoRedisClient = clients.createIoRedisClient;
+  });
+
+  describe("node-redis", () => {
+    let client: Awaited<ReturnType<typeof createNodeRedisClient>>;
+    let cache: ReturnType<typeof createCache>;
+    let testPrefix: string;
+
+    beforeAll(async () => {
+      client = await createNodeRedisClient();
+    });
+
+    afterAll(async () => {
+      await client.quit();
+    });
+
+    beforeEach(() => {
+      ({ cache, prefix: testPrefix } = createIsolatedRedisStoreCache(
+        client as NodeRedisLike
+      ));
+    });
+
+    afterEach(async () => {
+      await cache.invalidateCache("*", { prefix: testPrefix });
+      cache.reset();
+    });
+
+    it("uses redisStore in production mode", async () => {
+      expect(cache.inMemoryCache()).toBeNull();
+
+      const store = cache.getCache();
+      const key = `${testPrefix}:roundtrip`;
+      const payload = { ok: true as const, data: { id: "redis" } };
+
+      await store.set(key, payload, 60);
+      expect(await store.get(key)).toEqual(payload);
+    });
+
+    it("caches successful results via withCache on redisStore", async () => {
+      const fn = vi.fn(() =>
+        Promise.resolve({ ok: true as const, data: { value: 42 } })
+      );
+
+      const cached = cache.withCache(fn, {
+        prefix: testPrefix,
+        keyGenerator: () => "with-cache",
+        ttl: "short",
+      });
+
+      await cached();
+      await cached();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("invalidates a single cache key on redisStore", async () => {
+      const store = cache.getCache();
+      const key = `${testPrefix}:invalidate-one`;
+      await store.set(key, { ok: true, data: 1 }, 60);
+
+      const deleted = await cache.invalidateCacheKey(key);
+      expect(deleted).toEqual({ ok: true, data: true });
+    });
+  });
+
+  describe("ioredis", () => {
+    let client: ReturnType<typeof createIoRedisClient>;
+    let cache: ReturnType<typeof createCache>;
+    let testPrefix: string;
+
+    beforeAll(() => {
+      client = createIoRedisClient();
+    });
+
+    afterAll(async () => {
+      await client.quit();
+    });
+
+    beforeEach(() => {
+      ({ cache, prefix: testPrefix } = createIsolatedRedisStoreCache(
+        client as IoRedisLike
+      ));
+    });
+
+    afterEach(async () => {
+      await cache.invalidateCache("*", { prefix: testPrefix });
+      cache.reset();
+    });
+
+    it("uses redisStore in production mode", async () => {
+      expect(cache.inMemoryCache()).toBeNull();
+
+      const store = cache.getCache();
+      const key = `${testPrefix}:roundtrip`;
+      const payload = { ok: true as const, data: { id: "ioredis" } };
+
+      await store.set(key, payload, 60);
+      expect(await store.get(key)).toEqual(payload);
+    });
+
+    it("caches successful results via withCache on redisStore", async () => {
+      const fn = vi.fn(() =>
+        Promise.resolve({ ok: true as const, data: { value: 7 } })
+      );
+
+      const cached = cache.withCache(fn, {
+        prefix: testPrefix,
+        keyGenerator: () => "with-cache-io",
+        ttl: "short",
+      });
+
+      await cached();
+      await cached();
+      expect(fn).toHaveBeenCalledTimes(1);
+    });
+
+    it("invalidates a single cache key on redisStore", async () => {
+      const store = cache.getCache();
+      const key = `${testPrefix}:invalidate-one`;
+      await store.set(key, { ok: true, data: 1 }, 60);
+
+      const deleted = await cache.invalidateCacheKey(key);
+      expect(deleted).toEqual({ ok: true, data: true });
     });
   });
 });

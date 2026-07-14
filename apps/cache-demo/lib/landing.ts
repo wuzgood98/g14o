@@ -42,6 +42,23 @@ async function fetchFeatured(): Promise<Result<LandingFeatured[], Error>> {
   };
 }
 
+async function getCategories(): Promise<LandingCategory[]> {
+  await delay(FETCH_DELAY_MS);
+  return [
+    { id: "1", name: "Bedding" },
+    { id: "2", name: "Decor" },
+    { id: "3", name: "Kitchen" },
+  ];
+}
+
+async function getFeatured(): Promise<LandingFeatured[]> {
+  await delay(FETCH_DELAY_MS);
+  return [
+    { id: "a", title: "Cozy Throw Blanket" },
+    { id: "b", title: "Ceramic Mug Set" },
+  ];
+}
+
 export const getCategoriesCached = withCache(fetchCategories, {
   prefix: "landing",
   keyGenerator: () => "categories",
@@ -51,5 +68,17 @@ export const getCategoriesCached = withCache(fetchCategories, {
 export const getFeaturedCached = withCache(fetchFeatured, {
   prefix: "landing",
   keyGenerator: () => "featured",
+  ttl: "long",
+});
+
+export const getCategoriesCachedNoResultType = withCache(getCategories, {
+  prefix: "landing-no-result-type",
+  keyGenerator: () => "categories-no-result-type",
+  ttl: "long",
+});
+
+export const getFeaturedCachedNoResultType = withCache(getFeatured, {
+  prefix: "landing-no-result-type",
+  keyGenerator: () => "featured-no-result-type",
   ttl: "long",
 });

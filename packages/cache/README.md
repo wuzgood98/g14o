@@ -2,14 +2,21 @@
 
 > Documentation: [docs.g14o.dev/packages/cache](https://docs.g14o.dev/packages/cache)
 
-Framework-agnostic Redis-backed caching with in-memory fallbacks for development and static build phases. Works with any Node.js server runtime (Next.js App Router, Hono, etc.).
+Framework-agnostic caching with pluggable stores (memory, Upstash, node-redis/ioredis). In-memory fallbacks apply automatically in development, test, and static build phases.
+
 ## Install
 
 ```bash
 pnpm add @g14o/cache @upstash/redis
 ```
 
-`@upstash/redis` is a peer dependency — add it when using Redis-backed cache in production.
+Install only the peer(s) matching your chosen store:
+
+| Store | Peer dependency |
+|-------|-----------------|
+| Upstash | `@upstash/redis` |
+| node-redis | `redis` |
+| ioredis | `ioredis` |
 
 ## Setup
 
@@ -17,29 +24,42 @@ Create an app-owned client in `lib/cache.ts`:
 
 ```ts
 import { createCache } from "@g14o/cache";
+import { upstashStore } from "@g14o/cache/upstash";
 import { logger } from "@/lib/logger";
 
 export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
-  redis: {
+  store: upstashStore({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  },
+  }),
   logger,
 });
 ```
 
-### Custom TTL
+### Other stores
 
 ```ts
-export const { withCache, getTTL } = createCache({
-  redis: {
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  },
-  ttl: {
-    development: { short: 30, long: 900 },
-    production: { medium: 3600 },
-  },
+import { memoryStore } from "@g14o/cache/memory";
+import { redisStore } from "@g14o/cache/redis";
+
+createCache({ store: memoryStore() });
+createCache({ store: redisStore(redisClient) });
+```
+
+### Legacy `redis` option
+
+The `redis` option still works and wraps `upstashStore` internally. Prefer `store: upstashStore(...)` for new projects.
+
+### Custom store from raw KV primitives
+
+```ts
+import { createStore } from "@g14o/cache";
+
+const store = createStore({
+  async read(key) { /* return string | null */ },
+  async write(key, value, ttlSeconds) { /* persist string */ },
+  async remove(...keys) { /* return deleted count */ },
+  async list(pattern) { /* return matching keys */ },
 });
 ```
 
@@ -47,89 +67,60 @@ export const { withCache, getTTL } = createCache({
 
 ### Wrap a server function with `withCache`
 
-Functions passed to `withCache` must return `{ ok: true, data }` or `{ ok: false, error, status }`:
+`withCache` accepts any async function. `Result`-shaped returns (`{ ok: true | false }`) cache successes by default; opt in to caching failures with `cacheFailures: true`.
 
 ```ts
-// lib/users.ts
-import { withCache } from "@/lib/cache";
-
-async function getUsers() {
-  return fetchUsersFromDb();
-}
-
 export const getUsersCached = withCache(getUsers, {
   ttl: "medium",
   prefix: "users",
 });
 ```
 
-### Parameterized cache with a custom key
+### Stale-while-revalidate
 
 ```ts
-import { createListCacheKey } from "@g14o/cache";
-import { withCache } from "@/lib/cache";
+withCache(getUsers, {
+  ttl: "medium",
+  staleWhileRevalidate: 60, // serve stale for 60s while refreshing in background
+});
+```
 
-export const listUsersCached = withCache(listUsers, {
-  prefix: "users",
-  keyGenerator: (filters) => createListCacheKey("users", filters),
-  ttl: "short",
+### Negative caching (opt-in)
+
+```ts
+withCache(getUser, {
+  cacheFailures: true,
+});
+```
+
+Custom failure TTL:
+
+```ts
+withCache(getUser, {
+  cacheFailures: { enabled: true, ttl: "medium" },
 });
 ```
 
 ### Invalidate after a mutation
 
 ```ts
-import { createEntityCacheKey } from "@g14o/cache";
-import { invalidateCache, invalidateCacheKey } from "@/lib/cache";
-
-await updateUser(id, data);
 await invalidateCacheKey(createEntityCacheKey("user", id));
-await invalidateCache("*", { prefix: "users" }); // list keys matching users:*
+await invalidateCache("*", { prefix: "users" });
 ```
-
-### Shared Redis client
-
-Reuse an existing `@upstash/redis` client across your app:
-
-```ts
-// lib/redis.ts
-import { Redis } from "@upstash/redis";
-
-export const redis = Redis.fromEnv();
-```
-
-```ts
-// lib/cache.ts
-import { createCache } from "@g14o/cache";
-import { redis } from "@/lib/redis";
-import { logger } from "@/lib/logger";
-
-export const { withCache, invalidateCache, invalidateCacheKey } = createCache({ redis, logger });
-```
-
-### Build vs runtime
-
-By default, `inMemoryDuringBuild` is `true`: during static build phases (Next.js sets `NEXT_PHASE` to `phase-production-build` or `phase-export` during `next build` / export), cache uses an in-memory adapter so prerender does not call Upstash. At runtime in production, Redis is used when configured. No `next` dependency is required — detection uses the `NEXT_PHASE` environment variable when present.
-
-To opt into Redis during builds (debugging only):
-
-```ts
-createCache({
-  redis: { url: "...", token: "..." },
-  inMemoryDuringBuild: false,
-});
-```
-
-You can also import `isBuildLikePhase()` from `@g14o/cache/config` to branch on build phase in your own code.
 
 ## Import paths
 
 | Use case | Import |
 |----------|--------|
-| Cache factory and helpers | `import { createCache, createListCacheKey } from "@g14o/cache"` |
-| Shared types (`Result`, `Logger`, …) | `import type { Result, Logger } from "@g14o/cache/types"` |
-| Redis / env helpers | `import { createRedisClient, isBuildLikePhase, type Logger } from "@g14o/cache/config"` |
+| Cache factory and helpers | `@g14o/cache` |
+| Memory store | `@g14o/cache/memory` |
+| Upstash store | `@g14o/cache/upstash` |
+| node-redis / ioredis store | `@g14o/cache/redis` |
+| Shared types | `@g14o/cache/types` |
+| Redis / env helpers | `@g14o/cache/config` |
 
-## Next.js
+## Build vs runtime
 
-`@g14o/cache` works in Next.js App Router route handlers and server components. For build-phase behavior, see `inMemoryDuringBuild` in the factory options and `isBuildLikePhase()` from `@g14o/cache/config`.
+When no `store` is configured, development/test/build phases use in-memory cache automatically. Production requires an explicit `store` (or legacy `redis`).
+
+See `inMemoryDuringBuild` and `isBuildLikePhase()` from `@g14o/cache/config`.
