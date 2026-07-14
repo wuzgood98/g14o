@@ -426,13 +426,18 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
       return defaultKeyGenerator(prefix, fn.name || "anonymous", args);
     };
 
+    const inflightRefreshes = new Map<string, Promise<void>>();
+
     const refreshInBackground = (
       cacheKey: string,
       args: Parameters<T>,
       swrSeconds: number
     ): void => {
-      // biome-ignore lint/complexity/noVoid: fire-and-forget background refresh
-      void (async () => {
+      if (inflightRefreshes.has(cacheKey)) {
+        return;
+      }
+
+      const refreshPromise = (async () => {
         try {
           const result = await fn(...args);
           if (!shouldCacheValue(result, cacheFailures)) {
@@ -450,8 +455,14 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
           );
         } catch (error) {
           logger.warn(error, `Background cache refresh failed for ${cacheKey}`);
+        } finally {
+          inflightRefreshes.delete(cacheKey);
         }
       })();
+
+      inflightRefreshes.set(cacheKey, refreshPromise);
+      // biome-ignore lint/complexity/noVoid: fire-and-forget background refresh
+      void refreshPromise;
     };
 
     return (async (...args: Parameters<T>): Promise<Awaited<ReturnType<T>>> => {
