@@ -143,11 +143,12 @@ function escapeConsoleText(text: string): string {
 function buildConsoleArgs(segments: BrowserSegment[]): unknown[] {
   let format = "";
   const styles: string[] = [];
+  const hasStyledSegment = segments.some((segment) => segment.style);
 
   for (const segment of segments) {
-    if (segment.style) {
+    if (hasStyledSegment) {
       format += `%c${escapeConsoleText(segment.text)}`;
-      styles.push(segment.style);
+      styles.push(segment.style ?? "");
       continue;
     }
     format += escapeConsoleText(segment.text);
