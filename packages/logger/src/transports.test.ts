@@ -48,12 +48,22 @@ const sampleRecord: LogRecord = {
 const TERMINAL_WIDTH = 100;
 const DIM_TIME = "\x1b[2m00:00:00\x1b[22m";
 const ORIGINAL_PLATFORM = process.platform;
+const ORIGINAL_STDOUT_COLUMNS = Object.getOwnPropertyDescriptor(
+  process.stdout,
+  "columns"
+);
 
 function mockTerminalWidth(columns: number): void {
   Object.defineProperty(process.stdout, "columns", {
     configurable: true,
     value: columns,
   });
+}
+
+function restoreTerminalWidth(): void {
+  if (ORIGINAL_STDOUT_COLUMNS) {
+    Object.defineProperty(process.stdout, "columns", ORIGINAL_STDOUT_COLUMNS);
+  }
 }
 
 function restorePlatform(): void {
@@ -129,6 +139,7 @@ describe("transport formatting", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    restoreTerminalWidth();
     restorePlatform();
   });
 
@@ -591,6 +602,7 @@ describe("console routing", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    restoreTerminalWidth();
     restorePlatform();
   });
 
@@ -644,6 +656,7 @@ describe("formatOptions", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllEnvs();
+    restoreTerminalWidth();
     restorePlatform();
   });
 
