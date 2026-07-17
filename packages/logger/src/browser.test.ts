@@ -81,6 +81,15 @@ describe("formatBrowserConsole", () => {
     expect(styles.some((style) => String(style).includes("color:"))).toBe(true);
   });
 
+  it("resets browser console styles for unstyled segments with empty %c args", () => {
+    const args = formatBrowserConsole(sampleRecord, PRETTY);
+    const [format, ...styles] = args;
+
+    expect(countStyleMarkers(format as string)).toBe(styles.length);
+    expect(styles.some((style) => style === "")).toBe(true);
+    expect(styles.some((style) => String(style).includes("color:"))).toBe(true);
+  });
+
   it("formats warn as a badge with background styling", () => {
     const record: LogRecord = {
       ...sampleRecord,
