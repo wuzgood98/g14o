@@ -1,6 +1,6 @@
 {
   "name": "@g14o/logger",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Zero-dependency isomorphic structured logger core for @g14o packages.",
   "type": "module",
   "sideEffects": false,
