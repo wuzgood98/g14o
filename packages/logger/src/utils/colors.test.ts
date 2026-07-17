@@ -125,6 +125,21 @@ describe("createColors", () => {
     expect(nested).toBe("\x1b[97m(\x1b[38;5;43mfile.ts:1:1\x1b[97m)\x1b[39m");
   });
 
+  it("repairs many close sequences without overflowing the stack", () => {
+    const colors = createColors({ useColor: true });
+    const close = "\x1b[39m";
+    const open = "\x1b[38;5;37m";
+    const matchCount = 5000;
+    // clearBleed only scans for close codes from open.length + 1 onward
+    const prefix = "p".repeat(open.length + 1);
+    const input = `${prefix}${close.repeat(matchCount)}y`;
+
+    expect(() => colors.info(input)).not.toThrow();
+    expect(colors.info(input)).toBe(
+      `${open}${prefix}${open.repeat(matchCount)}y${close}`
+    );
+  });
+
   it("nests badge styles without full reset", () => {
     const colors = createColors({ useColor: true });
     const badge = colors.bgWarn(colors.black(colors.bold(" WARN ")));
