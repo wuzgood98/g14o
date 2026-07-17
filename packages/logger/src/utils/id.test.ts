@@ -4,6 +4,7 @@ import { generateRequestId } from "./id";
 describe("generateRequestId", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("uses crypto.randomUUID when available", () => {
