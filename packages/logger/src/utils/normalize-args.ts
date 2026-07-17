@@ -43,11 +43,18 @@ export function normalizeLogArgs(args: unknown[]): {
   }
 
   if (first instanceof Error && typeof second === "string") {
-    return { message: second, meta: errorMeta(first) };
+    const meta = errorMeta(first);
+    return {
+      message: second,
+      meta: args.length > 2 ? { ...meta, details: args.slice(2) } : meta,
+    };
   }
 
   if (typeof first === "string" && isPlainObject(second)) {
-    return { message: first, meta: second };
+    return {
+      message: first,
+      meta: args.length > 2 ? { ...second, details: args.slice(2) } : second,
+    };
   }
 
   if (typeof first === "string") {
