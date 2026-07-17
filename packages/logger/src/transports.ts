@@ -445,6 +445,8 @@ function formatPlain(
   return [firstLine, ...continuations].join("\n");
 }
 
+const JSON_RESERVED_KEYS = new Set(["timestamp", "level", "name", "message"]);
+
 function formatJson(
   record: LogRecord,
   formatOptions: ResolvedFormatOptions = DEFAULT_FORMAT_OPTIONS
@@ -477,6 +479,9 @@ function formatJson(
         break;
       case "meta":
         for (const key of Object.keys(record.meta).sort()) {
+          if (JSON_RESERVED_KEYS.has(key)) {
+            continue;
+          }
           payload[key] = record.meta[key];
         }
         break;

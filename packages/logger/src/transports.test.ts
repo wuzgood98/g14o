@@ -551,6 +551,38 @@ describe("transport formatting", () => {
     });
   });
 
+  it("keeps canonical JSON fields when meta keys collide", () => {
+    const record: LogRecord = {
+      ...sampleRecord,
+      meta: {
+        level: "debug",
+        message: "from-meta",
+        name: "spoofed",
+        timestamp: "99:99:99",
+        zKey: 1,
+        aKey: "alpha",
+      },
+    };
+    const parsed = JSON.parse(formatJson(record)) as Record<string, unknown>;
+
+    expect(Object.keys(parsed)).toEqual([
+      "timestamp",
+      "level",
+      "name",
+      "message",
+      "aKey",
+      "zKey",
+    ]);
+    expect(parsed).toMatchObject({
+      timestamp: "00:00:00",
+      level: "info",
+      name: "cache",
+      message: "Cache hit",
+      aKey: "alpha",
+      zKey: 1,
+    });
+  });
+
   it("formats JSON with full ISO timestamp when configured", () => {
     const parsed = JSON.parse(
       formatJson(sampleRecord, FORMAT_TIME_ISO)
