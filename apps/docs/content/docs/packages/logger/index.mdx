@@ -1,0 +1,84 @@
+---
+title: Overview
+description: Zero-dependency isomorphic structured logger for Node.js and the browser.
+---
+
+Isomorphic structured logger for Node.js and the browser. Accepts a message string and optional plain-object meta on every call — no printf-style interpolation.
+
+**Zero runtime dependencies.** Same API in Node and the browser.
+
+## Install
+
+```bash
+pnpm add @g14o/logger
+```
+
+Requires Node `>=22.18` when running on the server.
+
+## Quick start
+
+```ts title="lib/logger.ts"
+import { createLogger } from "@g14o/logger";
+
+export const logger = createLogger({
+  name: "cache",
+  level: "info",
+  formatOptions: { pretty: true },
+  transports: [{ type: "console" }],
+});
+
+logger.info("Cache hit", { key: "users:1" });
+logger.warn("Cache read error", { key: "users:1", err: "timeout" });
+```
+
+`createLogger()` is valid. Defaults:
+
+| Option | Default |
+|--------|---------|
+| `level` | `"info"` |
+| `transports` | `[{ type: "console" }]` |
+| `formatOptions.pretty` | `false` (plain console) |
+| `formatOptions.time` | enabled, `"time"` (`HH:MM:SS` UTC) |
+| `redact` | `["password", "token", "authorization"]` |
+
+## Transports
+
+Built-in transports are configured as a discriminated union. Pretty mode and other formatting live under `formatOptions` (logger-level or per-transport overrides):
+
+| Type | Options | Output |
+|------|---------|--------|
+| `console` | `formatOptions?` | Human-readable lines; colorized when `pretty: true` |
+| `json` | `formatOptions?` | One JSON object per line (or pretty-printed) |
+
+```ts
+// Development — pretty console
+createLogger({
+  formatOptions: { pretty: true },
+  transports: [{ type: "console" }],
+});
+
+// Production — structured JSON
+createLogger({
+  transports: [{ type: "json" }],
+});
+
+// Both (pretty only on console via transport override)
+createLogger({
+  transports: [
+    { type: "console", formatOptions: { pretty: true } },
+    { type: "json" },
+  ],
+});
+```
+
+## Severity levels
+
+Order (lowest to highest): `trace` < `debug` < `info` / `start` / `success` < `warn` < `error` < `fatal`.
+
+Use `"silent"` to suppress all output. The default threshold is `"info"`, so `trace` and `debug` are hidden unless you lower the level.
+
+## Next steps
+
+- [Formatting](/packages/logger/formatting) — pretty console, JSON, timestamps, errors, Node vs browser
+- [Examples](/packages/logger/examples) — child loggers, request IDs, timing, redaction, cache injection
+- [API reference](/packages/logger/api)

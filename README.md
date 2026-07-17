@@ -7,6 +7,7 @@ Monorepo for [`@g14o/*`](packages/cache) npm packages.
 ## What it provides
 
 - **[@g14o/cache](packages/cache/README.md)** — `createCache()` / `withCache()` with Upstash Redis
+- **[@g14o/logger](packages/logger/README.md)** — zero-dependency isomorphic structured logger
 - **[@g14o/ratelimit](packages/ratelimit/core/README.md)** — framework-agnostic rate limiting (`Request` / `Response`)
 - **[@g14o/ratelimit-nextjs](packages/ratelimit/nextjs/README.md)** — Next.js rate limiting (`NextRequest` / `NextResponse`)
 - **[@g14o/env-core](packages/env-core/README.md)** — typesafe environment variables via Standard Schema
@@ -17,6 +18,7 @@ Monorepo for [`@g14o/*`](packages/cache) npm packages.
 
 ```bash
 pnpm add @g14o/cache @upstash/redis
+pnpm add @g14o/logger
 pnpm add @g14o/ratelimit @upstash/redis @upstash/ratelimit
 pnpm add @g14o/ratelimit-nextjs @upstash/redis @upstash/ratelimit next
 pnpm add @g14o/paystack zod
@@ -46,6 +48,7 @@ export const { withCache, invalidateCache } = createCache({
 | Path | Purpose |
 |------|---------|
 | [`packages/cache`](packages/cache) | Standalone cache package |
+| [`packages/logger`](packages/logger) | Zero-dependency isomorphic structured logger |
 | [`packages/ratelimit/core`](packages/ratelimit/core), [`packages/ratelimit/nextjs`](packages/ratelimit/nextjs) | Rate limiting (agnostic + Next.js) |
 | [`packages/env-core`](packages/env-core) | Environment variable validation |
 | [`packages/paystack`](packages/paystack) | Paystack API client |

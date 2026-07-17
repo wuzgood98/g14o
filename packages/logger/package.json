@@ -1,0 +1,67 @@
+{
+  "name": "@g14o/logger",
+  "version": "0.1.0",
+  "description": "Zero-dependency isomorphic structured logger core for @g14o packages.",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuzgood98/g14o.git",
+    "directory": "packages/logger"
+  },
+  "bugs": "https://github.com/wuzgood98/g14o/issues",
+  "homepage": "https://docs.g14o.dev/packages/logger",
+  "files": [
+    "dist",
+    "README.md",
+    "THIRD_PARTY_NOTICES.md"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "clean": "rimraf dist",
+    "prepack": "tsdown",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@workspace/typescript-config": "workspace:*",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.22.1",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "browser": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "dev-source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "browser": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.mts"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "logger",
+    "logging",
+    "structured-logging",
+    "browser",
+    "isomorphic"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  }
+}

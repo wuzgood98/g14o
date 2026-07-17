@@ -48,7 +48,15 @@ const envCoreSmoke = {
   exports: ["createEnv", "InvalidEnvironmentVariablesError"],
 };
 
+const loggerSmoke = {
+  filter: "@g14o/logger",
+  importPath: "@g14o/logger",
+  distFile: "dist/index.mjs",
+  exports: ["createLogger"],
+};
+
 const standalonePackages = [
+  loggerSmoke,
   {
     filter: "@g14o/cache",
     importPath: "@g14o/cache",
@@ -294,6 +302,16 @@ try {
     const packedPkg = JSON.parse(
       readFileSync(join(pkgRoot, "package.json"), "utf8")
     );
+
+    if (
+      importPath === loggerSmoke.importPath &&
+      packedPkg.dependencies &&
+      Object.keys(packedPkg.dependencies).length > 0
+    ) {
+      throw new Error(
+        `${importPath}: expected no runtime dependencies (got ${JSON.stringify(packedPkg.dependencies)})`
+      );
+    }
 
     const rootExport = packedPkg.exports?.["."];
     const importTarget =

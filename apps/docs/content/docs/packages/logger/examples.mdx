@@ -1,0 +1,122 @@
+---
+title: Examples
+description: Child loggers, request IDs, timing, redaction, and cache injection.
+---
+
+## Process lifecycle (`start` / `success`)
+
+Use `start` to announce the beginning or progress of a process, and `success` when it completes:
+
+```ts
+logger.start("Migrating database", { version: 3 });
+// ... work ...
+logger.success("Migration complete", { rows: 1200 });
+```
+
+Both share the `info` severity tier, so they emit at the default `"info"` threshold.
+
+## Child loggers
+
+```ts
+const requestLogger = logger.child({ requestId: "req-123" });
+
+requestLogger.info("handled", { status: 200 });
+// meta: { requestId: "req-123", status: 200 }
+```
+
+Per-call meta overrides child bindings with the same key.
+
+## Request IDs
+
+Use `withRequestId` to create a request-scoped child logger. When no id is passed, one is generated automatically:
+
+```ts
+const requestLogger = logger.withRequestId();
+// or with an explicit id from middleware:
+const requestLogger = logger.withRequestId(req.headers["x-request-id"]);
+
+requestLogger.info("handled", { status: 200 });
+// meta: { requestId: "...", status: 200 }
+```
+
+`withRequestId` is sugar over `child({ requestId })` and works with all transports.
+
+## Timing
+
+Measure elapsed time with `time`. Calling it starts a timer; the returned stop function logs at `success` level with `durationMs` in meta:
+
+```ts
+const stop = logger.time("Handled request", { route: "/users" });
+// ... work ...
+stop({ status: 200 });
+// success: "Handled request" {"route":"/users","status":200,"durationMs":43}
+```
+
+Timing inherits child bindings, so it works naturally with request-scoped loggers:
+
+```ts
+const requestLogger = logger.withRequestId("req-123");
+const stop = requestLogger.time("Request complete");
+stop();
+// meta: { requestId: "req-123", durationMs: 25 }
+```
+
+## Redaction
+
+Sensitive keys are redacted recursively (case-insensitive). Defaults are `password`, `token`, and `authorization`. Values become `"[REDACTED]"` without mutating the original metadata:
+
+```ts
+import { createLogger } from "@g14o/logger";
+
+const logger = createLogger({
+  redact: ["password", "token", "authorization", "ssn"],
+});
+
+logger.info("user created", {
+  email: "a@b.com",
+  password: "secret",
+  nested: { token: "abc" },
+});
+// meta: { email: "a@b.com", password: "[REDACTED]", nested: { token: "[REDACTED]" } }
+```
+
+## Multiple transports
+
+```ts
+const logger = createLogger({
+  name: "api",
+  formatOptions: { pretty: true },
+  transports: [{ type: "console" }, { type: "json" }],
+});
+```
+
+Every emitted record is written to each configured transport.
+
+## Inject into `@g14o/cache`
+
+```ts
+import { createCache } from "@g14o/cache";
+import { createLogger } from "@g14o/logger";
+
+const logger = createLogger({ name: "cache" });
+
+export const { withCache } = createCache({ logger });
+```
+
+`Logger` is assignable to the broader logger shape accepted by `@g14o/cache`.
+
+## Browser usage
+
+No configuration changes are required for browsers:
+
+```ts
+import { createLogger } from "@g14o/logger";
+
+export const logger = createLogger({
+  name: "app",
+  formatOptions: { pretty: true },
+  transports: [{ type: "console" }],
+});
+```
+
+See [Formatting](/packages/logger/formatting) for Node vs browser prefix differences.

@@ -1,0 +1,68 @@
+---
+title: API Reference
+description: Types and options for createLogger and built-in transports.
+---
+
+## createLogger
+
+```ts
+import { createLogger } from "@g14o/logger";
+
+const logger = createLogger(options);
+```
+
+Returns a [`Logger`](#logger).
+
+## LoggerOptions
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="LoggerOptions" nameLabel="Option" />
+
+## FormatOptions
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="FormatOptions" nameLabel="Option" />
+
+## LevelFormatOptions
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="LevelFormatOptions" nameLabel="Option" />
+
+## JsonFormatOptions
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="JsonFormatOptions" nameLabel="Option" />
+
+## Logger
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="Logger" nameLabel="Prop" />
+
+Primary call shape is `message, meta?` for most levels. `error` and `fatal` accept `error, message?`. Broader `(...args: unknown[])` overloads keep the type assignable to cache-style logger contracts; unsupported extra arguments are preserved under `details`, not printf-interpolated.
+
+## ConsoleTransport
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="ConsoleTransport" nameLabel="Option" />
+
+## JsonTransport
+
+<OptionsTable path="../../packages/logger/src/types.ts" name="JsonTransport" nameLabel="Option" />
+
+## Timestamp and format types
+
+| Type / constant | Description |
+|-----------------|-------------|
+| `TimestampFormat` | `"time"` \| `"time12"` \| `"iso"` \| `"utcString"` |
+| `TimestampTimezone` | `"utc"` \| `"local"` |
+| `TimestampOption` | `boolean` or `{ enabled: false }` / `{ enabled: true; format?; timezone? }` |
+| `ResolvedTimestampConfig` | Resolved `{ enabled, format, timezone }` used by transports |
+| `JsonFieldGroup` | `"timestamp"` \| `"level"` \| `"name"` \| `"message"` \| `"meta"` |
+| `LevelPrefixKind` | `"symbol"` \| `"badge"` |
+| `ActiveLogLevel` | Log levels excluding `"silent"` |
+| `DEFAULT_TIMESTAMP_FORMAT` | `"time"` |
+| `DEFAULT_TIMESTAMP_CONFIG` | `{ enabled: true, format: "time", timezone: "utc" }` |
+| `DEFAULT_FORMAT_OPTIONS` | Full resolved defaults for `formatOptions` |
+| `DEFAULT_JSON_FIELD_ORDER` | Default JSON group order |
+| `resolveFormatOptions` | Normalizes partial `FormatOptions` into `ResolvedFormatOptions` |
+| `mergeFormatOptions` | Deep-merges transport overrides over resolved logger options |
+
+## Exported types
+
+From `@g14o/logger`:
+
+`createLogger`, `Logger`, `LoggerOptions`, `FormatOptions`, `ResolvedFormatOptions`, `LevelFormatOptions`, `JsonFormatOptions`, `JsonFieldGroup`, `ActiveLogLevel`, `Transport`, `ConsoleTransport`, `JsonTransport`, `LogLevel`, `TimestampFormat`, `TimestampOption`, `TimestampTimezone`, `ResolvedTimestampConfig`, `DEFAULT_TIMESTAMP_FORMAT`, `DEFAULT_TIMESTAMP_CONFIG`, `DEFAULT_FORMAT_OPTIONS`, `DEFAULT_JSON_FIELD_ORDER`, `resolveFormatOptions`, `mergeFormatOptions`.
