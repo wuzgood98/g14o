@@ -528,6 +528,37 @@ describe("transport formatting", () => {
     expect(parsed.wrapper.err.message).toBe("inner");
   });
 
+  it("does not throw on circular or bigint meta in JSON and inline output", () => {
+    const circular: Record<string, unknown> = { label: "cycle" };
+    circular.self = circular;
+    const record: LogRecord = {
+      ...sampleRecord,
+      meta: { circular, amount: 10n },
+    };
+
+    expect(() => formatJson(record)).not.toThrow();
+    expect(() => formatPlain(record)).not.toThrow();
+
+    const parsed = JSON.parse(formatJson(record)) as {
+      amount: string;
+      circular: { label: string; self: string };
+    };
+    expect(parsed.amount).toBe("10");
+    expect(parsed.circular.self).toBe("[Circular]");
+    expect(formatPlain(record)).toContain("[Circular]");
+    expect(formatPlain(record)).toContain('"amount":"10"');
+  });
+
+  it("omits empty metadata from inline plain output", () => {
+    const record: LogRecord = {
+      ...sampleRecord,
+      meta: {},
+    };
+    const line = formatPlain(record, FORMAT_TIME_OFF);
+    expect(line).toBe("INFO    [cache] Cache hit");
+    expect(line).not.toContain("{}");
+  });
+
   it("formats JSON with stable key order", () => {
     const parsed = JSON.parse(formatJson(sampleRecord)) as Record<
       string,
