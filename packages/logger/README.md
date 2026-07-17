@@ -2,7 +2,7 @@
 
 > Documentation: [docs.g14o.dev/packages/logger](https://docs.g14o.dev/packages/logger)
 
-Isomorphic structured logger for Node.js and the browser. Accepts a message string and optional plain-object meta on every call — no printf-style interpolation.
+Isomorphic structured logger for Node.js and the browser. Prefer a message plus optional plain-object meta — no printf-style interpolation.
 
 **Zero runtime dependencies.**
 
