@@ -2,7 +2,7 @@
 
 > Documentation: [docs.g14o.dev/packages/logger](https://docs.g14o.dev/packages/logger)
 
-Zero-dependency structured logger core for `@g14o` packages. Accepts a message string and optional plain-object meta on every call — no printf-style interpolation.
+Isomorphic structured logger for Node.js and the browser. Accepts a message string and optional plain-object meta on every call — no printf-style interpolation.
 
 **Zero runtime dependencies.**
 
@@ -139,10 +139,10 @@ Transport `formatOptions` deep-merge over logger settings (`time`, `levels`, and
 
 #### Timestamps (`formatOptions.time`)
 
-Timestamps are enabled by default (`DEFAULT_TIMESTAMP_CONFIG`). Disable them or choose a format:
+Timestamps are enabled by default. Disable them or choose a format:
 
 ```ts
-createLogger({}); // timestamps on, "time" format (default)
+createLogger(); // timestamps on, "time" format (default)
 createLogger({ formatOptions: { time: false } });
 createLogger({ formatOptions: { time: { enabled: true } } }); // same as default
 createLogger({ formatOptions: { time: { enabled: true, format: "time12" } } }); // 06:45:30 PM
@@ -273,10 +273,6 @@ export const { withCache } = createCache({ logger });
 | `json` | `formatOptions?` | One JSON object per line (or pretty-printed when `json.pretty` is set) |
 
 Pretty console prefixes (Node defaults): colored glyphs `→` trace, `◆`/`D` debug, `ℹ`/`i` info, `✔`/`✓` success, `◐`/`o` start, `⚠`/`‼` warn, `☠`/`×` fatal (Unicode / ASCII fallback); background badge ` ERROR ` (red). In the browser, `warn`/`error`/`fatal` use badges and lower levels use `·`/`●`/`i`/`√`/`◐`. Override per level with `formatOptions.levels`.
-
-### Types
-
-Exported: `Logger`, `LoggerOptions`, `FormatOptions`, `ResolvedFormatOptions`, `LevelFormatOptions`, `JsonFormatOptions`, `JsonFieldGroup`, `ActiveLogLevel`, `Transport`, `ConsoleTransport`, `JsonTransport`, `LogLevel`, `TimestampFormat`, `TimestampOption`, `TimestampTimezone`, `ResolvedTimestampConfig`, `DEFAULT_TIMESTAMP_FORMAT`, `DEFAULT_TIMESTAMP_CONFIG`, `DEFAULT_FORMAT_OPTIONS`, `DEFAULT_JSON_FIELD_ORDER`, `resolveFormatOptions`, `mergeFormatOptions`.
 
 ## License
 

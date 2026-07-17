@@ -50,19 +50,5 @@ Primary call shape is `message, meta?` for most levels. `error` and `fatal` acce
 | `TimestampFormat` | `"time"` \| `"time12"` \| `"iso"` \| `"utcString"` |
 | `TimestampTimezone` | `"utc"` \| `"local"` |
 | `TimestampOption` | `boolean` or `{ enabled: false }` / `{ enabled: true; format?; timezone? }` |
-| `ResolvedTimestampConfig` | Resolved `{ enabled, format, timezone }` used by transports |
 | `JsonFieldGroup` | `"timestamp"` \| `"level"` \| `"name"` \| `"message"` \| `"meta"` |
 | `LevelPrefixKind` | `"symbol"` \| `"badge"` |
-| `ActiveLogLevel` | Log levels excluding `"silent"` |
-| `DEFAULT_TIMESTAMP_FORMAT` | `"time"` |
-| `DEFAULT_TIMESTAMP_CONFIG` | `{ enabled: true, format: "time", timezone: "utc" }` |
-| `DEFAULT_FORMAT_OPTIONS` | Full resolved defaults for `formatOptions` |
-| `DEFAULT_JSON_FIELD_ORDER` | Default JSON group order |
-| `resolveFormatOptions` | Normalizes partial `FormatOptions` into `ResolvedFormatOptions` |
-| `mergeFormatOptions` | Deep-merges transport overrides over resolved logger options |
-
-## Exported types
-
-From `@g14o/logger`:
-
-`createLogger`, `Logger`, `LoggerOptions`, `FormatOptions`, `ResolvedFormatOptions`, `LevelFormatOptions`, `JsonFormatOptions`, `JsonFieldGroup`, `ActiveLogLevel`, `Transport`, `ConsoleTransport`, `JsonTransport`, `LogLevel`, `TimestampFormat`, `TimestampOption`, `TimestampTimezone`, `ResolvedTimestampConfig`, `DEFAULT_TIMESTAMP_FORMAT`, `DEFAULT_TIMESTAMP_CONFIG`, `DEFAULT_FORMAT_OPTIONS`, `DEFAULT_JSON_FIELD_ORDER`, `resolveFormatOptions`, `mergeFormatOptions`.
