@@ -74,12 +74,19 @@ function replaceClose(
   index: number,
   string: string,
   close: string,
-  replace: string,
-  head = string.slice(0, index) + replace,
-  tail = string.slice(index + close.length),
-  next = tail.indexOf(close)
+  replace: string
 ): string {
-  return head + (next < 0 ? tail : replaceClose(next, tail, close, replace));
+  let result = "";
+  let current = string;
+  let at = index;
+
+  while (at >= 0) {
+    result += current.slice(0, at) + replace;
+    current = current.slice(at + close.length);
+    at = current.indexOf(close);
+  }
+
+  return result + current;
 }
 
 function clearBleed(
