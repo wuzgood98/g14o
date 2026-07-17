@@ -2,6 +2,7 @@
   "title": "Packages",
   "pages": [
     "cache",
+    "logger",
     "ratelimit",
     "ratelimit-nextjs",
     "ratelimit-express",

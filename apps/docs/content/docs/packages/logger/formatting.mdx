@@ -1,0 +1,173 @@
+---
+title: Formatting
+description: Pretty console, JSON transport, timestamps, errors, and Node vs browser output.
+---
+
+## Console transport
+
+Plain console (default) emits padded uppercase level labels and a single text line.
+
+Pretty console (`formatOptions.pretty: true`) adds level prefixes, optional `[name]`, inline JSON metadata, and timestamps:
+
+```text
+→ [cache] Entering get {"key":"users:1"}                            00:00:00
+◐ [cache] Migrating database {"version":3}                          00:00:01
+✔ [cache] Migration complete {"rows":1200}                          00:00:02
+ℹ [cache] Cache hit {"key":"users:1"}                               00:00:03
+⚠ [cache] Cache read error {"key":"users:1"}                        00:00:04
+```
+
+Timestamps right-align when the terminal is at least 80 columns and both sides fit; otherwise they append with a single space. Multiline messages keep the first line alignable and indent continuations.
+
+### Node prefixes
+
+| Level | Kind | Unicode | ASCII fallback |
+|-------|------|---------|----------------|
+| `trace` | symbol | `→` | `→` |
+| `debug` | symbol | `◆` | `D` |
+| `info` | symbol | `ℹ` | `i` |
+| `success` | symbol | `✔` | `✓` |
+| `start` | symbol | `◐` | `o` |
+| `warn` | symbol | `⚠` | `‼` |
+| `error` | badge | ` ERROR ` | — |
+| `fatal` | symbol | `☠` | `×` |
+
+ANSI colors follow Colorette-style detection: disabled by `NO_COLOR` / `--no-color` or a dumb `TERM`; enabled by `FORCE_COLOR` / `--color`, a compatible TTY, Windows (non-dumb), or supported CI. When colors are unsupported, pretty layout and glyphs remain but ANSI is omitted. Glyph selection falls back to ASCII when Unicode is unsupported.
+
+Override glyphs, ASCII fallbacks, labels, and kind (`symbol` / `badge`) per level with `formatOptions.levels`.
+
+### Browser prefixes
+
+In the browser, pretty mode maps styles to `console` `%c` CSS. Browser defaults use badges for `warn`, `error`, and `fatal`. Lower levels use glyphs (`·` / `●` / `i` / `√` / `◐`) with ASCII fallbacks (`.` / `*` / `i` / `v` / `o`). Plain console output omits styling and uses a single text argument.
+
+## JSON transport
+
+```ts
+const logger = createLogger({
+  name: "api",
+  level: "info",
+  transports: [{ type: "json" }],
+});
+```
+
+Each line is a single JSON object. Default key order: `timestamp` (when enabled), `level`, `name` (when provided), `message`, then meta keys sorted alphabetically. `Error` values serialize with `name`, `message`, `stack`, and `cause` when present.
+
+Customize order and indentation with `formatOptions.json`:
+
+```ts
+createLogger({
+  transports: [{ type: "json" }],
+  formatOptions: {
+    json: {
+      fieldOrder: ["level", "message", "meta", "timestamp"],
+      pretty: true, // 2 spaces; or a number 0–10
+    },
+  },
+});
+```
+
+`fieldOrder` lists named groups. `meta` expands to alphabetically sorted metadata. Missing groups append in the default order; duplicates are ignored after first use.
+
+## Format options
+
+Customize console appearance (and timestamps / JSON for all transports) via `formatOptions`. Pretty mode lives here — not on `ConsoleTransport`:
+
+```ts
+createLogger({
+  name: "api",
+  formatOptions: {
+    pretty: true,
+    time: { enabled: true, format: "time12", timezone: "local" },
+    meta: false,
+    name: false,
+    align: false,
+    colors: true,
+    stack: false,
+    levels: {
+      info: { symbol: "★", label: "NOTE" },
+      warn: { kind: "badge" },
+    },
+    json: {
+      fieldOrder: ["level", "message", "meta"],
+      pretty: 4,
+    },
+  },
+  transports: [
+    { type: "console" },
+    {
+      type: "json",
+      formatOptions: { json: { pretty: false } }, // deep-merged override
+    },
+  ],
+});
+```
+
+| Key | Default | Applies to | Purpose |
+|-----|---------|------------|---------|
+| `pretty` | `false` | console | Glyph/badge console mode |
+| `time` | enabled, `"time"`, `"utc"` | console + JSON | Timestamp display, format, and timezone |
+| `meta` | `true` | console | Inline `{...}` metadata on log lines |
+| `name` | `true` | console | `[name]` prefix segment |
+| `align` | `80` | console | Min width for right-aligned timestamps; `false` = always compact |
+| `colors` | `"auto"` | pretty console | Override ANSI (Node) / `%c` CSS (browser) detection |
+| `stack` | `true` | pretty console errors | Stack frames below error/fatal messages |
+| `levels` | `{}` | console | Per-level `symbol`, `fallbackSymbol`, `label`, `kind` |
+| `json` | compact, default field order | JSON | `fieldOrder` groups and `pretty` indentation |
+
+Transport `formatOptions` deep-merge over logger settings. Nested `time`, `levels`, and `json` objects merge rather than replace. Console-only toggles do not strip fields from JSON.
+
+## Timestamps
+
+Timestamps are enabled by default (`{ enabled: true, format: "time", timezone: "utc" }`). Configure via `formatOptions.time`:
+
+```ts
+createLogger(); // timestamps on, "time" format (default)
+createLogger({ formatOptions: { time: false } });
+createLogger({ formatOptions: { time: { enabled: true } } }); // same as default
+createLogger({ formatOptions: { time: { enabled: true, format: "time12" } } }); // 06:45:30 PM
+createLogger({ formatOptions: { time: { enabled: true, format: "iso" } } }); // full ISO 8601
+createLogger({ formatOptions: { time: { enabled: true, format: "utcString" } } }); // Thu, 16 Jul 2026 18:45:30 GMT
+createLogger({ formatOptions: { time: { enabled: true, timezone: "local" } } }); // local clock
+```
+
+| Format | Example (UTC) |
+|--------|---------------|
+| `"time"` | `18:45:30` |
+| `"time12"` | `06:45:30 PM` |
+| `"iso"` | `2026-07-16T18:45:30.000Z` |
+| `"utcString"` | `Thu, 16 Jul 2026 18:45:30 GMT` |
+
+`timezone` is `"utc"` (default) or `"local"`. With `"local"`, `time` / `time12` use the local clock; `iso` stays full ISO; `utcString` uses `Date#toString()`.
+
+When disabled, console output has no right-aligned time and JSON omits the `timestamp` field. An internal ISO timestamp is still attached to each record for transport use.
+
+## Errors
+
+`error` and `fatal` take an `Error` first, with an optional message. The message (or `error.message` when omitted) prints inline; when a separate message is given, `error.message` and the stack render structured below. Stack output drops only the duplicate error header and keeps frames plus other useful detail lines.
+
+```ts
+logger.error(new Error("connection refused"), "Database unavailable");
+logger.fatal(new Error("process crashed"), "Unrecoverable failure");
+```
+
+```text
+ ERROR  [cache] Database unavailable                                00:00:05
+
+  connection refused
+  at connect (db.ts:42:11)
+  at bootstrap (server.ts:8:3)
+
+☠ [cache] Unrecoverable failure                                     00:00:06
+
+  process crashed
+  at bootstrap (server.ts:8:3)
+  at main (server.ts:1:1)
+```
+
+## Console method routing
+
+| Levels | Console method |
+|--------|----------------|
+| `trace`, `debug`, `info`, `start`, `success` | `console.log` |
+| `warn` | `console.warn` |
+| `error`, `fatal` | `console.error` |

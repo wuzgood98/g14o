@@ -1,13 +1,19 @@
-import type { Logger } from "@g14o/cache/types";
+import { createLogger } from "@g14o/logger";
 
-export const logger: Logger = {
-  info: (...args: unknown[]) => {
-    console.info(...args);
+export const logger = createLogger({
+  formatOptions: {
+    pretty: true,
+    time: {
+      enabled: true,
+      format: "time12",
+    },
+    levels: {
+      error: {
+        kind: "symbol",
+      },
+      fatal: {
+        kind: "badge",
+      },
+    },
   },
-  warn: (...args: unknown[]) => {
-    console.warn(...args);
-  },
-  error: (...args: unknown[]) => {
-    console.error(...args);
-  },
-};
+});

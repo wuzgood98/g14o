@@ -10,7 +10,8 @@
     ["@g14o/ratelimit-express"],
     ["@g14o/ratelimit-hono"],
     ["@g14o/paystack"],
-    ["@g14o/paystack-better-auth"]
+    ["@g14o/paystack-better-auth"],
+    ["@g14o/logger"]
   ],
   "linked": [],
   "access": "public",
