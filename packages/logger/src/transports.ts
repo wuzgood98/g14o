@@ -27,6 +27,7 @@ import {
   resolveJsonFieldOrder,
   resolveJsonIndent,
 } from "./utils/format-options";
+import { safeJsonStringify } from "./utils/safe-json";
 import { normalizeStack } from "./utils/stack";
 import { formatTimestamp } from "./utils/timestamp";
 
@@ -233,28 +234,12 @@ function finalizeLine(
   return padToRight(content, suffix, width, align);
 }
 
-function serializeError(error: Error): Record<string, unknown> {
-  const result: Record<string, unknown> = {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-  };
-  if (error.cause !== undefined) {
-    result.cause = error.cause;
-  }
-  return result;
-}
-
-function metaReplacer(_key: string, value: unknown): unknown {
-  return value instanceof Error ? serializeError(value) : value;
-}
-
 function formatMetaInline(meta: Record<string, unknown>): string {
   const keys = Object.keys(meta);
   if (keys.length === 0) {
     return "";
   }
-  return ` ${JSON.stringify(meta, metaReplacer)}`;
+  return ` ${safeJsonStringify(meta)}`;
 }
 
 /** Serializes meta to inline JSON, omitting the given keys. */
@@ -491,7 +476,7 @@ function formatJson(
   }
 
   const indent = resolveJsonIndent(formatOptions.json.pretty);
-  return JSON.stringify(payload, metaReplacer, indent);
+  return safeJsonStringify(payload, indent);
 }
 
 function writeToConsole(

@@ -8,6 +8,7 @@ import type {
 } from "./types";
 import { forceTextPresentation, selectGlyph } from "./utils/display";
 import { DEFAULT_FORMAT_OPTIONS } from "./utils/format-options";
+import { safeJsonStringify } from "./utils/safe-json";
 import { normalizeStack } from "./utils/stack";
 import { formatTimestamp } from "./utils/timestamp";
 
@@ -157,28 +158,12 @@ function buildConsoleArgs(segments: BrowserSegment[]): unknown[] {
   return [format, ...styles];
 }
 
-function serializeError(error: Error): Record<string, unknown> {
-  const result: Record<string, unknown> = {
-    name: error.name,
-    message: error.message,
-    stack: error.stack,
-  };
-  if (error.cause !== undefined) {
-    result.cause = error.cause;
-  }
-  return result;
-}
-
-function metaReplacer(_key: string, value: unknown): unknown {
-  return value instanceof Error ? serializeError(value) : value;
-}
-
 function formatMetaInline(meta: Record<string, unknown>): string {
   const keys = Object.keys(meta);
   if (keys.length === 0) {
     return "";
   }
-  return ` ${JSON.stringify(meta, metaReplacer)}`;
+  return ` ${safeJsonStringify(meta)}`;
 }
 
 function formatMetaInlineExcluding(
