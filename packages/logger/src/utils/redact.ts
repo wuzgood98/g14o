@@ -1,4 +1,5 @@
 const REDACTED = "[REDACTED]";
+const CIRCULAR = "[Circular]";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
@@ -17,20 +18,35 @@ function shouldRedactKey(key: string, redactKeys: Set<string>): boolean {
   return redactKeys.has(key.toLowerCase());
 }
 
-function cloneAndRedact(value: unknown, redactKeys: Set<string>): unknown {
+function cloneAndRedact(
+  value: unknown,
+  redactKeys: Set<string>,
+  seen: WeakSet<object>
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => cloneAndRedact(item, redactKeys));
+    if (seen.has(value)) {
+      return CIRCULAR;
+    }
+    seen.add(value);
+    const result = value.map((item) => cloneAndRedact(item, redactKeys, seen));
+    seen.delete(value);
+    return result;
   }
 
   if (isPlainObject(value)) {
+    if (seen.has(value)) {
+      return CIRCULAR;
+    }
+    seen.add(value);
     const result: Record<string, unknown> = {};
     for (const [key, nestedValue] of Object.entries(value)) {
       if (shouldRedactKey(key, redactKeys)) {
         result[key] = REDACTED;
       } else {
-        result[key] = cloneAndRedact(nestedValue, redactKeys);
+        result[key] = cloneAndRedact(nestedValue, redactKeys, seen);
       }
     }
+    seen.delete(value);
     return result;
   }
 
@@ -50,6 +66,6 @@ export function redactMeta(
   }
 
   const redactKeys = normalizeRedactKeys(keys);
-  const result = cloneAndRedact(meta, redactKeys);
+  const result = cloneAndRedact(meta, redactKeys, new WeakSet());
   return isPlainObject(result) ? result : {};
 }

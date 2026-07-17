@@ -54,4 +54,32 @@ describe("redactMeta", () => {
     expect(redacted).toEqual({ user: "alice" });
     expect(redacted).not.toBe(meta);
   });
+
+  it("replaces cyclic references instead of overflowing", () => {
+    const meta: Record<string, unknown> = {
+      user: "alice",
+      password: "secret",
+    };
+    meta.self = meta;
+
+    expect(() => redactMeta(meta, ["password"])).not.toThrow();
+    expect(redactMeta(meta, ["password"])).toEqual({
+      user: "alice",
+      password: "[REDACTED]",
+      self: "[Circular]",
+    });
+  });
+
+  it("fully clones shared non-cyclic references", () => {
+    const shared = { token: "abc", id: 1 };
+    const meta = { left: shared, right: shared };
+
+    const redacted = redactMeta(meta, ["token"]);
+
+    expect(redacted).toEqual({
+      left: { token: "[REDACTED]", id: 1 },
+      right: { token: "[REDACTED]", id: 1 },
+    });
+    expect(redacted.left).not.toBe(redacted.right);
+  });
 });
