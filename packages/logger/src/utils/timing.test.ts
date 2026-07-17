@@ -4,6 +4,7 @@ import { monotonicNow } from "./timing";
 describe("monotonicNow", () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("uses performance.now when available", () => {
