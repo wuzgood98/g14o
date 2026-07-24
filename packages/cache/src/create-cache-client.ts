@@ -8,6 +8,8 @@ import {
   type CacheOptions,
   defaultKeyGenerator,
 } from "./internals";
+import type { InternalLogger } from "./logging";
+import { resolveLogger } from "./logging";
 import {
   createFallbackMemoryStore,
   type ResolveStoreOptions,
@@ -15,8 +17,7 @@ import {
 } from "./store/factory";
 import type { CacheStore } from "./store/interface";
 import { InMemoryCache } from "./store/memory";
-import type { InMemoryEnvOptions, Logger, Result } from "./types";
-import { noopLogger } from "./types";
+import type { InMemoryEnvOptions, Result } from "./types";
 
 /** TTL overrides for one environment bucket (values in **seconds**). */
 export interface CacheEnvironmentTtlOverride {
@@ -40,8 +41,6 @@ export interface CacheTtlOverride {
 /** Options for {@link createCache}. */
 export type CreateCacheOptions = InMemoryEnvOptions &
   ResolveStoreOptions & {
-    /** Application logger. Defaults to a silent no-op logger. */
-    logger?: Logger;
     /**
      * Override default TTL seconds per duration name (`short` | `medium` | `long`).
      * Accepts either a flat map (applied to the active environment) or a nested
@@ -57,10 +56,21 @@ export type CreateCacheOptions = InMemoryEnvOptions &
       functionName: string,
       args: unknown[]
     ) => string;
-    /** Default for `withCache` when `cacheFailures` is omitted. Default `false`. */
+    /**
+     * Default for `withCache` when `cacheFailures` is omitted.
+     *
+     * @default false
+     */
     cacheFailures?: CacheFailuresOption;
     /** Default stale-while-revalidate window in seconds for `withCache`. */
     staleWhileRevalidate?: number;
+    /**
+     * When `true`, log cache diagnostics to the console (`info` / `warn` / `error`).
+     * Silent by default.
+     *
+     * @default false
+     */
+    verbose?: boolean;
   };
 
 /**
@@ -160,7 +170,7 @@ interface CacheRuntime {
   envName: string;
   inMemoryDuringBuild: boolean;
   keyGenerator?: CreateCacheOptions["keyGenerator"];
-  logger: Logger;
+  logger: InternalLogger;
   staleWhileRevalidate?: number;
   ttl?: CacheTtlOverride | CacheEnvironmentTtlOverride;
 }
@@ -237,7 +247,7 @@ function shouldCacheValue(value: unknown, cacheFailures: boolean): boolean {
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: options.logger ?? noopLogger,
+    logger: resolveLogger(options.verbose),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     configuredStore: resolveStore(options),
     ttl: options.ttl,
@@ -252,7 +262,7 @@ function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
 
 function createStoreForRuntime(runtime: CacheRuntime): CacheStore {
   if (runtime.configuredStore) {
-    runtime.logger.info("Using configured cache store");
+    runtime.logger.info("[cache] Using configured store");
     return runtime.configuredStore;
   }
 
@@ -261,7 +271,9 @@ function createStoreForRuntime(runtime: CacheRuntime): CacheStore {
       inMemoryDuringBuild: runtime.inMemoryDuringBuild,
     })
   ) {
-    runtime.logger.info("Using in-memory cache (build/development mode)");
+    runtime.logger.info(
+      "[cache] Using in-memory store (build/development mode)"
+    );
     return createFallbackMemoryStore();
   }
 
@@ -284,33 +296,30 @@ function resolveTtlForRuntime(
 async function readCachedValue<T>(
   cache: CacheStore,
   cacheKey: string,
-  logger: Logger
+  logger: InternalLogger
 ): Promise<{ hit: T | null; stale: T | null }> {
   try {
     const cached = await cache.get<unknown>(cacheKey);
     // Only missing keys (`null`) are misses; a stored `undefined` is a hit.
     if (cached === null) {
-      logger.info(`Cache miss: ${cacheKey}`);
+      logger.info(`[cache] Miss: ${cacheKey}`);
       return { hit: null, stale: null };
     }
 
     if (isSwrEnvelope<T>(cached)) {
       const now = Date.now();
       if (now <= cached.freshUntil) {
-        logger.info(`Cache hit: ${cacheKey}`);
+        logger.info(`[cache] Hit: ${cacheKey}`);
         return { hit: cached.value, stale: null };
       }
-      logger.info(`Cache stale hit: ${cacheKey}`);
+      logger.info(`[cache] Stale hit: ${cacheKey}`);
       return { hit: null, stale: cached.value };
     }
 
-    logger.info(`Cache hit: ${cacheKey}`);
+    logger.info(`[cache] Hit: ${cacheKey}`);
     return { hit: cached as T, stale: null };
   } catch (error) {
-    logger.warn(
-      error,
-      `Cache read error for ${cacheKey}, falling back to function`
-    );
+    logger.warn(`[cache] Read failed for ${cacheKey}, falling back`, error);
   }
   return { hit: null, stale: null };
 }
@@ -321,7 +330,7 @@ async function writeCachedValue(
   value: unknown,
   ttlValue: number,
   staleWhileRevalidate: number,
-  logger: Logger
+  logger: InternalLogger
 ): Promise<void> {
   try {
     const storeValue =
@@ -341,11 +350,11 @@ async function writeCachedValue(
     } else {
       await cache.set(cacheKey, storeValue);
     }
-    logger.info(`Cached result: ${cacheKey}`);
+    logger.info(`[cache] Set: ${cacheKey}`);
   } catch (error) {
     logger.warn(
-      error,
-      `Cache write error for ${cacheKey}, continuing without caching`
+      `[cache] Write failed for ${cacheKey}, continuing without caching`,
+      error
     );
   }
 }
@@ -353,7 +362,7 @@ async function writeCachedValue(
 /**
  * Creates a cache client with bound methods for caching and invalidation.
  *
- * @param options - Store, legacy redis credentials, logger, environment, and optional defaults.
+ * @param options - Store, legacy redis credentials, environment, verbose logging, and optional defaults.
  * @returns {@link CacheClient} instance.
  *
  * @example
@@ -365,7 +374,7 @@ async function writeCachedValue(
  *     url: process.env.UPSTASH_REDIS_REST_URL!,
  *     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
  *   }),
- *   logger,
+ *   verbose: true,
  * });
  * ```
  */
@@ -456,7 +465,10 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
             logger
           );
         } catch (error) {
-          logger.warn(error, `Background cache refresh failed for ${cacheKey}`);
+          logger.warn(
+            `[cache] Background refresh failed for ${cacheKey}`,
+            error
+          );
         } finally {
           inflightRefreshes.delete(cacheKey);
         }
@@ -520,7 +532,7 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
       if (keys.length > 0) {
         await cache.delete(...keys);
         logger.info(
-          `Invalidated ${keys.length} cache keys matching: ${fullPattern}`
+          `[cache] Invalidated ${keys.length} keys for pattern: ${fullPattern}`
         );
         return { ok: true, data: keys.length };
       }
@@ -528,8 +540,8 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
       return { ok: true, data: 0 };
     } catch (error) {
       logger.error(
-        error,
-        `Cache invalidation error for pattern ${fullPattern}`
+        `[cache] Invalidation failed for pattern ${fullPattern}`,
+        error
       );
       return {
         ok: false,
@@ -550,10 +562,10 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
     try {
       const cache = getCache();
       const deleted = await cache.delete(key);
-      logger.info(`Invalidated cache key: ${key}`);
+      logger.info(`[cache] Invalidated key: ${key}`);
       return { ok: true, data: deleted > 0 };
     } catch (error) {
-      logger.error(error, `Cache invalidation error for key ${key}`);
+      logger.error(`[cache] Invalidation failed for key ${key}`, error);
       return {
         ok: false,
         error:
@@ -575,7 +587,7 @@ export function createCache(options: CreateCacheOptions = {}): CacheClient {
       const { logger } = runtime;
       // biome-ignore lint/complexity/noVoid: fire-and-forget async clear
       void Promise.resolve(cacheStore.clear()).catch((error) => {
-        logger.warn(error, "Background cache clear failed");
+        logger.warn("[cache] Background clear failed", error);
       });
       return { ok: true, data: undefined };
     }

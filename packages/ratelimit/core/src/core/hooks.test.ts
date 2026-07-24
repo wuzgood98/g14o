@@ -2,7 +2,6 @@ import { describe, expect, it, vi } from "vitest";
 import { createRateLimit } from "../create-rate-limit-client";
 import { defineStore } from "../store/create-store";
 import type { RateLimitStoreConfig } from "../store/interface";
-import type { Logger } from "../types";
 import type { RateLimitHooks } from "./hooks";
 
 function mockRequest(headers: Record<string, string | null> = {}): Request {
@@ -45,18 +44,6 @@ function createControllableStore(options?: {
     },
   });
   return { store, getCallCount: () => callCount };
-}
-
-function createSpyLogger(): Logger & { errorCalls: unknown[] } {
-  const errorCalls: unknown[] = [];
-  return {
-    errorCalls,
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn((error: unknown) => {
-      errorCalls.push(error);
-    }),
-  };
 }
 
 describe("createRateLimit lifecycle hooks", () => {
@@ -201,7 +188,12 @@ describe("createRateLimit lifecycle hooks", () => {
   });
 
   it("swallows hook errors and logs them", async () => {
-    const logger = createSpyLogger();
+    const infoSpy = vi
+      .spyOn(console, "info")
+      .mockImplementation(() => undefined);
+    const errorSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const hooks: RateLimitHooks = {
       onSuccess: () => {
         throw new Error("hook blew up");
@@ -211,7 +203,7 @@ describe("createRateLimit lifecycle hooks", () => {
     const rateLimit = createRateLimit({
       env: "production",
       store,
-      logger,
+      verbose: true,
       hooks,
     });
 
@@ -220,9 +212,12 @@ describe("createRateLimit lifecycle hooks", () => {
         tier: "strict",
       });
       expect(result.ok).toBe(true);
-      expect(logger.errorCalls).toHaveLength(1);
+      expect(errorSpy).toHaveBeenCalled();
+      expect(errorSpy.mock.calls[0]?.[0]).toBe("[ratelimit] Hook threw");
     } finally {
       rateLimit.reset();
+      infoSpy.mockRestore();
+      errorSpy.mockRestore();
     }
   });
 

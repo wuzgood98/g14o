@@ -33,7 +33,6 @@ See [Installation](/getting-started/installation) for per-package setup, or jump
 
 ```ts title="lib/cache.ts"
 import { createCache } from "@g14o/cache";
-import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 export const { withCache, invalidateCache } = createCache({
@@ -41,7 +40,7 @@ export const { withCache, invalidateCache } = createCache({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
   },
-  logger,
+  verbose: true,
 });
 ```
 

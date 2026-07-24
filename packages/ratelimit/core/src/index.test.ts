@@ -178,14 +178,18 @@ describe("createRateLimit (factory API)", () => {
     });
 
     it("strips CR/LF from req.url and identifier in log messages", async () => {
-      const logger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-      };
+      const infoSpy = vi
+        .spyOn(console, "info")
+        .mockImplementation(() => undefined);
+      const warnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const errorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
       const limited = createRateLimit({
         env: "test",
-        logger,
+        verbose: true,
       });
 
       try {
@@ -198,9 +202,9 @@ describe("createRateLimit (factory API)", () => {
         });
 
         const logMessages = [
-          ...logger.info.mock.calls,
-          ...logger.warn.mock.calls,
-          ...logger.error.mock.calls,
+          ...infoSpy.mock.calls,
+          ...warnSpy.mock.calls,
+          ...errorSpy.mock.calls,
         ]
           .flat()
           .filter((arg): arg is string => typeof arg === "string");
@@ -211,6 +215,43 @@ describe("createRateLimit (factory API)", () => {
         }
       } finally {
         limited.reset();
+        infoSpy.mockRestore();
+        warnSpy.mockRestore();
+        errorSpy.mockRestore();
+      }
+    });
+
+    it("logs diagnostics when verbose is true and stays silent when omitted", async () => {
+      const infoSpy = vi
+        .spyOn(console, "info")
+        .mockImplementation(() => undefined);
+      const silent = createRateLimit({ env: "test" });
+      const verbose = createRateLimit({ env: "test", verbose: true });
+
+      try {
+        await silent.checkRateLimit(
+          new Request("http://localhost/api/silent"),
+          {
+            tier: "strict",
+          }
+        );
+        expect(infoSpy).not.toHaveBeenCalled();
+
+        await verbose.checkRateLimit(
+          new Request("http://localhost/api/verbose"),
+          { tier: "strict" }
+        );
+        expect(infoSpy).toHaveBeenCalled();
+        expect(
+          infoSpy.mock.calls.some(
+            (call) =>
+              typeof call[0] === "string" && call[0].startsWith("[ratelimit]")
+          )
+        ).toBe(true);
+      } finally {
+        silent.reset();
+        verbose.reset();
+        infoSpy.mockRestore();
       }
     });
 

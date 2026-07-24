@@ -7,7 +7,6 @@ description: Create a rate limit client, custom tiers, and build-phase behavior.
 
 ```ts title="lib/ratelimit.ts"
 import { createRateLimit } from "@g14o/ratelimit";
-import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 export const { withRateLimit, checkRateLimit, withUserRateLimit } =
@@ -16,7 +15,7 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
       url: env.UPSTASH_REDIS_REST_URL,
       token: env.UPSTASH_REDIS_REST_TOKEN,
     },
-    logger,
+    verbose: true,
   });
 ```
 
@@ -29,7 +28,6 @@ Use an explicit store for new projects. The legacy `redis` option remains fully 
 ```ts title="lib/ratelimit.ts"
 import { createRateLimit } from "@g14o/ratelimit";
 import { upstashStore } from "@g14o/ratelimit/upstash";
-import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 const store = upstashStore({
@@ -37,7 +35,7 @@ const store = upstashStore({
   token: env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-export const { withRateLimit } = createRateLimit({ store, logger });
+export const { withRateLimit } = createRateLimit({ store, verbose: true });
 ```
 
 For a pre-built Redis client, use the wrapped form:

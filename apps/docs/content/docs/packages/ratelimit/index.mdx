@@ -19,7 +19,6 @@ Peers are optional in `package.json` metadata for metadata-only installs; add bo
 
 ```ts
 import { createRateLimit } from "@g14o/ratelimit";
-import { logger } from "@/lib/logger";
 
 export const { withRateLimit, checkRateLimit, withUserRateLimit } =
   createRateLimit({
@@ -27,7 +26,7 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
       url: process.env.UPSTASH_REDIS_REST_URL!,
       token: process.env.UPSTASH_REDIS_REST_TOKEN!,
     },
-    logger,
+    verbose: true,
   });
 ```
 
