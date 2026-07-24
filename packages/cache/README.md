@@ -25,14 +25,13 @@ Create an app-owned client in `lib/cache.ts`:
 ```ts
 import { createCache } from "@g14o/cache";
 import { upstashStore } from "@g14o/cache/upstash";
-import { logger } from "@/lib/logger";
 
 export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
   store: upstashStore({
     url: process.env.UPSTASH_REDIS_REST_URL!,
     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
   }),
-  logger,
+  verbose: true,
 });
 ```
 

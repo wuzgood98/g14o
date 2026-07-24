@@ -1,6 +1,8 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: route handler wrappers use dynamic args */
 
 import { isInMemoryEnv, resolveEnvName } from "../env";
+import type { InternalLogger } from "../logging";
+import { resolveLogger } from "../logging";
 import type { Duration } from "../parse-duration";
 import type { ResolveStoreOptions } from "../store/factory";
 import { createFallbackMemoryStore, resolveStore } from "../store/factory";
@@ -9,7 +11,7 @@ import type {
   RateLimitStore,
   RateLimitStoreLimiter,
 } from "../store/interface";
-import { type InMemoryEnvOptions, type Logger, noopLogger } from "../types";
+import type { InMemoryEnvOptions } from "../types";
 import {
   applyRateLimitHeadersToResponse,
   buildRateLimitExceededBody,
@@ -42,7 +44,10 @@ function sanitizeLogValue(value: string): string {
 export interface RateLimitTierConfig {
   /** Max requests allowed within `window`. */
   limit?: number;
-  /** Key prefix for this tier. Default `@ratelimit:<tier>`. */
+  /** Key prefix for this tier.
+   *
+   * @default `@ratelimit:<tier>`
+   */
   prefix?: string;
   /** Sliding window length (e.g. `"60 s"`, `"15 m"`). */
   window?: Duration;
@@ -75,10 +80,6 @@ export type CreateRateLimitOptions<Req extends RateLimitRequest = Request> =
      */
     hooks?: RateLimitHooks<Req>;
     /**
-     * Application logger. Defaults to a silent no-op logger.
-     */
-    logger?: Logger;
-    /**
      * When `true`, skip rate limiting for every request from this client.
      * Evaluated at client creation — no request is available. Use per-call
      * `skipRateLimit` for request-aware skip logic.
@@ -99,6 +100,13 @@ export type CreateRateLimitOptions<Req extends RateLimitRequest = Request> =
      * ```
      */
     tiers?: RateLimitTiersOverride;
+    /**
+     * When `true`, log rate-limit diagnostics to the console (`info` / `warn` / `error`).
+     * Silent by default.
+     *
+     * @default false
+     */
+    verbose?: boolean;
   } & ResolveStoreOptions;
 
 /**
@@ -191,7 +199,7 @@ interface RateLimitRuntime {
   configuredStore: RateLimitStore | undefined;
   envName: string;
   inMemoryDuringBuild: boolean;
-  logger: Logger;
+  logger: InternalLogger;
   skipRateLimit?: boolean;
   tiers?: RateLimitTiersOverride;
 }
@@ -201,7 +209,7 @@ function createRateLimitRuntime<Req extends RateLimitRequest = Request>(
 ): RateLimitRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: options.logger ?? noopLogger,
+    logger: resolveLogger(options.verbose),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     skipRateLimit: options.skipRateLimit,
     tiers: options.tiers,
@@ -212,7 +220,7 @@ function createRateLimitRuntime<Req extends RateLimitRequest = Request>(
 /**
  * Creates a rate limit client with bound methods for `Request`/`Response` handlers.
  *
- * @param options - Store or Redis credentials, logger, environment, and optional `tiers` overrides.
+ * @param options - Store or Redis credentials, environment, verbose logging, and optional `tiers` overrides.
  * @returns {@link RateLimitClient} instance.
  *
  * @example
@@ -222,7 +230,7 @@ function createRateLimitRuntime<Req extends RateLimitRequest = Request>(
  *     url: process.env.UPSTASH_REDIS_REST_URL!,
  *     token: process.env.UPSTASH_REDIS_REST_TOKEN!,
  *   },
- *   logger,
+ *   verbose: true,
  * });
  *
  * export const POST = withRateLimit(
@@ -299,14 +307,14 @@ export function createRateLimit<
     let limiter: RateLimitStoreLimiter;
 
     if (runtime.configuredStore) {
-      logger.info(`Using configured rate limit store (tier: ${tier})`);
+      logger.info(`[ratelimit] Using configured store (tier: ${tier})`);
       limiter = runtime.configuredStore.createLimiter(config);
     } else if (
       isInMemoryEnv(runtime.envName, {
         inMemoryDuringBuild: runtime.inMemoryDuringBuild,
       })
     ) {
-      logger.info(`Using in-memory rate limiter (tier: ${tier})`);
+      logger.info(`[ratelimit] Using in-memory store (tier: ${tier})`);
       limiter = getFallbackMemoryStore().createLimiter(config);
     } else {
       throw new Error(
@@ -341,7 +349,7 @@ export function createRateLimit<
       if (
         await shouldSkipRateLimit(runtime.skipRateLimit, skipRateLimit, req)
       ) {
-        logger.info(`Rate limit skipped for request: ${logUrl}`);
+        logger.info(`[ratelimit] Skipped: ${logUrl}`);
         return {
           ok: true,
           remaining: 999_999,
@@ -366,7 +374,7 @@ export function createRateLimit<
 
       if (!success) {
         logger.warn(
-          `Rate limit exceeded for ${logIdentifier} (tier: ${tier}): ${logUrl}`
+          `[ratelimit] Exceeded: ${logIdentifier} (tier: ${tier}): ${logUrl}`
         );
         const hookContext = {
           req,
@@ -393,7 +401,7 @@ export function createRateLimit<
       }
 
       logger.info(
-        `Rate limit check passed for ${logIdentifier}: ${remaining}/${limit} remaining: ${logUrl}`
+        `[ratelimit] Passed: ${logIdentifier}: ${remaining}/${limit} remaining: ${logUrl}`
       );
       await runHook(
         hooks?.onSuccess,
@@ -414,7 +422,7 @@ export function createRateLimit<
         reset: resetAt,
       };
     } catch (error) {
-      logger.error(error, `Rate limit check error: ${logUrl}`);
+      logger.error(`[ratelimit] Check failed: ${logUrl}`, error);
       const err = error instanceof Error ? error : new Error(String(error));
       await runHook(
         hooks?.onStoreError,

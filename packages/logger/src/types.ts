@@ -228,7 +228,7 @@ export interface LoggerOptions {
  * Structured logger interface.
  *
  * Overloads preserve structured call-site typing while remaining assignable to
- * broader `(...args: unknown[])` logger shapes (e.g. `@g14o/cache`).
+ * broader `(...args: unknown[])` logger shapes.
  */
 export interface Logger {
   /** Returns a child logger that merges `bindings` into every subsequent log. */

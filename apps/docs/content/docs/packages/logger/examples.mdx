@@ -1,6 +1,6 @@
 ---
 title: Examples
-description: Child loggers, request IDs, timing, redaction, and cache injection.
+description: Child loggers, request IDs, timing, and redaction.
 ---
 
 ## Process lifecycle (`start` / `success`)
@@ -91,19 +91,6 @@ const logger = createLogger({
 ```
 
 Every emitted record is written to each configured transport.
-
-## Inject into `@g14o/cache`
-
-```ts
-import { createCache } from "@g14o/cache";
-import { createLogger } from "@g14o/logger";
-
-const logger = createLogger({ name: "cache" });
-
-export const { withCache } = createCache({ logger });
-```
-
-`Logger` is assignable to the broader logger shape accepted by `@g14o/cache`.
 
 ## Browser usage
 

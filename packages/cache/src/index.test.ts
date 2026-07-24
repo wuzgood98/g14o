@@ -527,3 +527,66 @@ describe("createCachePattern", () => {
     expect(pattern).toBe("users:*role:a:1:b:2*");
   });
 });
+
+describe("createCache verbose logging", () => {
+  it("logs hit/miss/set when verbose is true", async () => {
+    const infoSpy = vi
+      .spyOn(console, "info")
+      .mockImplementation(() => undefined);
+    const verboseCache = createCache({ env: "test", verbose: true });
+    verboseCache.reset();
+
+    try {
+      const cached = verboseCache.withCache(
+        async () => ({ ok: true as const, data: "value" }),
+        { prefix: "verbose", ttl: "short" }
+      );
+
+      await cached();
+      expect(
+        infoSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === "string" && call[0].includes("[cache] Miss:")
+        )
+      ).toBe(true);
+      expect(
+        infoSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === "string" && call[0].includes("[cache] Set:")
+        )
+      ).toBe(true);
+
+      infoSpy.mockClear();
+      await cached();
+      expect(
+        infoSpy.mock.calls.some(
+          (call) =>
+            typeof call[0] === "string" && call[0].includes("[cache] Hit:")
+        )
+      ).toBe(true);
+    } finally {
+      verboseCache.reset();
+      infoSpy.mockRestore();
+    }
+  });
+
+  it("does not log when verbose is omitted", async () => {
+    const infoSpy = vi
+      .spyOn(console, "info")
+      .mockImplementation(() => undefined);
+    const silentCache = createCache({ env: "test" });
+    silentCache.reset();
+
+    try {
+      const cached = silentCache.withCache(async () => "silent", {
+        prefix: "silent",
+        ttl: "short",
+      });
+      await cached();
+      expect(infoSpy).not.toHaveBeenCalled();
+    } finally {
+      silentCache.reset();
+      infoSpy.mockRestore();
+    }
+  });
+});

@@ -226,16 +226,7 @@ export const logger = createLogger({
 });
 ```
 
-### Inject into `@g14o/cache`
-
-```ts
-import { createCache } from "@g14o/cache";
-import { createLogger } from "@g14o/logger";
-
-const logger = createLogger({ name: "cache" });
-
-export const { withCache } = createCache({ logger });
-```
+`@g14o/cache` and `@g14o/ratelimit` log via an internal console logger when you pass `verbose: true` — they no longer accept an injected logger.
 
 ## API
 
