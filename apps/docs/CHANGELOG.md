@@ -1,5 +1,16 @@
 # docs
 
+## 0.0.10
+
+### Patch Changes
+
+- Updated dependencies [2bbd646]
+  - @g14o/cache@0.4.0
+  - @g14o/ratelimit@0.7.0
+  - @g14o/ratelimit-nextjs@0.4.0
+  - @g14o/ratelimit-express@0.4.0
+  - @g14o/ratelimit-hono@0.4.0
+
 ## 0.0.9
 
 ### Patch Changes
