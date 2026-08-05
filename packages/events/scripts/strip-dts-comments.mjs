@@ -20,7 +20,7 @@ function walk(dir) {
       continue;
     }
 
-    if (!entry.endsWith(".d.mts") && !entry.endsWith(".d.ts")) {
+    if (!(entry.endsWith(".d.mts") || entry.endsWith(".d.ts"))) {
       continue;
     }
 
