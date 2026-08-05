@@ -1,0 +1,32 @@
+---
+title: Deployment
+description: Choose a stream backend and host the SSE route for realtime events.
+---
+
+Multi-instance realtime needs a shared `EventStream` so emits on one server reach subscribers on another. Pick an adapter that matches where your server runs. Wiring examples live on [Streams](/packages/events/streams).
+
+## Pick a stream adapter
+
+| Environment | Adapter | Why |
+|-------------|---------|-----|
+| Local / single process | `memoryStream` | In-process only — no cross-instance fan-out |
+| Vercel, Lambda, Workers, edge, other serverless | `upstashStream` | REST via `@upstash/redis` — no persistent TCP |
+| Always-on Node (Express, Hono, Fastify, Nest, Docker/K8s) | `redisStream` | Persistent TCP, lower latency |
+
+`redisStream` accepts any Redis-protocol client (`ioredis` / `node-redis`), including TCP endpoints from managed providers.
+
+## Cost
+
+Upstash bills per command — a good fit for low or spiky traffic. Self-hosted or always-on Redis (VPS, ElastiCache, Docker) is mostly fixed cost and often wins at sustained high load. See [Upstash Redis pricing](https://upstash.com/pricing/redis) for current plans.
+
+## Host the SSE route
+
+`handler()` opens a long-lived SSE connection. Serverless platforms cap how long a single invocation may run.
+
+- Set `maxDurationSecs` **below** your platform route `maxDuration` (default **280** seconds).
+- After the budget expires, the server emits a `reconnect` system event and closes; the client opens a new connection.
+- On reconnect, history resumes via `last_ack_{channel}` cursors and stream replay.
+
+On Vercel, use [Fluid Compute](https://vercel.com/docs/fluid-compute) for long-lived HTTP — the typical path for realtime SSE.
+
+Details: [Handler](/packages/events/handler) (server options), [Client](/packages/events/client) (provider reconnect).

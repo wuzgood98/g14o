@@ -1,0 +1,80 @@
+---
+title: Client
+description: EventProvider and typed hooks from @g14o/events/client.
+---
+
+```bash
+pnpm add @g14o/events react
+```
+
+Import from `@g14o/events/client` in Client Components only.
+
+## Provider
+
+```tsx title="app/providers.tsx"
+"use client";
+
+import { EventProvider } from "@g14o/events/client";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <EventProvider
+      api={{ url: "/api/events", withCredentials: true }}
+      maxReconnectAttempts={3}
+    >
+      {children}
+    </EventProvider>
+  );
+}
+```
+
+`EventProvider` owns one shared `EventSource`. It connects after a hook registers at least one channel.
+
+### `maxReconnectAttempts`
+
+| Value | Behavior |
+|--------|----------|
+| `0` | No retries — first drop sets status to `error` |
+| `1…n` | Retry up to *n* times with backoff, then `error` |
+| `3` (default) | Same as above |
+| `Infinity` | Retry forever while subscribers exist |
+
+Server-driven rotation (`reconnect` system events from `maxDurationSecs`) does not consume the failure budget; the counter resets on a successful connection.
+
+## Typed hooks
+
+```ts title="lib/events-client.ts"
+"use client";
+
+import { createEvent } from "@g14o/events/client";
+import type { Events } from "./events";
+
+export const { useEvent, useChannel, useEventStatus } =
+  createEvent<Events>();
+```
+
+Channel scoping and `useChannel` live on [Channel](/packages/events/channel).
+
+### useEvent
+
+Primary subscribe API. Omit `events` to receive all user events on the joined channels. Set `enabled: false` to unregister without unmounting. When `events` is a literal union, narrowing `event` in `onData` narrows `data` to the matching payload type.
+
+```tsx
+const { status } = useEvent({
+  events: ["notification.alert"],
+  enabled: true,
+  onData({ event, data }) {
+    console.log(event, data);
+  },
+});
+```
+
+See [UseEventOptions](/packages/events/api#useeventoptions) for the full option table. Pass `channels` to scope delivery — see [Channel](/packages/events/channel).
+
+### useEventStatus
+
+Returns the provider connection status: `disconnected` | `connecting` | `connected` | `error`.
+
+## Next steps
+
+Subscribe and join delivery scopes on [Channel](/packages/events/channel). Wire the SSE edge on [Handler](/packages/events/handler) and emit from [Server](/packages/events/server).

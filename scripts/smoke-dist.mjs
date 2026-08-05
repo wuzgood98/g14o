@@ -55,8 +55,16 @@ const loggerSmoke = {
   exports: ["createLogger"],
 };
 
+const eventsSmoke = {
+  filter: "@g14o/events",
+  importPath: "@g14o/events",
+  distFile: "dist/index.mjs",
+  exports: ["Event", "handler", "memoryStream"],
+};
+
 const standalonePackages = [
   loggerSmoke,
+  eventsSmoke,
   {
     filter: "@g14o/cache",
     importPath: "@g14o/cache",
@@ -304,7 +312,8 @@ try {
     );
 
     if (
-      importPath === loggerSmoke.importPath &&
+      (importPath === loggerSmoke.importPath ||
+        importPath === eventsSmoke.importPath) &&
       packedPkg.dependencies &&
       Object.keys(packedPkg.dependencies).length > 0
     ) {

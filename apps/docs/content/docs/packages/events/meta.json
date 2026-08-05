@@ -1,0 +1,19 @@
+{
+  "title": "@g14o/events",
+  "pages": [
+    "index",
+    "streams",
+    "deployment",
+    "handler",
+    "server",
+    "client",
+    "channel",
+    "listeners",
+    "middleware",
+    "execution",
+    "namespaces",
+    "errors",
+    "observability",
+    "api"
+  ]
+}

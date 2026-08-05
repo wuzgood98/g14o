@@ -1,0 +1,154 @@
+{
+  "name": "@g14o/events",
+  "version": "0.1.0",
+  "description": "Type-safe realtime events with Standard Schema, pluggable streams, and a Fetch API SSE handler. React client hooks included.",
+  "type": "module",
+  "sideEffects": false,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wuzgood98/g14o.git",
+    "directory": "packages/events"
+  },
+  "bugs": "https://github.com/wuzgood98/g14o/issues",
+  "homepage": "https://docs.g14o.dev/packages/events",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsdown && node scripts/strip-dts-comments.mjs",
+    "clean": "rimraf dist",
+    "prepack": "tsdown && node scripts/strip-dts-comments.mjs",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@upstash/redis": "^1.34.0",
+    "ioredis": "^5.0.0",
+    "react": ">=18",
+    "react-dom": ">=18",
+    "redis": "^4.0.0 || ^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@upstash/redis": {
+      "optional": true
+    },
+    "ioredis": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "redis": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@upstash/redis": "^1.34.0",
+    "@workspace/typescript-config": "workspace:*",
+    "happy-dom": "^20.0.0",
+    "ioredis": "^5.6.1",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "redis": "^5.6.0",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.22.1",
+    "typescript": "^5",
+    "vitest": "^3.2.4"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "exports": {
+    ".": {
+      "dev-source": "./src/index.ts",
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./client": {
+      "dev-source": "./src/client/index.ts",
+      "types": "./dist/client/index.d.mts",
+      "default": "./dist/client/index.mjs"
+    },
+    "./handler": {
+      "dev-source": "./src/handler.ts",
+      "types": "./dist/handler.d.mts",
+      "default": "./dist/handler.mjs"
+    },
+    "./observability": {
+      "dev-source": "./src/observability.ts",
+      "types": "./dist/observability.d.mts",
+      "default": "./dist/observability.mjs"
+    },
+    "./stream": {
+      "dev-source": "./src/stream.ts",
+      "types": "./dist/stream.d.mts",
+      "default": "./dist/stream.mjs"
+    },
+    "./memory": {
+      "dev-source": "./src/memory.ts",
+      "types": "./dist/memory.d.mts",
+      "default": "./dist/memory.mjs"
+    },
+    "./redis": {
+      "dev-source": "./src/redis.ts",
+      "types": "./dist/redis.d.mts",
+      "default": "./dist/redis.mjs"
+    },
+    "./upstash": {
+      "dev-source": "./src/upstash.ts",
+      "types": "./dist/upstash.d.mts",
+      "default": "./dist/upstash.mjs"
+    }
+  },
+  "typesVersions": {
+    "*": {
+      "*": [
+        "./dist/index.d.mts"
+      ],
+      "client": [
+        "./dist/client/index.d.mts"
+      ],
+      "handler": [
+        "./dist/handler.d.mts"
+      ],
+      "observability": [
+        "./dist/observability.d.mts"
+      ],
+      "stream": [
+        "./dist/stream.d.mts"
+      ],
+      "memory": [
+        "./dist/memory.d.mts"
+      ],
+      "redis": [
+        "./dist/redis.d.mts"
+      ],
+      "upstash": [
+        "./dist/upstash.d.mts"
+      ]
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "events",
+    "realtime",
+    "sse",
+    "typescript",
+    "middleware",
+    "redis",
+    "upstash"
+  ],
+  "engines": {
+    "node": ">=22.18"
+  }
+}

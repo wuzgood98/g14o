@@ -1,0 +1,81 @@
+---
+title: Streams
+description: Pluggable EventStream backends — memory, Redis, and Upstash.
+---
+
+Realtime delivery uses an `EventStream`: durable history + live fan-out. Same role as Redis Streams in Upstash Realtime.
+
+Choosing memory vs Upstash vs Redis: [Deployment](/packages/events/deployment).
+
+## Interface
+
+Every adapter implements:
+
+- `append(channel, message) → cursor`
+- `publish(channel, message)`
+- `readAfter(channel, cursor)`
+- `subscribe(channels, onMessage)`
+- `close()`
+
+Pass a stream into `new Event({ stream })`. Omitting `stream` throws `"Stream not configured"`.
+
+## Memory
+
+```ts
+import { memoryStream } from "@g14o/events/memory";
+
+const event = new Event({
+  schema,
+  stream: memoryStream({ maxLength: 100 }),
+});
+```
+
+In-process only — fine for single-instance and local dev.
+
+## Redis (ioredis / node-redis)
+
+```ts
+import { Event } from "@g14o/events";
+import { redisStream } from "@g14o/events/redis";
+import Redis from "ioredis";
+
+const event = new Event({
+  schema,
+  stream: redisStream({
+    client: new Redis(process.env.REDIS_URL!),
+    maxLength: 1000,
+  }),
+});
+```
+
+## Upstash
+
+```ts
+import { Event } from "@g14o/events";
+import { upstashStream } from "@g14o/events/upstash";
+import { Redis } from "@upstash/redis";
+
+const event = new Event({
+  schema,
+  stream: upstashStream({
+    redis: Redis.fromEnv(),
+    maxLength: 1000,
+  }),
+});
+```
+
+Default `channelPrefix` is `@g14o:events`. Do **not** put `/` in the prefix (or in channel names you pass through to Redis pub/sub keys): Upstash REST `SUBSCRIBE` places the channel in the URL path, so a slash splits the path and live fan-out fails while `XADD` / history still work.
+
+## Custom streams
+
+```ts
+import { defineStream } from "@g14o/events/stream";
+
+const stream = defineStream({
+  async append(channel, message) { /* … */ return id; },
+  async publish(channel, message) { /* … */ },
+  async readAfter(channel, cursor) { return []; },
+  subscribe(channels, onMessage) { return () => {}; },
+  async close() {},
+});
+```

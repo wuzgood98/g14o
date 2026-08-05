@@ -11,7 +11,8 @@
     ["@g14o/ratelimit-hono"],
     ["@g14o/paystack"],
     ["@g14o/paystack-better-auth"],
-    ["@g14o/logger"]
+    ["@g14o/logger"],
+    ["@g14o/events"]
   ],
   "linked": [],
   "access": "public",

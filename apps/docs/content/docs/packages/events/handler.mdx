@@ -1,0 +1,120 @@
+---
+title: Handler
+description: Fetch API SSE route handler for realtime subscriptions.
+---
+
+`handler()` creates a **Fetch API** GET handler — `(request: Request) => Promise<Response>` — that opens an SSE stream over your `Event` instance's stream. Wire it per framework in [Mounting](#mounting).
+
+```ts title="app/api/events/route.ts"
+import { handler } from "@g14o/events/handler";
+import { event } from "@/lib/events";
+
+export const { GET } = handler({
+  event,
+  middleware: async ({ request, channels }) => {
+    const user = await auth(request);
+    if (!user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+  },
+  authorizeJoin: async ({ channels, request }) => {
+    return channels.every((channel) => canJoin(channel, request));
+  },
+});
+```
+
+## Mounting
+
+`handler()` returns `{ GET }` for convenient destructuring. The handler itself is Web `Request`/`Response`; each framework mounts it differently.
+
+### Next.js App Router
+
+```ts title="app/api/events/route.ts"
+import { handler } from "@g14o/events/handler";
+import { event } from "@/lib/events";
+
+export const { GET } = handler({ event });
+```
+
+Demo: [events-demo](https://github.com/wuzgood98/g14o/tree/main/apps/events-demo) — `pnpm demo:events` (port 3002).
+
+### Hono
+
+```ts title="src/index.ts"
+import { Hono } from "hono";
+import { handler } from "@g14o/events/handler";
+import { event } from "./events";
+
+const app = new Hono();
+const { GET } = handler({ event });
+
+app.get("/api/events", (c) => GET(c.req.raw));
+
+export default app;
+```
+
+On Node, serve with `@hono/node-server`: `serve({ fetch: app.fetch, port: 3000 })`.
+
+Demo: [events-hono-demo](https://github.com/wuzgood98/g14o/tree/main/apps/events-hono-demo) — `pnpm demo:events-hono` (API :3010, UI :3011).
+
+### TanStack Start
+
+```ts title="routes/api/events.ts"
+import { createFileRoute } from "@tanstack/react-router";
+import { handler } from "@g14o/events/handler";
+import { event } from "@/lib/events";
+
+const { GET } = handler({ event });
+
+export const Route = createFileRoute("/api/events")({
+  server: {
+    handlers: {
+      GET: async ({ request }) => GET(request),
+    },
+  },
+});
+```
+
+Demo: [events-start-demo](https://github.com/wuzgood98/g14o/tree/main/apps/events-start-demo) — `pnpm demo:events-start` (port 3030).
+
+### Express
+
+Express uses Node `req`/`res`, not Web `Request`/`Response`. Mount the Fetch handler with `@hono/node-server`'s `getRequestListener`. Register the route **before** body parsers (`express.json()`, etc.) that consume the request stream.
+
+```ts title="src/server.ts"
+import express from "express";
+import { getRequestListener } from "@hono/node-server";
+import { handler } from "@g14o/events/handler";
+import { event } from "./events";
+
+const app = express();
+
+app.use("/api/events", getRequestListener(handler({ event }).GET));
+
+app.use(express.json());
+// ...other routes
+
+app.listen(3000);
+```
+
+Demo: [events-express-demo](https://github.com/wuzgood98/g14o/tree/main/apps/events-express-demo) — `pnpm demo:events-express` (API :3020, UI :3021).
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `event` | `Event` instance (required) |
+| `middleware` | Runs before SSE opens. Return a `Response` to reject. |
+| `authorizeJoin` | Channel membership check after middleware |
+| `maxDurationSecs` | Max SSE connection duration before server signals reconnect (default `280`). Set below your platform route `maxDuration`. |
+
+Keepalive uses an internal default (30s). After `maxDurationSecs`, the server emits a `reconnect` system event and closes the stream; the client reconnects with `last_ack_*` cursors for Redis stream replay. Platform guidance: [Deployment](/packages/events/deployment).
+
+## Query params
+
+- `channel` (repeatable) — channels to join (default `default`)
+- `last_ack_{channel}` — cursor for exclusive replay on reconnect
+
+## Auth pattern
+
+Prefer `middleware` for request-level auth (cookies, headers). Use `authorizeJoin` for per-channel ACL.

@@ -1,0 +1,11 @@
+---
+title: Namespaces
+description: Prefix-scoped event APIs.
+---
+
+Namespaces organize **event names**. Channels control **delivery scope**.
+
+```ts
+const auth = event.namespace("auth");
+await auth.emit("login", { userId: "1" }); // emits "auth.login"
+```

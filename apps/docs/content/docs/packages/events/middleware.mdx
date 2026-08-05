@@ -1,0 +1,14 @@
+---
+title: Middleware
+description: Bus-level middleware pipeline.
+---
+
+```ts
+event.use(async (ctx, next) => {
+  console.log("before", ctx.name);
+  await next();
+  console.log("after", ctx.name);
+});
+```
+
+Skipping `next()` short-circuits downstream middleware and listeners.

@@ -1,0 +1,39 @@
+---
+title: Observability
+description: Pipeline hooks, createPipelineLog, and verbose console diagnostics.
+---
+
+Pass `hooks` to `new Event({ hooks })` to observe the emit pipeline:
+
+```ts
+import { Event } from "@g14o/events";
+import { createPipelineLog } from "@g14o/events/observability";
+import { memoryStream } from "@g14o/events/memory";
+
+const log = createPipelineLog();
+
+export const event = new Event({
+  schema,
+  stream: memoryStream(),
+  hooks: log.hooks,
+});
+```
+
+`createPipelineLog` is an **in-process** store. It records pipeline start/end strings and errors in the same JavaScript runtime as the bus — it does not sync across a Next.js server/browser boundary.
+
+## Verbose console logging
+
+When `verbose: true`, the bus logs diagnostics to the console (`info` / `warn` / `error`). Silent by default.
+
+```ts
+import { Event } from "@g14o/events";
+import { memoryStream } from "@g14o/events/memory";
+
+export const event = new Event({
+  schema,
+  stream: memoryStream(),
+  verbose: true,
+});
+```
+
+This surfaces emit activity, validation failures, listener errors, hook throws, failed dispatches, and SSE write/cleanup issues in `handler({ event })`.

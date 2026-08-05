@@ -1,0 +1,86 @@
+---
+title: API Reference
+description: Types and options for @g14o/events.
+---
+
+## EventBusOptions
+
+Options for `new Event({ … })`. Schema-first mode also accepts `schema` (nested Standard Schema map) for validation and `InferEvents` — that field lives on the conditional `CreateEventConfig`, not on `EventBusOptions` itself.
+
+<OptionsTable path="../../packages/events/src/bus/create-event-bus.ts" name="EventBusOptions" nameLabel="Option" />
+
+## EventBusHooks
+
+<OptionsTable path="../../packages/events/src/bus/hooks.ts" name="EventBusHooks" nameLabel="Option" />
+
+## EventBus
+
+Typed async-first event bus returned by `new Event({ … })`. See [Server](/packages/events/server) for emit/dispatch and SSE wiring, [Listeners](/packages/events/listeners) for `on` / `once` / `subscribe`, and [Namespaces](/packages/events/namespaces) for `namespace` and channel scoping.
+
+## ChannelEmitter
+
+Channel-scoped emitter from `event.channel(...names)` — same emit API with `channels` merged into metadata. See [Channel](/packages/events/channel) for client subscribe and [Server](/packages/events/server) for emit.
+
+## EventHandlerOptions
+
+Options for `handler({ … })`.
+
+<OptionsTable path="../../packages/events/src/handler/create-handler.ts" name="EventHandlerOptions" nameLabel="Option" />
+
+## OnOptions
+
+Options for `on` / `once`.
+
+<OptionsTable path="../../packages/events/src/types/listener.ts" name="OnOptions" nameLabel="Option" />
+
+## SubscribeEventOptions
+
+Options-object form of server `event.subscribe` / `channel.subscribe` (channel-scoped form omits `channels`).
+
+<OptionsTable path="../../packages/events/src/subscribe-event.ts" name="SubscribeEventOptions" nameLabel="Option" />
+
+## MemoryStreamOptions
+
+<OptionsTable path="../../packages/events/src/stream/memory.ts" name="MemoryStreamOptions" nameLabel="Option" />
+
+## RedisStreamOptions
+
+<OptionsTable path="../../packages/events/src/stream/redis.ts" name="RedisStreamOptions" nameLabel="Option" />
+
+## UpstashStreamOptions
+
+<OptionsTable path="../../packages/events/src/stream/upstash.ts" name="UpstashStreamOptions" nameLabel="Option" />
+
+## EventStream
+
+Pluggable stream contract for custom backends (`defineStream`). See [Streams](/packages/events/streams) for built-in adapters and [Deployment](/packages/events/deployment) for multi-instance wiring.
+
+## EventProviderProps
+
+<OptionsTable path="../../packages/events/src/client/provider.tsx" name="EventProviderProps" nameLabel="Option" />
+
+## ProviderApiConfig
+
+<OptionsTable path="../../packages/events/src/client/provider.tsx" name="ProviderApiConfig" nameLabel="Option" />
+
+## UseEventOptions
+
+Client hook options from `createEvent().useEvent`. The `channels` option scopes delivery — see [Channel](/packages/events/channel).
+
+<OptionsTable path="../../packages/events/src/client/hooks/use-event.ts" name="UseEventOptions" nameLabel="Option" />
+
+## PipelineLogOptions
+
+Options for `createPipelineLog`.
+
+<OptionsTable path="../../packages/events/src/observability/create-pipeline-log.ts" name="PipelineLogOptions" nameLabel="Option" />
+
+## Package entry points
+
+| Import | Description |
+|--------|-------------|
+| `@g14o/events` | `Event`, `handler`, strategies, errors, `createPipelineLog`, `defineStream` |
+| `@g14o/events/client` | `EventProvider`, `createEvent`, hooks |
+| `@g14o/events/memory` | `memoryStream` |
+| `@g14o/events/redis` | `redisStream` |
+| `@g14o/events/upstash` | `upstashStream` |
