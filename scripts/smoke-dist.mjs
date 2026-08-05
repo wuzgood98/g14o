@@ -348,7 +348,9 @@ try {
     for (const entry of entries) {
       const subEntryPath = join(pkgRoot, entry.distFile);
       if (!existsSync(subEntryPath)) {
-        throw new Error(`${importPath}: missing packed entry ${entry.distFile}`);
+        throw new Error(
+          `${importPath}: missing packed entry ${entry.distFile}`
+        );
       }
 
       const mod = await import(pathToFileURL(subEntryPath).href);
