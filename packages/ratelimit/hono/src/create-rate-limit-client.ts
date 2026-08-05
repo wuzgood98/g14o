@@ -201,7 +201,7 @@ function createUserIdentifierFn<E extends Env>(
  *
  * Delegates to {@link @g14o/ratelimit | @g14o/ratelimit} at runtime.
  *
- * @param options - Redis credentials or client, logger, environment, and optional `tiers` overrides.
+ * @param options - Redis credentials or client, environment, verbose logging, and optional `tiers` overrides.
  * @returns {@link HonoRateLimitClient} instance.
  *
  * @example

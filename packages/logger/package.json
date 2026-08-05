@@ -1,7 +1,7 @@
 {
   "name": "@g14o/logger",
   "version": "0.1.1",
-  "description": "Zero-dependency isomorphic structured logger core for @g14o packages.",
+  "description": "Isomorphic structured logger for browser and Node.js",
   "type": "module",
   "sideEffects": false,
   "license": "MIT",

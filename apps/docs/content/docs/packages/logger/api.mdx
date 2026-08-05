@@ -33,7 +33,7 @@ Returns a [`Logger`](#logger).
 
 <OptionsTable path="../../packages/logger/src/types.ts" name="Logger" nameLabel="Prop" />
 
-Primary call shape is `message, meta?` for most levels. `error` and `fatal` accept `error, message?`. Broader `(...args: unknown[])` overloads keep the type assignable to cache-style logger contracts; unsupported extra arguments are preserved under `details`, not printf-interpolated.
+Primary call shape is `message, meta?` for most levels. `error` and `fatal` accept `error, message?`. Broader `(...args: unknown[])` overloads keep the type assignable to duck-typed logger shapes; unsupported extra arguments are preserved under `details`, not printf-interpolated.
 
 ## ConsoleTransport
 

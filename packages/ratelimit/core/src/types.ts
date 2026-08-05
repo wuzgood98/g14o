@@ -1,12 +1,3 @@
-/**
- * Logger interface used by `@g14o/ratelimit`.
- */
-export interface Logger {
-  error: (...args: unknown[]) => void;
-  info: (...args: unknown[]) => void;
-  warn: (...args: unknown[]) => void;
-}
-
 /** Supported environment names for cache and rate-limit factories. */
 export type Environment = "development" | "test" | "production";
 
@@ -29,14 +20,3 @@ export interface InMemoryEnvOptions {
    */
   inMemoryDuringBuild?: boolean;
 }
-
-const noop = (): void => {
-  /* silent default logger */
-};
-
-/** Silent logger used when no custom logger is configured. */
-export const noopLogger: Logger = {
-  info: noop,
-  warn: noop,
-  error: noop,
-};

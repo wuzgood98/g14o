@@ -3,8 +3,7 @@
   "compilerOptions": {
     "noEmit": true,
     "paths": {
-      "@g14o/logger": ["../src/index.ts"],
-      "@g14o/cache/types": ["../../cache/src/types.ts"]
+      "@g14o/logger": ["../src/index.ts"]
     }
   },
   "include": ["./**/*.ts"]

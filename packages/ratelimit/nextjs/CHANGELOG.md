@@ -1,5 +1,18 @@
 # @g14o/ratelimit-nextjs
 
+## 0.4.0
+
+### Minor Changes
+
+- 2bbd646: Replace injectable `logger` with opt-in `verbose` logging.
+
+  **Breaking:** remove the `logger` option and public `Logger` / `noopLogger` exports from cache and ratelimit. Pass `verbose: true` for console diagnostics.
+
+### Patch Changes
+
+- Updated dependencies [2bbd646]
+  - @g14o/ratelimit@0.7.0
+
 ## 0.3.2
 
 ### Patch Changes

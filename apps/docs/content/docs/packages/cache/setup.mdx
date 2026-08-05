@@ -8,7 +8,6 @@ description: Configure createCache with stores, TTL overrides, and build-phase b
 ```ts title="lib/cache.ts"
 import { createCache } from "@g14o/cache";
 import { upstashStore } from "@g14o/cache/upstash";
-import { logger } from "@/lib/logger";
 import { env } from "@/lib/env";
 
 export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
@@ -16,7 +15,7 @@ export const { withCache, invalidateCache, invalidateCacheKey } = createCache({
     url: env.UPSTASH_REDIS_REST_URL,
     token: env.UPSTASH_REDIS_REST_TOKEN,
   }),
-  logger,
+  verbose: true,
 });
 ```
 

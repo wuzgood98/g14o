@@ -1,4 +1,4 @@
-import type { Logger } from "../types";
+import type { InternalLogger } from "../logging";
 import type { RateLimitRequest } from "./request";
 import type { RateLimitTier } from "./tiers";
 
@@ -68,7 +68,7 @@ export interface RateLimitHooks<Req extends RateLimitRequest = Request> {
 export async function runHook<Ctx>(
   hook: ((ctx: Ctx) => void | Promise<void>) | undefined,
   ctx: Ctx,
-  logger: Logger
+  logger: InternalLogger
 ): Promise<void> {
   if (!hook) {
     return;
@@ -76,6 +76,6 @@ export async function runHook<Ctx>(
   try {
     await hook(ctx);
   } catch (error) {
-    logger.error(error, "Rate limit hook threw");
+    logger.error("[ratelimit] Hook threw", error);
   }
 }

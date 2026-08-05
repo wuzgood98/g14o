@@ -4,8 +4,7 @@ export {
   isInMemoryEnv,
   resolveEnvName,
 } from "./env";
-export type { Environment, InMemoryEnvOptions, Logger } from "./types";
-export { noopLogger } from "./types";
+export type { Environment, InMemoryEnvOptions } from "./types";
 export {
   createRedisClient,
   type RedisConfig,

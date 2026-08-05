@@ -70,12 +70,16 @@ describe("createRateLimit (factory API)", () => {
     });
 
     it("strips CR/LF from req.url and identifier in log messages", async () => {
-      const logger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-      };
-      const limited = createRateLimit({ env: "test", logger });
+      const infoSpy = vi
+        .spyOn(console, "info")
+        .mockImplementation(() => undefined);
+      const warnSpy = vi
+        .spyOn(console, "warn")
+        .mockImplementation(() => undefined);
+      const errorSpy = vi
+        .spyOn(console, "error")
+        .mockImplementation(() => undefined);
+      const limited = createRateLimit({ env: "test", verbose: true });
 
       try {
         const req = {
@@ -92,9 +96,9 @@ describe("createRateLimit (factory API)", () => {
         });
 
         const logMessages = [
-          ...logger.info.mock.calls,
-          ...logger.warn.mock.calls,
-          ...logger.error.mock.calls,
+          ...infoSpy.mock.calls,
+          ...warnSpy.mock.calls,
+          ...errorSpy.mock.calls,
         ]
           .flat()
           .filter((arg): arg is string => typeof arg === "string");
@@ -105,6 +109,9 @@ describe("createRateLimit (factory API)", () => {
         }
       } finally {
         limited.reset();
+        infoSpy.mockRestore();
+        warnSpy.mockRestore();
+        errorSpy.mockRestore();
       }
     });
 
