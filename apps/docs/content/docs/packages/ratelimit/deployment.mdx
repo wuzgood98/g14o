@@ -1,0 +1,24 @@
+---
+title: Deployment
+description: Choose a rate limit store for your hosting environment.
+---
+
+Distributed rate limiting needs a shared store so every instance enforces the same counters. Pick a store that matches where your server runs. Wiring examples live on [Setup](/packages/ratelimit/setup).
+
+## Pick a store
+
+| Environment | Store | Why |
+|-------------|-------|-----|
+| Local / single process | `memoryStore` | Per-process counters — not shared across replicas |
+| Serverless / edge (Vercel, Lambda, Workers) | `upstashStore` | REST via `@upstash/redis` — no persistent TCP |
+| Always-on Node (Express, Hono, Fastify, Nest, Docker/K8s) | `redisStore` | TCP via `node-redis` / `ioredis` |
+
+The legacy `redis: { url, token }` option is Upstash REST only. Prefer `store: upstashStore(...)` for new projects.
+
+## Cost
+
+Upstash bills per command — a good fit for low or spiky traffic. Self-hosted or always-on Redis is mostly fixed cost and often wins at sustained high load. See [Upstash Redis pricing](https://upstash.com/pricing/redis) for current plans.
+
+## Multi-instance
+
+`memoryStore()` does not share counters across replicas — fine for single-instance deployments, local dev, and tests. For production with multiple instances, use `upstashStore` or `redisStore`. See [Setup](/packages/ratelimit/setup) for configuration.

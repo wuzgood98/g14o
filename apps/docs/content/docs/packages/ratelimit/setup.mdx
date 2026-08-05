@@ -23,6 +23,8 @@ export const { withRateLimit, checkRateLimit, withUserRateLimit } =
 
 Use an explicit store for new projects. The legacy `redis` option remains fully supported. **`store` and `redis` are mutually exclusive** — pass one or neither, not both.
 
+Choosing a store for your environment: [Deployment](/packages/ratelimit/deployment).
+
 ### Upstash Redis
 
 ```ts title="lib/ratelimit.ts"
