@@ -1,0 +1,25 @@
+---
+title: Error handling
+description: Validation errors, listener errors, and error routing.
+---
+
+## Validation errors
+
+Schema failures notify `onValidationError` handlers, then reject `emit()`:
+
+```ts
+const event = new Event({ schema });
+
+event.onValidationError((error, ctx) => {
+  console.error(error, ctx.name);
+});
+```
+
+## Listener errors
+
+```ts
+const event = new Event<Events>({ onListenerError: "stop" });
+// or "continue" (default)
+```
+
+Register bus-level handlers with `event.onError(...)`.

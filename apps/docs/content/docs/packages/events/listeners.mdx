@@ -1,0 +1,20 @@
+---
+title: Listeners
+description: on, once, wildcards, and priorities.
+---
+
+```ts
+const off = event.on("user.created", async (ctx) => {
+  console.log(ctx.payload);
+});
+
+event.once("user.deleted", (ctx) => {
+  console.log(ctx.payload.id);
+});
+
+event.on("user.*", (ctx) => {
+  // wildcard
+});
+```
+
+Use `priority` and `AbortSignal` via the third options argument. Prefer the unsubscribe function returned by `on` / `once`.

@@ -1,0 +1,15 @@
+{
+  "extends": "@workspace/typescript-config/nextjs.json",
+  "compilerOptions": {
+    "paths": {
+      "@g14o/events": ["./src/index.ts"],
+      "@g14o/events/client": ["./src/client/index.ts"],
+      "@g14o/events/memory": ["./src/memory.ts"],
+      "@g14o/events/redis": ["./src/redis.ts"],
+      "@g14o/events/upstash": ["./src/upstash.ts"]
+    },
+    "strictNullChecks": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

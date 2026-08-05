@@ -1,0 +1,120 @@
+---
+title: Server
+description: Event bus, channels, and subscribe from @g14o/events.
+---
+
+```bash
+pnpm add @g14o/events
+```
+
+Import from `@g14o/events` in server/runtime code only (not Client Components). Optional stream peers: `@upstash/redis`, `ioredis`, or `redis`.
+
+## Create the bus
+
+```ts title="lib/events.ts"
+import { Event, type InferEvents } from "@g14o/events";
+import { memoryStream } from "@g14o/events/memory";
+import { z } from "zod";
+
+export const event = new Event({
+  schema: {
+    demo: {
+      ping: z.object({ message: z.string().min(1) }),
+    },
+  },
+  stream: memoryStream(),
+  hooks: {
+    onValidationError: (error) => {
+      console.error(error);
+    },
+  },
+});
+
+export type Events = InferEvents<typeof event>;
+```
+
+- `schema` — Standard Schema map for validation and `InferEvents`
+- `stream` — durable fan-out backend (required; omit throws `"Stream not configured"`); see [Streams](/packages/events/streams)
+- `hooks` — pipeline and validation observability; see [Observability](/packages/events/observability)
+
+## Channel usages
+
+`event.channel(...names)` returns a scoped emitter. **Only** channel-scoped `emit` / `dispatch` tag channels and fan out via the stream (SSE). Plain `event.emit()` runs local listeners only.
+
+### emit
+
+Awaited pipeline — primary realtime publish path:
+
+```ts title="app/api/notify/route.ts"
+const channel = event.channel("room-1");
+await channel.emit("demo.ping", {
+  message: "Hello from the server!",
+});
+```
+
+Or as a one-liner:
+
+```ts
+await event.channel("room-1").emit("demo.ping", {
+  message: "Hello from the server!",
+});
+```
+
+### dispatch
+
+Fire-and-forget (same channel tagging and stream fan-out; does not await listeners):
+
+```ts
+event.channel("room-1").dispatch("demo.ping", {
+  message: "fire-and-forget",
+});
+```
+
+### on / once / off
+
+Channel-scoped local listeners. `on` and `once` return an unsubscribe function:
+
+```ts
+const channel = event.channel("room-1");
+
+const stop = channel.on("demo.ping", (ctx) => {
+  console.log(ctx.payload);
+});
+
+channel.once("demo.ping", (ctx) => {
+  console.log("one-shot", ctx.payload);
+});
+
+channel.off("demo.ping", handler);
+stop();
+```
+
+Wildcards and priority: [Listeners](/packages/events/listeners).
+
+### subscribe
+
+Enriched in-process subscribe (options shaped like client `useEvent`; channels are implicit). Not browser SSE:
+
+```ts
+event.channel("room-1").subscribe({
+  events: ["demo.ping"],
+  onData(ctx) {
+    console.log(ctx.event, ctx.channel, ctx.payload);
+  },
+});
+```
+
+Returns `Promise<() => void>` for cleanup.
+
+## SSE route
+
+Expose the bus over SSE with `handler()`:
+
+```ts title="app/api/events/route.ts"
+import { handler } from "@g14o/events/handler";
+import { event } from "@/lib/events";
+
+export const { GET } = handler({ event });
+```
+
+Auth, channel checks, and query params: [Handler](/packages/events/handler).

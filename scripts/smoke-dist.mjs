@@ -55,8 +55,20 @@ const loggerSmoke = {
   exports: ["createLogger"],
 };
 
+const eventsSmoke = {
+  filter: "@g14o/events",
+  importPath: "@g14o/events",
+  distFile: "dist/index.mjs",
+  exports: ["Event"],
+  subpaths: [
+    { distFile: "dist/handler.mjs", exports: ["handler"] },
+    { distFile: "dist/memory.mjs", exports: ["memoryStream"] },
+  ],
+};
+
 const standalonePackages = [
   loggerSmoke,
+  eventsSmoke,
   {
     filter: "@g14o/cache",
     importPath: "@g14o/cache",
@@ -290,7 +302,12 @@ try {
     );
   }
 
-  for (const { importPath, distFile, exports: names } of standalonePackages) {
+  for (const {
+    importPath,
+    distFile,
+    exports: names,
+    subpaths = [],
+  } of standalonePackages) {
     const pkgName = importPath.split("/")[1];
     const pkgRoot = join(consumerDir, "node_modules", "@g14o", pkgName);
     const entryPath = join(pkgRoot, distFile);
@@ -304,7 +321,8 @@ try {
     );
 
     if (
-      importPath === loggerSmoke.importPath &&
+      (importPath === loggerSmoke.importPath ||
+        importPath === eventsSmoke.importPath) &&
       packedPkg.dependencies &&
       Object.keys(packedPkg.dependencies).length > 0
     ) {
@@ -324,16 +342,31 @@ try {
       );
     }
 
-    const mod = await import(pathToFileURL(entryPath).href);
-    for (const name of names) {
-      if (typeof mod[name] !== "function") {
+    const entries = [{ distFile, exports: names }, ...subpaths];
+    const checkedExports = [];
+
+    for (const entry of entries) {
+      const subEntryPath = join(pkgRoot, entry.distFile);
+      if (!existsSync(subEntryPath)) {
         throw new Error(
-          `${importPath}: expected function export "${name}" in packed tarball`
+          `${importPath}: missing packed entry ${entry.distFile}`
         );
+      }
+
+      const mod = await import(pathToFileURL(subEntryPath).href);
+      for (const name of entry.exports) {
+        if (typeof mod[name] !== "function") {
+          throw new Error(
+            `${importPath}: expected function export "${name}" in packed tarball (${entry.distFile})`
+          );
+        }
+        checkedExports.push(name);
       }
     }
 
-    console.log(`${importPath}: standalone smoke OK (${names.join(", ")})`);
+    console.log(
+      `${importPath}: standalone smoke OK (${checkedExports.join(", ")})`
+    );
   }
 
   console.log("All packed smoke checks passed.");

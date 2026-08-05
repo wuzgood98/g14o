@@ -3,6 +3,7 @@
   "pages": [
     "cache",
     "logger",
+    "events",
     "ratelimit",
     "ratelimit-nextjs",
     "ratelimit-express",

@@ -1,0 +1,115 @@
+---
+title: Overview
+description: Type-safe realtime events with pluggable streams and React client hooks.
+---
+
+`@g14o/events` is a type-safe realtime library for server emit and browser subscribe with Standard Schema validation and pluggable stream backends.
+
+## Install
+
+```bash
+pnpm add @g14o/events
+```
+
+React client: `pnpm add @g14o/events react`
+
+Optional stream peers: `@upstash/redis`, `ioredis`, or `redis`.
+
+## Quick start
+
+### 1. Define events
+
+```ts title="lib/events.ts"
+import { Event, type InferEvents } from "@g14o/events";
+import { memoryStream } from "@g14o/events/memory";
+import { z } from "zod";
+
+export const event = new Event({
+  schema: {
+    notification: {
+      alert: z.string(),
+    },
+  },
+  stream: memoryStream(),
+  // verbose: true, // console diagnostics (silent by default)
+});
+
+export type Events = InferEvents<typeof event>;
+```
+
+### 2. Route handler
+
+The SSE handler is Fetch API (`Request` → `Response`). Next.js App Router example:
+
+```ts title="app/api/events/route.ts"
+import { handler } from "@g14o/events/handler";
+import { event } from "@/lib/events";
+
+export const { GET } = handler({
+  event,
+  middleware: async ({ request, channels }) => {
+    // return Response to reject the connection
+  },
+});
+```
+
+For Hono, Express, TanStack Start, and other runtimes, see [Handler — Mounting](/packages/events/handler#mounting).
+
+### 3. Provider + hooks
+
+```tsx title="app/providers.tsx"
+"use client";
+
+import { EventProvider } from "@g14o/events/client";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return <EventProvider>{children}</EventProvider>;
+}
+```
+
+```ts title="lib/events-client.ts"
+"use client";
+
+import { createEvent } from "@g14o/events/client";
+import type { Events } from "./events";
+
+export const { useEvent, useChannel, useEventStatus } = createEvent<Events>();
+```
+
+### 4. Emit and subscribe
+
+```ts
+await event.channel("demo").emit("notification.alert", "hello");
+```
+
+```tsx
+"use client";
+
+import { useEvent } from "@/lib/events-client";
+
+export function Alerts() {
+  const { status } = useEvent({
+    channels: ["demo"],
+    events: ["notification.alert"],
+    onData({ event, data, channel }) {
+      console.log(status, event, channel, data);
+    },
+  });
+
+  return <p>Listening…</p>;
+}
+```
+
+## How it works
+
+```
+new Event({ schema, stream }) → stream.append + publish
+handler() GET SSE ← stream.subscribe + readAfter
+EventProvider EventSource ← hooks (useEvent / useChannel)
+```
+
+- **Server** — validate with Standard Schema, run local listeners/middleware, persist/fan-out via `EventStream`.
+- **Handler** — SSE edge over the stream (history via `last_ack_*`).
+- **Client** — one shared EventSource; hooks register channels.
+
+See [Streams](/packages/events/streams), [Deployment](/packages/events/deployment), [Handler](/packages/events/handler), [Client](/packages/events/client), and [Channel](/packages/events/channel).

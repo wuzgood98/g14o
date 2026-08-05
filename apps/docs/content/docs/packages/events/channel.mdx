@@ -1,0 +1,373 @@
+---
+title: Channel
+description: Join delivery scopes and subscribe from @g14o/events/client.
+---
+
+A **channel** is an opaque delivery-scope string — a room, user inbox, job, tenant, or any scope you define. It controls **who receives** an emission. It is not an event name and not a namespace.
+
+| Concept | Role |
+|---------|------|
+| **Event name** | Typed payload key in your schema (`notification.alert`) |
+| **Namespace** | Prefix on event names for organization |
+| **Channel** | Delivery scope for fan-out (`user:abc`, `room:42`) |
+
+Only `event.channel(...names).emit` / `.dispatch` reaches browser subscribers. Plain `event.emit()` runs local listeners only and does **not** fan out over SSE.
+
+See [Namespaces](/packages/events/namespaces) for event-name organization and [Server](/packages/events/server) for `ChannelEmitter`.
+
+## Setup
+
+Channel hooks require the shared [Client](/packages/events/client) setup: wrap your tree in `EventProvider` and export typed hooks from `createEvent<Events>()`.
+
+```ts title="lib/events-client.ts"
+"use client";
+
+import { createEvent } from "@g14o/events/client";
+import type { Events } from "./events";
+
+export const { useEvent, useChannel, useEventStatus } = createEvent<Events>();
+```
+
+`EventProvider` owns one shared `EventSource`. It connects after a hook registers at least one channel. On reconnect, the provider sends `last_ack_*` query params per channel so the Handler can gap-fill missed messages.
+
+## useChannel
+
+Join one or more channels. Pass a handler as the last argument to receive **all** user events on those channels, or omit it for join-only registration:
+
+```tsx
+useChannel("demo");
+useChannel("room-1", ({ event, data, channel }) => {
+  console.log(event, channel, data);
+});
+```
+
+`useChannel` returns void — use `useEventStatus` for connection status.
+
+Prefer `useEvent` when you need to filter by event name.
+
+## useEvent + channels
+
+Filtered subscribe API. Pass `channels` to scope which delivery scopes you join. Default is `["default"]` when omitted.
+
+```tsx
+const { status } = useEvent({
+  channels: ["demo"],
+  events: ["notification.alert"],
+  enabled: true,
+  onData({ event, data, channel }) {
+    console.log(event, channel, data);
+  },
+});
+```
+
+Omit `events` to receive all user events on the joined channels. Set `enabled: false` to unregister without unmounting. When `events` is a literal union, narrowing `event` in `onData` narrows `data` to the matching payload type.
+
+Either `useChannel` or `useEvent` with `channels` is enough to open the EventSource — you do not need join-only `useChannel` when `useEvent` already lists the same channels.
+
+See [UseEventOptions](/packages/events/api#useeventoptions) for the full option table.
+
+## Naming
+
+Channel names are plain strings — the package does not enforce a format. Common app conventions:
+
+- `user:${userId}` — private inbox
+- `room:${roomId}` — chat or collaboration room
+- `job:${jobId}` — background task progress
+- `workspace:${id}` / `org:${id}` — tenant-scoped feeds
+
+With [Upstash](/packages/events/streams), avoid `/` in channel names and prefixes.
+
+## Private channels
+
+User-scoped and job-scoped channels need Handler auth so subscribers only join channels they own:
+
+```ts title="app/api/events/route.ts"
+export const { GET } = handler({
+  event,
+  authorizeJoin: async ({ channels, request }) => {
+    const user = await auth(request);
+    if (!user) return false;
+    return channels.every((channel) => canJoin(user, channel));
+  },
+});
+```
+
+See [Handler](/packages/events/handler) for `middleware` and `authorizeJoin`.
+
+## Use cases
+
+Channel subscribe is for **server → browser push**. Every scenario pairs a subscribe hook with server-side `event.channel(...).emit`.
+
+### Live notifications
+
+Show a toast or inbox badge when something happens in your app — a mention, invite, or order update.
+
+```ts title="lib/events.ts (schema excerpt)"
+schema: {
+  notification: {
+    alert: z.object({ title: z.string(), body: z.string() }),
+  },
+},
+```
+
+```tsx title="components/notification-listener.tsx"
+"use client";
+
+import { useEvent } from "@/lib/events-client";
+
+export function NotificationListener({ userId }: { userId: string }) {
+  useEvent({
+    channels: [`user:${userId}`],
+    events: ["notification.alert"],
+    onData({ data }) {
+      toast(data.title, { description: data.body });
+    },
+  });
+
+  return null;
+}
+```
+
+```ts title="app/api/mentions/route.ts"
+// After persisting the mention:
+await event
+  .channel(`user:${mentionedUserId}`)
+  .emit("notification.alert", {
+    title: "New mention",
+    body: `${author.name} mentioned you`,
+  });
+```
+
+### Live activity feed
+
+Append "X happened" rows to a workspace or admin feed as server events arrive — no polling.
+
+```ts title="lib/events.ts (schema excerpt)"
+schema: {
+  activity: {
+    created: z.object({
+      actor: z.string(),
+      action: z.string(),
+      target: z.string(),
+    }),
+  },
+},
+```
+
+```tsx title="components/activity-feed.tsx"
+"use client";
+
+import { useState } from "react";
+import { useEvent } from "@/lib/events-client";
+
+export function ActivityFeed({ workspaceId }: { workspaceId: string }) {
+  const [entries, setEntries] = useState<
+    { id: string; actor: string; action: string; target: string }[]
+  >([]);
+
+  useEvent({
+    channels: [`workspace:${workspaceId}`],
+    events: ["activity.created"],
+    onData({ data }) {
+      setEntries((current) => [{ ...data, id: crypto.randomUUID() }, ...current]);
+    },
+  });
+
+  return (
+    <ul>
+      {entries.map((entry) => (
+        <li key={entry.id}>
+          {entry.actor} {entry.action} {entry.target}
+        </li>
+      ))}
+    </ul>
+  );
+}
+```
+
+```ts title="lib/audit.ts"
+// After a domain action completes:
+await event
+  .channel(`workspace:${workspaceId}`)
+  .emit("activity.created", {
+    actor: user.name,
+    action: "created",
+    target: document.title,
+  });
+```
+
+### Live dashboard
+
+Fetch KPIs with TanStack Query. When the server emits `dashboard.snapshot`, invalidate the query so metrics refetch — no polling. Assumes the tree is wrapped in `QueryClientProvider`.
+
+```ts title="lib/events.ts (schema excerpt)"
+schema: {
+  dashboard: {
+    snapshot: z.object({ at: z.number() }),
+  },
+},
+```
+
+```tsx title="components/ops-dashboard.tsx"
+"use client";
+
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEvent } from "@/lib/events-client";
+
+type DashboardMetrics = {
+  activeUsers: number;
+  errorRate: number;
+  queueDepth: number;
+};
+
+async function fetchDashboardMetrics(orgId: string): Promise<DashboardMetrics> {
+  const response = await fetch(`/api/orgs/${orgId}/metrics`);
+  if (!response.ok) throw new Error("Failed to load metrics");
+  return response.json() as Promise<DashboardMetrics>;
+}
+
+export function OpsDashboard({ orgId }: { orgId: string }) {
+  const queryClient = useQueryClient();
+  const { data: metrics, isPending, isError } = useQuery({
+    queryKey: ["dashboard", orgId],
+    queryFn: () => fetchDashboardMetrics(orgId),
+  });
+
+  useEvent({
+    channels: [`org:${orgId}`],
+    events: ["dashboard.snapshot"],
+    onData() {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", orgId] });
+    },
+  });
+
+  if (isPending) return <p>Loading metrics…</p>;
+  if (isError || !metrics) return <p>Failed to load metrics.</p>;
+
+  return (
+    <dl>
+      <dt>Active users</dt>
+      <dd>{metrics.activeUsers}</dd>
+      <dt>Error rate</dt>
+      <dd>{metrics.errorRate}%</dd>
+      <dt>Queue depth</dt>
+      <dd>{metrics.queueDepth}</dd>
+    </dl>
+  );
+}
+```
+
+```ts title="app/api/orgs/[orgId]/metrics/route.ts"
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ orgId: string }> }
+) {
+  const { orgId } = await params;
+
+  return Response.json({
+    activeUsers: await countActiveUsers(orgId),
+    errorRate: await computeErrorRate(orgId),
+    queueDepth: await queue.size(orgId),
+  });
+}
+```
+
+```ts title="jobs/metrics-publisher.ts"
+// After metrics change, signal subscribers to refetch:
+await event
+  .channel(`org:${orgId}`)
+  .emit("dashboard.snapshot", { at: Date.now() });
+```
+
+For multi-instance deployments, use a shared [Stream](/packages/events/streams) backend so every app instance receives the same fan-out.
+
+### Job / workflow progress
+
+Listen on a job channel while a background task runs — queued, running, done, or failed.
+
+```ts title="lib/events.ts (schema excerpt)"
+schema: {
+  job: {
+    progress: z.object({
+      status: z.enum(["queued", "running", "done", "failed"]),
+      percent: z.number().optional(),
+      message: z.string().optional(),
+    }),
+  },
+},
+```
+
+```tsx title="components/job-progress.tsx"
+"use client";
+
+import { useState } from "react";
+import { useEvent } from "@/lib/events-client";
+
+type JobProgressPayload = {
+  status: "queued" | "running" | "done" | "failed";
+  percent?: number;
+  message?: string;
+};
+
+export function JobProgress({ jobId }: { jobId: string | null }) {
+  const [progress, setProgress] = useState<JobProgressPayload | null>(null);
+
+  useEvent({
+    channels: jobId ? [`job:${jobId}`] : [],
+    events: ["job.progress"],
+    enabled: Boolean(jobId),
+    onData({ data }) {
+      setProgress(data);
+    },
+  });
+
+  if (!jobId) return null;
+  return <p>{progress?.status ?? "queued"}…</p>;
+}
+```
+
+```ts title="jobs/run-export.ts"
+await event.channel(`job:${jobId}`).emit("job.progress", {
+  status: "running",
+  percent: 42,
+});
+
+// On completion:
+await event.channel(`job:${jobId}`).emit("job.progress", {
+  status: "done",
+  message: "Export ready",
+});
+```
+
+### Chat (receive path)
+
+The Client receives messages; **sending** is a separate REST (or RPC) route that persists and then emits:
+
+```tsx
+useEvent({
+  channels: [`room:${roomId}`],
+  events: ["chat.message"],
+  onData({ data }) {
+    appendMessage(data);
+  },
+});
+```
+
+```ts title="app/api/messages/route.ts"
+// POST body → validate → persist → emit
+await event.channel(`room:${roomId}`).emit("chat.message", message);
+```
+
+This is not a full chat SDK — typing indicators, receipts, and presence need the same REST-then-emit pattern or a dedicated collab stack.
+
+## What channels are not for
+
+The Client **does not emit** — publishing is server-side via `event.channel(...).emit`. Namespaces, stream adapters, listeners, and middleware are server-side — see [Server](/packages/events/server), [Streams](/packages/events/streams), and [Listeners](/packages/events/listeners).
+
+There is no built-in presence or membership roster. Build those at the application layer (REST + emit) if you need them.
+
+Document cursors, operational transforms, and CRDT sync need bidirectional transport (WebSockets + Yjs/Automerge, etc.). Channels can show server-authored awareness toasts, but they are not the editing transport.
+
+Reconnect gap-fill via `last_ack_*` replays missed messages after a drop — it is not a chat history SDK for loading the last N messages on first connect.
+
+Runnable full loops live in `apps/events-*` in the repo (Next, Hono, Express, TanStack Start).
