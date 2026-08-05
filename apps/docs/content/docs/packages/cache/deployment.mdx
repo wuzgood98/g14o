@@ -1,0 +1,24 @@
+---
+title: Deployment
+description: Choose a cache store for your hosting environment.
+---
+
+Shared caching across instances needs a remote store. Pick one that matches where your server runs. Wiring examples live on [Setup](/packages/cache/setup).
+
+## Pick a store
+
+| Environment | Store | Why |
+|-------------|-------|-----|
+| Local / single process | In-memory (implicit or explicit) | Per-process — not shared across replicas |
+| Serverless / edge (Vercel, Lambda, Workers) | `upstashStore` | REST via `@upstash/redis` — no persistent TCP |
+| Always-on Node (Express, Hono, Fastify, Nest, Docker/K8s) | `redisStore` | TCP via `node-redis` / `ioredis` |
+
+The legacy `redis: { url, token }` option wraps `upstashStore` internally. Prefer `store: upstashStore(...)` for new projects.
+
+## Cost
+
+Upstash bills per command — a good fit for low or spiky traffic. Self-hosted or always-on Redis is mostly fixed cost and often wins at sustained high load. See [Upstash Redis pricing](https://upstash.com/pricing/redis) for current plans.
+
+## Dev and build fallbacks
+
+When no `store` is configured, development, test, and static build phases use an in-memory backend automatically. Production requires an explicit store. See [Setup](/packages/cache/setup) for configuration.
