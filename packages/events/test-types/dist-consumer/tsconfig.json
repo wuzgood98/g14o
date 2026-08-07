@@ -4,7 +4,11 @@
     "noEmit": true,
     "skipLibCheck": true,
     "module": "ESNext",
-    "moduleResolution": "Bundler"
+    "moduleResolution": "Bundler",
+    "paths": {
+      "@g14o/events": ["../../dist/index.d.mts"],
+      "@g14o/events/memory": ["../../dist/memory.d.mts"]
+    }
   },
   "include": ["./**/*.ts"]
 }
