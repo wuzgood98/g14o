@@ -21,6 +21,14 @@ export type Events = InferEvents<typeof event>;
 
 type EmitEvent = Parameters<typeof event.emit>[0];
 
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+type EventsIsNotAny = IsAny<Events> extends true ? false : true;
+type EmitEventIsNotAny = IsAny<EmitEvent> extends true ? false : true;
+
+const _eventsNotAny: EventsIsNotAny = true;
+const _emitEventNotAny: EmitEventIsNotAny = true;
+
 type HasExactEmitLiteral = EmitEvent extends "notification.alert"
   ? "notification.alert" extends EmitEvent
     ? true
@@ -33,6 +41,16 @@ type AlertPayload = Events["notification.alert"];
 
 const _alertPayload: AlertPayload = {
   createdAt: "2026-01-01T00:00:00.000Z",
+  href: "/orders/1",
+  id: "alert-1",
+  kind: "order",
+  message: "Order shipped",
+  title: "Update",
+};
+
+const _invalidAlertPayload: AlertPayload = {
+  // @ts-expect-error — invalid notification.alert payload must not typecheck
+  createdAt: 1,
   href: "/orders/1",
   id: "alert-1",
   kind: "order",
