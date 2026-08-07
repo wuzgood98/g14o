@@ -43,7 +43,6 @@ export namespace StandardSchemaV1 {
 /** @internal */
 export type SchemaShape = Record<string, StandardSchemaV1>;
 
-/** @internal */
 export type InferSchemaOutput<TSchema extends StandardSchemaV1> =
   TSchema extends StandardSchemaV1<unknown, infer TOutput> ? TOutput : never;
 
@@ -92,7 +91,6 @@ type FlattenSchemaEventsLevel<
       }[keyof T & string]
     >;
 
-/** @internal */
 export type FlattenSchemaEvents<
   T extends NestedSchemaShape,
   Prefix extends string = "",

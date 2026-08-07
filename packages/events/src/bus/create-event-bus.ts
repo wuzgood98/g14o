@@ -245,18 +245,12 @@ export interface EventBusOptions {
   verbose?: boolean;
 }
 
-/**
- * Bus configuration when a schema map is provided for schema-first mode.
- * @internal
- */
+/** Bus configuration when a schema map is provided for schema-first mode. */
 type SchemaEventConfig<TSchema extends NestedSchemaShape> = EventBusOptions & {
   schema: TSchema;
 };
 
-/**
- * Bus configuration when no schema is provided for type-only mode.
- * @internal
- */
+/** Bus configuration when no schema is provided for type-only mode. */
 type TypeOnlyEventConfig = EventBusOptions & {
   schema?: undefined;
 };
