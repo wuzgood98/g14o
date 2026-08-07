@@ -20,7 +20,7 @@
     "build": "tsdown && node scripts/strip-dts-comments.mjs",
     "clean": "rimraf dist",
     "prepack": "tsdown && node scripts/strip-dts-comments.mjs",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p test-types/tsconfig.json && tsc --noEmit -p test-types/dist-consumer/tsconfig.json",
     "test": "vitest run"
   },
   "peerDependencies": {
@@ -61,7 +61,8 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.22.1",
     "typescript": "^5",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "zod": "^4.4.3"
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
@@ -137,7 +138,41 @@
     }
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "./client": {
+        "types": "./dist/client/index.d.mts",
+        "default": "./dist/client/index.mjs"
+      },
+      "./handler": {
+        "types": "./dist/handler.d.mts",
+        "default": "./dist/handler.mjs"
+      },
+      "./observability": {
+        "types": "./dist/observability.d.mts",
+        "default": "./dist/observability.mjs"
+      },
+      "./stream": {
+        "types": "./dist/stream.d.mts",
+        "default": "./dist/stream.mjs"
+      },
+      "./memory": {
+        "types": "./dist/memory.d.mts",
+        "default": "./dist/memory.mjs"
+      },
+      "./redis": {
+        "types": "./dist/redis.d.mts",
+        "default": "./dist/redis.mjs"
+      },
+      "./upstash": {
+        "types": "./dist/upstash.d.mts",
+        "default": "./dist/upstash.mjs"
+      }
+    }
   },
   "keywords": [
     "events",
