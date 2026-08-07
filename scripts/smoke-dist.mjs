@@ -63,6 +63,7 @@ const eventsSmoke = {
   subpaths: [
     { distFile: "dist/handler.mjs", exports: ["handler"] },
     { distFile: "dist/memory.mjs", exports: ["memoryStream"] },
+    { distFile: "dist/client/index.mjs", exports: ["EventProvider"] },
   ],
 };
 
