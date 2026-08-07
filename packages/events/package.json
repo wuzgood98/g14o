@@ -1,6 +1,6 @@
 {
   "name": "@g14o/events",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe realtime events with Standard Schema, pluggable streams, and a Fetch API SSE handler. React client hooks included.",
   "type": "module",
   "sideEffects": false,
