@@ -6,6 +6,7 @@ import {
   WebhookVerificationError,
 } from "../src/client/errors";
 import { Paystack } from "../src/client/paystack-client";
+import { processWebhookDelivery } from "../src/client/webhook-delivery";
 import {
   createChargeSuccessWebhookEvent,
   createPaystackClient,
@@ -321,6 +322,19 @@ describe("paystack.webhook.processWebhookRequest", () => {
 
 describe("paystack.webhook.processWebhookDelivery", () => {
   const paystack = createPaystackClient();
+
+  it("rejects request-first calls with missing options and deps", async () => {
+    const request = createWebhookRequest(
+      createChargeSuccessWebhookEvent({ reference: "ref_shape" })
+    );
+
+    await expect(processWebhookDelivery(request)).rejects.toMatchObject({
+      code: "WEBHOOK_PROCESSING_ERROR",
+      statusCode: 400,
+      message:
+        "Request-first webhook delivery requires options and secretKey deps",
+    });
+  });
 
   it("calls the handler and returns the parsed event", async () => {
     const payload = createChargeSuccessWebhookEvent({
