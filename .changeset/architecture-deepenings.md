@@ -7,7 +7,7 @@
 "@g14o/ratelimit": minor
 ---
 
-Deepen package architecture across six grill candidates.
+Deepen package architecture across six packages.
 
 **@g14o/events**
 - Replace `EventStream.append` + `publish` with single `write` — custom stream adapters must implement `write`
