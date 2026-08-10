@@ -40,7 +40,7 @@
       "passThroughEnv": ["PAYSTACK_SECRET_KEY", "REDIS_URL"]
     },
     "test:integration": {
-      "dependsOn": [],
+      "dependsOn": ["^build"],
       "cache": false
     },
     "dev": {
