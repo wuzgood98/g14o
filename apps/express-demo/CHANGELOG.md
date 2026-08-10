@@ -1,5 +1,11 @@
 # express-demo
 
+## 0.0.7
+
+### Patch Changes
+
+- @g14o/ratelimit-express@0.4.1
+
 ## 0.0.6
 
 ### Patch Changes

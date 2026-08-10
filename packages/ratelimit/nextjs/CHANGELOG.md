@@ -1,5 +1,12 @@
 # @g14o/ratelimit-nextjs
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [7c74d51]
+  - @g14o/ratelimit@0.8.0
+
 ## 0.4.0
 
 ### Minor Changes
