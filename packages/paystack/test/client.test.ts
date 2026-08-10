@@ -424,7 +424,7 @@ describe("paystack.subscriptions", () => {
       code: DEMO_PAYSTACK_SUBSCRIPTION_CODE,
       token: "email_token_demo",
     });
-    expect(result).toEqual({});
+    expect(result).toBe("Subscription disabled");
   });
 
   it("enables a subscription", async () => {
@@ -438,7 +438,7 @@ describe("paystack.subscriptions", () => {
 
     const call = getLastFetchCall(fetchMock as Mock);
     expect(call?.url).toContain("/subscription/enable");
-    expect(result).toEqual({});
+    expect(result).toBe("Subscription enabled");
   });
 
   it("rejects disable requests with invalid payload before fetch", async () => {

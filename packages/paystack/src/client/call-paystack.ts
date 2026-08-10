@@ -11,12 +11,20 @@ export interface CallPaystackOptions<T> {
   method: HttpMethod;
   path: string;
   query?: RequestOptions["query"];
+  /**
+   * When true, return the envelope `message` instead of parsed `data`.
+   * Used for Paystack endpoints that succeed with status + message only.
+   */
+  returnMessage?: boolean | undefined;
 }
 
 const asBody = (value: object): Record<string, unknown> =>
   value as Record<string, unknown>;
 
-function parseResponseEnvelope<T>(schema: z.ZodType<T>, response: unknown): T {
+function parseResponseEnvelope<T>(
+  schema: z.ZodType<T>,
+  response: unknown
+): { data: T; message: string } {
   const envelope = paystackResponseEnvelopeSchema(schema).safeParse(response);
 
   if (!envelope.success) {
@@ -33,7 +41,10 @@ function parseResponseEnvelope<T>(schema: z.ZodType<T>, response: unknown): T {
     });
   }
 
-  return envelope.data.data;
+  return {
+    data: envelope.data.data,
+    message: envelope.data.message,
+  };
 }
 
 /**
@@ -41,8 +52,16 @@ function parseResponseEnvelope<T>(schema: z.ZodType<T>, response: unknown): T {
  */
 export async function callPaystack<T>(
   http: PaystackHttpClient,
+  options: CallPaystackOptions<T> & { returnMessage: true }
+): Promise<string>;
+export async function callPaystack<T>(
+  http: PaystackHttpClient,
+  options: CallPaystackOptions<T> & { returnMessage?: false | undefined }
+): Promise<T>;
+export async function callPaystack<T>(
+  http: PaystackHttpClient,
   options: CallPaystackOptions<T>
-): Promise<T> {
+): Promise<T | string> {
   const body = options.body;
 
   if (body !== undefined && options.bodySchema) {
@@ -63,7 +82,8 @@ export async function callPaystack<T>(
     query: options.query,
   });
 
-  return parseResponseEnvelope(options.dataSchema, response);
+  const envelope = parseResponseEnvelope(options.dataSchema, response);
+  return options.returnMessage ? envelope.message : envelope.data;
 }
 
 export { asBody };
