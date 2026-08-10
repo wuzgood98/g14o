@@ -35,8 +35,8 @@ export interface PaystackClient {
      * @returns The list of customers.
      */
     list: (query?: {
-      perPage?: number;
-      page?: number;
+      perPage?: number | undefined | null;
+      page?: number | undefined | null;
     }) => Promise<PaystackCustomer[]>;
     /**
      * Update a customer.
@@ -71,8 +71,8 @@ export interface PaystackClient {
      * @returns The list of plans.
      */
     list: (query?: {
-      perPage?: number;
-      page?: number;
+      perPage?: number | undefined | null;
+      page?: number | undefined | null;
     }) => Promise<PaystackPlan[]>;
   };
   /**
@@ -109,10 +109,10 @@ export interface PaystackClient {
      * @returns The list of subscriptions.
      */
     list: (query?: {
-      perPage?: number;
-      page?: number;
-      customer?: number;
-      plan?: number;
+      perPage?: number | undefined | null;
+      page?: number | undefined | null;
+      customer?: number | undefined | null;
+      plan?: number | undefined | null;
     }) => Promise<PaystackSubscription[]>;
   };
   /**
