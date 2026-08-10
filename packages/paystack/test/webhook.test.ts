@@ -328,7 +328,10 @@ describe("paystack.webhook.processWebhookDelivery", () => {
       createChargeSuccessWebhookEvent({ reference: "ref_shape" })
     );
 
-    await expect(processWebhookDelivery(request)).rejects.toMatchObject({
+    await expect(
+      // @ts-expect-error request-first requires options and secretKey deps
+      processWebhookDelivery(request)
+    ).rejects.toMatchObject({
       code: "WEBHOOK_PROCESSING_ERROR",
       statusCode: 400,
       message:
