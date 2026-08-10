@@ -24,14 +24,6 @@ export interface PaystackHttpOptions {
    */
   maxRetries?: number;
   /**
-   * The function to call when you want to validate the payload before sending it to Paystack.
-   * @param payload - The payload to validate.
-   * @returns The void or a promise.
-   */
-  onPayloadValidationBeforeSending?: (
-    payload: Record<string, unknown>
-  ) => Promise<void> | void;
-  /**
    * The secret key to use for authentication.
    * @required
    */
@@ -55,14 +47,6 @@ export interface RequestOptions {
    */
   method: HttpMethod;
   /**
-   * The function to call when you want to validate the payload before sending it to Paystack.
-   * @param payload - The payload to validate.
-   * @returns The void or a promise.
-   */
-  onPayloadValidationBeforeSending?: (
-    payload: Record<string, unknown>
-  ) => Promise<void> | void;
-  /**
    * The path of the request.
    * @required
    */
@@ -82,25 +66,6 @@ const DEFAULT_MAX_RETRIES = 3;
 const DEFAULT_INITIAL_RETRY_DELAY_MS = 500;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * Converts a partial record of query parameters into a deterministic URL query string.
- *
- * Keys are sorted alphabetically for stable output. Entries that are `null`, `undefined`,
- * empty strings, or empty arrays are omitted. Array values are joined with commas.
- *
- * @typeParam TParams - Shape of the input parameter record.
- * @param params - Partial query parameters to serialize.
- * @returns Query string without a leading `?` (e.g. `page=1&search=foo`).
- *
- * @example
- * ```ts
- * stringifyParams({ search: "john", page: 1, tags: ["a", "b"] });
- * // "page=1&search=john&tags=a,b"
- * ```
- *
- * @internal
- */
 function stringifyParams<
   TParams extends Record<
     string,
@@ -130,13 +95,6 @@ function stringifyParams<
 
   return new URLSearchParams(stringParams).toString();
 }
-
-/**
- * Parses the Retry-After header value into a number of milliseconds.
- * @param header - The Retry-After header value.
- * @returns The number of milliseconds to wait before retrying the request.
- * @internal
- */
 const parseRetryAfter = (header: string | null): number | undefined => {
   if (!header) {
     return;
@@ -155,12 +113,6 @@ const parseRetryAfter = (header: string | null): number | undefined => {
   return;
 };
 
-/**
- * Checks if a status code is retryable.
- * @param status - The status code to check.
- * @returns `true` if the status code is retryable, `false` otherwise.
- * @internal
- */
 const isRetryableStatus = (status: number): boolean =>
   status === 429 || status >= 500;
 
@@ -170,14 +122,6 @@ type HttpAttemptResult<T> =
   | { status: "success"; data: T }
   | { status: "retry"; delayMs: number };
 
-/**
- * Builds a request URL with query parameters.
- * @param baseUrl - The base URL of the Paystack API.
- * @param path - The path of the request.
- * @param query - The query parameters to add to the URL.
- * @returns The request URL.
- * @internal
- */
 const buildRequestUrl = (
   baseUrl: string,
   path: string,
@@ -192,13 +136,6 @@ const buildRequestUrl = (
   return url;
 };
 
-/**
- * Parses the response text into a JSON object.
- * @param text - The response text.
- * @param statusCode - The status code of the response.
- * @returns The JSON object.
- * @internal
- */
 const parseResponseJson = (text: string, statusCode: number): unknown => {
   try {
     return text ? JSON.parse(text) : {};
@@ -210,13 +147,6 @@ const parseResponseJson = (text: string, statusCode: number): unknown => {
   }
 };
 
-/**
- * Gets the error message from the JSON response.
- * @param json - The JSON response.
- * @param status - The status code of the response.
- * @returns The error message.
- * @internal
- */
 const getPaystackErrorMessage = (json: unknown, status: number): string => {
   if (
     typeof json === "object" &&
@@ -229,28 +159,12 @@ const getPaystackErrorMessage = (json: unknown, status: number): string => {
 
   return `Paystack request failed with status ${status}`;
 };
-
-/**
- * Gets the backoff delay in milliseconds.
- * @param attempt - The attempt number.
- * @param initialRetryDelayMs - The initial retry delay in milliseconds.
- * @returns The backoff delay in milliseconds.
- * @internal
- */
 const getBackoffDelayMs = (
   attempt: number,
   initialRetryDelayMs: number
 ): number =>
   initialRetryDelayMs * 2 ** attempt + Math.floor(Math.random() * 100);
 
-/**
- * Gets the rate limit delay in milliseconds.
- * @param retryAfterHeader - The Retry-After header value.
- * @param attempt - The attempt number.
- * @param initialRetryDelayMs - The initial retry delay in milliseconds.
- * @returns The rate limit delay in milliseconds.
- * @internal
- */
 const getRateLimitDelayMs = (
   retryAfterHeader: string | null,
   attempt: number,
@@ -259,26 +173,10 @@ const getRateLimitDelayMs = (
   parseRetryAfter(retryAfterHeader) ??
   getBackoffDelayMs(attempt, initialRetryDelayMs);
 
-/**
- * Checks if an error is an abort error.
- * @param error - The error to check.
- * @returns `true` if the error is an abort error, `false` otherwise.
- * @internal
- */
 const isAbortError = (error: unknown): boolean =>
   error instanceof Error &&
   (error.name === "AbortError" || error.message.includes("aborted"));
 
-/**
- * Processes the HTTP response.
- * @param response - The HTTP response.
- * @param json - The JSON response.
- * @param attempt - The attempt number.
- * @param maxRetries - The maximum number of retries.
- * @param retryAfterHeader - The Retry-After header value.
- * @param initialRetryDelayMs - The initial retry delay in milliseconds.
- * @returns The HTTP attempt result.
- */
 const processHttpResponse = <T>(
   response: Response,
   json: unknown,
@@ -319,9 +217,6 @@ export class PaystackHttpClient {
   private readonly timeoutMs: number;
   private readonly maxRetries: number;
   private readonly initialRetryDelayMs: number;
-  private readonly onPayloadValidationBeforeSending: (
-    payload: Record<string, unknown>
-  ) => Promise<void> | void;
 
   constructor(options: PaystackHttpOptions) {
     this.#secretKey = options.secretKey;
@@ -331,8 +226,6 @@ export class PaystackHttpClient {
     this.maxRetries = options.maxRetries ?? DEFAULT_MAX_RETRIES;
     this.initialRetryDelayMs =
       options.initialRetryDelayMs ?? DEFAULT_INITIAL_RETRY_DELAY_MS;
-    this.onPayloadValidationBeforeSending =
-      options.onPayloadValidationBeforeSending ?? (() => undefined);
   }
 
   async request<T>(options: RequestOptions): Promise<T> {
@@ -344,11 +237,6 @@ export class PaystackHttpClient {
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
 
       try {
-        const validatePayload =
-          options.onPayloadValidationBeforeSending ??
-          this.onPayloadValidationBeforeSending;
-        await validatePayload?.(options.body ?? {});
-
         const response = await this.fetchImpl(url, {
           method: options.method,
           headers: {

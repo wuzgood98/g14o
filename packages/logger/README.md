@@ -226,7 +226,26 @@ export const logger = createLogger({
 });
 ```
 
-`@g14o/cache` and `@g14o/ratelimit` log via an internal console logger when you pass `verbose: true` — they no longer accept an injected logger.
+`@g14o/cache`, `@g14o/events`, and `@g14o/ratelimit` share verbose diagnostics via `@g14o/logger/verbose`. Pass `verbose: true` for zero-config console output, or inject a custom logger:
+
+```ts
+import { createLogger } from "@g14o/logger";
+import { createCache } from "@g14o/cache";
+
+const appLogger = createLogger({ name: "cache" });
+
+createCache({
+  verbose: true, // console adapter
+  // or:
+  logger: {
+    info: (...args) => appLogger.info(String(args[0] ?? "")),
+    warn: (...args) => appLogger.warn(String(args[0] ?? "")),
+    error: (...args) => appLogger.error(new Error(String(args[0] ?? ""))),
+  },
+});
+```
+
+See [`@g14o/logger/verbose`](./src/verbose.ts) for `resolveVerboseLogger`.
 
 ## API
 

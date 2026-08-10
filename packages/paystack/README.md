@@ -95,20 +95,22 @@ await paystack.subscriptions.enable({
 ## Webhooks
 
 ```ts
-import { Paystack, isPaystackEvent, processWebhookDelivery } from "@g14o/paystack";
+import { Paystack, isPaystackEvent } from "@g14o/paystack";
 
-// Simple: verify + parse
-const event = await paystack.webhook.processWebhookRequest(request);
+const paystack = new Paystack({ secretKey: process.env.PAYSTACK_SECRET_KEY! });
 
-// Production: verify + parse + handler + deduplication
+// Primary: verify + parse + handler + optional deduplication
 const result = await paystack.webhook.processWebhookDelivery(request, {
   handler: async (event) => {
     if (isPaystackEvent(event, "charge.success")) {
       // fulfill order
     }
   },
-  store: myWebhookStore,
+  store: myWebhookStore, // optional — omit for at-least-once delivery
 });
+
+// Advanced: verify + parse only (no handler)
+const event = await paystack.webhook.processWebhookRequest(request);
 ```
 
 Supported events (27): `charge.success`, `bank.transfer.rejected`, disputes, customer identification, dedicated accounts, invoices, payment requests, refunds, subscriptions, transfers. See [webhooks docs](https://docs.g14o.dev/packages/paystack/webhooks).
@@ -116,7 +118,8 @@ Supported events (27): `charge.success`, `bank.transfer.rejected`, disputes, cus
 ## Errors
 
 - `PaystackError` — API, validation, network, rate limit, timeout (`PAYSTACK_*` codes)
-- `WebhookVerificationError` — missing/invalid signature (`WEBHOOK_*` codes)
+- `WebhookVerificationError` — missing/invalid signature or raw body (`WEBHOOK_MISSING_SIGNATURE`, `WEBHOOK_INVALID_SIGNATURE`, `WEBHOOK_INVALID_PAYLOAD` on verify)
+- `WebhookDeliveryError` — invalid parsed payload or handler/store failure (`WEBHOOK_INVALID_PAYLOAD`, `WEBHOOK_PROCESSING_ERROR`)
 
 ## Features
 

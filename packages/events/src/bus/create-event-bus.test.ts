@@ -953,8 +953,7 @@ describe("Event", () => {
         const bus = createTestEvent({
           verbose: true,
           stream: {
-            append: () => Promise.reject(new Error("stream boom")),
-            publish: () => Promise.resolve(),
+            write: () => Promise.reject(new Error("stream boom")),
             readAfter: () => Promise.resolve([]),
             subscribe: () => () => undefined,
             close: () => Promise.resolve(),
@@ -979,6 +978,23 @@ describe("Event", () => {
         infoSpy.mockRestore();
         errorSpy.mockRestore();
       }
+    });
+
+    it("uses injected logger when provided", async () => {
+      const info = vi.fn();
+      const bus = createTestEvent({
+        logger: { info, warn: vi.fn(), error: vi.fn() },
+      });
+
+      await bus.emit("user.created", { id: "1", email: "a@b.com" });
+
+      expect(
+        info.mock.calls.some(
+          (call) =>
+            typeof call[0] === "string" &&
+            call[0].includes("[events] Emit: user.created")
+        )
+      ).toBe(true);
     });
 
     it("does not log when verbose is omitted", async () => {

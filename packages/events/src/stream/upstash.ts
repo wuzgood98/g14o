@@ -48,7 +48,7 @@ export function upstashStream(options: UpstashStreamOptions): EventStream {
   const { redis } = options;
 
   return defineStream({
-    async append(channel, message) {
+    async write(channel, message) {
       const key = streamKey(prefix, channel);
       const id = await redis.xadd(
         key,
@@ -76,19 +76,25 @@ export function upstashStream(options: UpstashStreamOptions): EventStream {
       );
 
       if (!id) {
-        throw new Error("Upstash stream append failed to allocate a cursor.");
+        throw new Error("Upstash stream write failed to allocate a cursor.");
       }
 
       if (options.expireAfterSecs) {
         await redis.expire(key, options.expireAfterSecs);
       }
 
-      return id;
-    },
+      await redis.publish(key, {
+        id,
+        channel,
+        event: message.event,
+        data: message.data,
+        timestamp: message.timestamp,
+        ...(message.metadata === undefined
+          ? {}
+          : { metadata: message.metadata }),
+      } satisfies StreamMessage);
 
-    async publish(channel, message) {
-      const key = streamKey(prefix, channel);
-      await redis.publish(key, message);
+      return id;
     },
 
     async readAfter(channel, cursor, readOptions) {

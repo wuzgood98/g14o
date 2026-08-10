@@ -11,8 +11,7 @@ Choosing memory vs Upstash vs Redis: [Deployment](/packages/events/deployment).
 
 Every adapter implements:
 
-- `append(channel, message) → cursor`
-- `publish(channel, message)`
+- `write(channel, message) → cursor`
 - `readAfter(channel, cursor)`
 - `subscribe(channels, onMessage)`
 - `close()`
@@ -72,8 +71,7 @@ Default `channelPrefix` is `@g14o:events`. Do **not** put `/` in the prefix (or 
 import { defineStream } from "@g14o/events/stream";
 
 const stream = defineStream({
-  async append(channel, message) { /* … */ return id; },
-  async publish(channel, message) { /* … */ },
+  async write(channel, message) { /* persist + fan-out */ return id; },
   async readAfter(channel, cursor) { return []; },
   subscribe(channels, onMessage) { return () => {}; },
   async close() {},

@@ -221,6 +221,31 @@ describe("createRateLimit (factory API)", () => {
       }
     });
 
+    it("uses injected logger when provided", async () => {
+      const info = vi.fn();
+      const limited = createRateLimit({
+        env: "test",
+        logger: { info, warn: vi.fn(), error: vi.fn() },
+      });
+
+      try {
+        await limited.checkRateLimit(
+          new Request("http://localhost/api/inject"),
+          {
+            tier: "strict",
+          }
+        );
+        expect(
+          info.mock.calls.some(
+            (call) =>
+              typeof call[0] === "string" && call[0].startsWith("[ratelimit]")
+          )
+        ).toBe(true);
+      } finally {
+        limited.reset();
+      }
+    });
+
     it("logs diagnostics when verbose is true and stays silent when omitted", async () => {
       const infoSpy = vi
         .spyOn(console, "info")

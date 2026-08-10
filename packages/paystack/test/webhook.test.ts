@@ -1,7 +1,10 @@
 /** biome-ignore-all lint/suspicious/noEmptyBlockStatements: for testing */
 import { createHmac } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
-import { PaystackError, WebhookVerificationError } from "../src/client/errors";
+import {
+  WebhookDeliveryError,
+  WebhookVerificationError,
+} from "../src/client/errors";
 import { Paystack } from "../src/client/paystack-client";
 import {
   createChargeSuccessWebhookEvent,
@@ -147,10 +150,14 @@ describe("paystack.webhook.parseWebhookPayload", () => {
       )
     ).toThrow(
       expect.objectContaining({
-        code: "PAYSTACK_VALIDATION_ERROR",
-        statusCode: 400,
+        code: "WEBHOOK_INVALID_PAYLOAD",
       })
     );
+    expect(() =>
+      paystack.webhook.parseWebhookPayload(
+        JSON.stringify({ event: "", data: {} })
+      )
+    ).toThrow(WebhookDeliveryError);
   });
 
   it("rejects malformed JSON payloads", () => {
@@ -159,10 +166,36 @@ describe("paystack.webhook.parseWebhookPayload", () => {
     );
     expect(() => paystack.webhook.parseWebhookPayload("{not-json")).toThrow(
       expect.objectContaining({
-        code: "PAYSTACK_VALIDATION_ERROR",
-        statusCode: 400,
+        code: "WEBHOOK_INVALID_PAYLOAD",
       })
     );
+    expect(() => paystack.webhook.parseWebhookPayload("{not-json")).toThrow(
+      WebhookDeliveryError
+    );
+  });
+
+  it("strips unsafe metadata keys from webhook customer and charge payloads", () => {
+    const payload = createChargeSuccessWebhookEvent({
+      reference: "ref_safe_meta",
+      metadata: { userId: "user_1", __proto__: { polluted: true } },
+      customer: {
+        ...createChargeSuccessWebhookEvent().data.customer,
+        metadata: { tier: "pro", __proto__: { polluted: true } },
+      },
+    });
+
+    const parsed = paystack.webhook.parseWebhookPayload(
+      JSON.stringify(payload)
+    );
+
+    expect(parsed.event).toBe("charge.success");
+    if (parsed.event !== "charge.success") {
+      throw new Error("expected charge.success");
+    }
+
+    expect(parsed.data.metadata).toEqual({ userId: "user_1" });
+    expect(parsed.data.customer.metadata).toEqual({ tier: "pro" });
+    expect(Object.prototype).not.toHaveProperty("polluted");
   });
 });
 
@@ -182,19 +215,21 @@ describe("paystack.webhook.verifyWebhookRequest", () => {
   it("rejects requests without a body", async () => {
     await expect(
       paystack.webhook.verifyWebhookRequest(undefined)
-    ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
-      message: "Invalid request body",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookVerificationError &&
+        error.code === "WEBHOOK_INVALID_PAYLOAD" &&
+        error.message === "Request body is required"
+    );
 
     await expect(
       paystack.webhook.verifyWebhookRequest(new Request("https://example.com"))
-    ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
-      message: "Invalid request body",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookVerificationError &&
+        error.code === "WEBHOOK_INVALID_PAYLOAD" &&
+        error.message === "Request body is required"
+    );
   });
 
   it("rejects requests without a signature header", async () => {
@@ -205,11 +240,12 @@ describe("paystack.webhook.verifyWebhookRequest", () => {
 
     await expect(
       paystack.webhook.verifyWebhookRequest(request)
-    ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
-      message: "Webhook signature not found",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookVerificationError &&
+        error.code === "WEBHOOK_MISSING_SIGNATURE" &&
+        error.message === "Missing x-paystack-signature header"
+    );
   });
 
   it("rejects requests with invalid signatures", async () => {
@@ -222,11 +258,9 @@ describe("paystack.webhook.verifyWebhookRequest", () => {
       paystack.webhook.verifyWebhookRequest(request)
     ).rejects.toSatisfy(
       (error: unknown) =>
-        error instanceof PaystackError &&
-        error.code === "PAYSTACK_VALIDATION_ERROR" &&
-        error.statusCode === 400 &&
-        error.message === "Webhook verification failed" &&
-        error.cause instanceof WebhookVerificationError
+        error instanceof WebhookVerificationError &&
+        error.code === "WEBHOOK_INVALID_SIGNATURE" &&
+        error.message === "Invalid webhook signature"
     );
   });
 });
@@ -248,11 +282,12 @@ describe("paystack.webhook.processWebhookRequest", () => {
 
     await expect(
       paystack.webhook.processWebhookRequest(request)
-    ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
-      message: "Invalid webhook payload",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookDeliveryError &&
+        error.code === "WEBHOOK_INVALID_PAYLOAD" &&
+        error.message === "Invalid webhook payload"
+    );
   });
 
   it("rejects malformed JSON after successful verification", async () => {
@@ -262,8 +297,7 @@ describe("paystack.webhook.processWebhookRequest", () => {
     await expect(
       paystack.webhook.processWebhookRequest(request)
     ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
+      code: "WEBHOOK_INVALID_PAYLOAD",
       message: "Invalid webhook payload",
     });
   });
@@ -276,11 +310,12 @@ describe("paystack.webhook.processWebhookRequest", () => {
 
     await expect(
       paystack.webhook.processWebhookRequest(request)
-    ).rejects.toMatchObject({
-      code: "PAYSTACK_VALIDATION_ERROR",
-      statusCode: 400,
-      message: "Webhook verification failed",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookVerificationError &&
+        error.code === "WEBHOOK_INVALID_SIGNATURE" &&
+        error.message === "Invalid webhook signature"
+    );
   });
 });
 
@@ -333,11 +368,13 @@ describe("paystack.webhook.processWebhookDelivery", () => {
         },
         store,
       })
-    ).rejects.toMatchObject({
-      code: "WEBHOOK_PROCESSING_ERROR",
-      statusCode: 400,
-      message: "Webhook processing failed",
-    });
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        error instanceof WebhookDeliveryError &&
+        error.code === "WEBHOOK_PROCESSING_ERROR" &&
+        error.statusCode === 400 &&
+        error.message === "Webhook processing failed"
+    );
     expect(store.markFailed).toHaveBeenCalledWith(
       "charge.success:ref_fail",
       "handler failed"

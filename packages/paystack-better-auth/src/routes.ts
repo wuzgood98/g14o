@@ -5,6 +5,7 @@ import {
   type Paystack,
   PaystackError,
   SubscriptionError,
+  WebhookDeliveryError,
 } from "@g14o/paystack";
 import type { GenericEndpointContext, User } from "better-auth";
 import { getSessionFromCtx } from "better-auth/api";
@@ -774,7 +775,7 @@ export const paystackWebhook = (
         return ctx.json({ received: true });
       } catch (error) {
         if (
-          error instanceof PaystackError &&
+          error instanceof WebhookDeliveryError &&
           error.code === "WEBHOOK_PROCESSING_ERROR"
         ) {
           throw APIError.from(

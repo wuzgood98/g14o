@@ -1,4 +1,4 @@
-import type { InternalLogger } from "../logging";
+import type { VerboseLogger } from "@g14o/logger/verbose";
 import type { ErrorHandler, MutableEventContext } from "../types/context";
 
 /** Optional lifecycle hooks for {@link Event}. */
@@ -24,7 +24,7 @@ export interface EventBusHooks {
 export async function runEventHook<Ctx>(
   hook: ((ctx: Ctx) => void | Promise<void>) | undefined,
   ctx: Ctx,
-  logger: InternalLogger
+  logger: VerboseLogger
 ): Promise<void> {
   if (!hook) {
     return;

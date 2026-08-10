@@ -103,7 +103,7 @@ export function Alerts() {
 ## How it works
 
 ```
-new Event({ schema, stream }) → stream.append + publish
+new Event({ schema, stream }) → stream.write
 handler() GET SSE ← stream.subscribe + readAfter
 EventProvider EventSource ← hooks (useEvent / useChannel)
 ```

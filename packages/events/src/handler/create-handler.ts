@@ -6,7 +6,7 @@ import {
 import { getEventLogger } from "../logging";
 import { compareStreamIds } from "../stream/cursor";
 import type { StreamMessage } from "../stream/interface";
-import { createServerSseConnection } from "../transport/server-sse-connection";
+import { createSseSession } from "./sse-session";
 
 export type HandlerMiddleware = (args: {
   channels: string[];
@@ -111,8 +111,10 @@ export function handler<TEvents extends Record<string, unknown>>(
         }
       }
 
+      const connectionId = crypto.randomUUID();
+
       const allowed = await authorizeJoin({
-        connectionId: "pending",
+        connectionId,
         channels,
         action: "join",
         request,
@@ -125,15 +127,9 @@ export function handler<TEvents extends Record<string, unknown>>(
         );
       }
 
-      const {
-        connectionId,
-        stream: responseStream,
-        transport,
-        writeKeepalive,
-        writeMeta,
-      } = createServerSseConnection();
+      const session = createSseSession({ connectionId });
 
-      writeMeta({ connectionId });
+      session.writeMeta({ connectionId });
 
       let cleanedUp = false;
       let unsubscribe: (() => void) | undefined;
@@ -155,37 +151,37 @@ export function handler<TEvents extends Record<string, unknown>>(
         if (reconnectTimer) {
           clearTimeout(reconnectTimer);
         }
-        await transport.close().catch((error) => {
+        await session.close().catch((error) => {
           logger.warn("[events] SSE cleanup failed", error);
         });
       };
 
       const writeUserMessage = (message: StreamMessage): void => {
-        transport
-          .publish({
+        try {
+          session.writeData({
             id: message.id,
             event: message.event,
             payload: message.data,
             channels: [message.channel],
             timestamp: message.timestamp,
             metadata: message.metadata,
-          })
-          .catch((error) => {
-            logger.error("[events] SSE publish failed", error);
           });
+        } catch (error) {
+          logger.error("[events] SSE publish failed", error);
+        }
       };
 
       const writeSystem = (payload: Record<string, unknown>): void => {
-        transport
-          .publish({
+        try {
+          session.writeData({
             id: `system-${Date.now()}`,
             event: `__system.${String(payload.type ?? "message")}`,
             payload,
             timestamp: Date.now(),
-          })
-          .catch((error) => {
-            logger.error("[events] SSE publish failed", error);
           });
+        } catch (error) {
+          logger.error("[events] SSE publish failed", error);
+        }
       };
 
       unsubscribe = stream.subscribe(channels, (message) => {
@@ -230,7 +226,7 @@ export function handler<TEvents extends Record<string, unknown>>(
       keepaliveTimer = setInterval(() => {
         writeSystem({ type: "ping", timestamp: Date.now() });
         try {
-          writeKeepalive();
+          session.writeKeepalive();
         } catch {
           cleanup().catch((error) => {
             logger.warn("[events] SSE cleanup failed", error);
@@ -240,7 +236,7 @@ export function handler<TEvents extends Record<string, unknown>>(
 
       reconnectTimer = setTimeout(() => {
         writeSystem({ type: "reconnect", timestamp: Date.now() });
-        writeMeta({ reconnect: true });
+        session.writeMeta({ reconnect: true });
         cleanup().catch((error) => {
           logger.warn("[events] SSE cleanup failed", error);
         });
@@ -252,7 +248,7 @@ export function handler<TEvents extends Record<string, unknown>>(
         });
       });
 
-      return new Response(responseStream, {
+      return new Response(session.stream, {
         headers: {
           "Cache-Control": "no-cache, no-transform",
           Connection: "keep-alive",

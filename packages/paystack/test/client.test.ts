@@ -317,6 +317,22 @@ describe("paystack.plans", () => {
       code: "PAYSTACK_VALIDATION_ERROR",
     });
   });
+
+  it("throws API error when Paystack returns status false", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      mockJsonResponse({
+        status: false,
+        message: "Unable to retrieve plans",
+        data: [],
+      })
+    );
+    const paystack = createPaystackClient({ fetch: fetchMock });
+
+    await expect(paystack.plans.list()).rejects.toMatchObject({
+      code: "PAYSTACK_API_ERROR",
+      paystackMessage: "Unable to retrieve plans",
+    });
+  });
 });
 
 describe("paystack.subscriptions", () => {
@@ -408,10 +424,7 @@ describe("paystack.subscriptions", () => {
       code: DEMO_PAYSTACK_SUBSCRIPTION_CODE,
       token: "email_token_demo",
     });
-    expect(result).toMatchObject({
-      status: true,
-      message: "Subscription disabled",
-    });
+    expect(result).toEqual({});
   });
 
   it("enables a subscription", async () => {
@@ -425,10 +438,7 @@ describe("paystack.subscriptions", () => {
 
     const call = getLastFetchCall(fetchMock as Mock);
     expect(call?.url).toContain("/subscription/enable");
-    expect(result).toMatchObject({
-      status: true,
-      message: "Subscription enabled",
-    });
+    expect(result).toEqual({});
   });
 
   it("rejects disable requests with invalid payload before fetch", async () => {

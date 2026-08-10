@@ -5,6 +5,7 @@ export {
   CustomerSyncError,
   PaystackError,
   SubscriptionError,
+  WebhookDeliveryError,
   WebhookVerificationError,
 } from "./client/errors";
 export { Paystack } from "./client/paystack-client";
@@ -26,6 +27,7 @@ export type {
   PaystackClientOptions,
 } from "./client/types";
 export type {
+  ProcessWebhookDeliveryDeps,
   ProcessWebhookDeliveryOptions,
   ProcessWebhookDeliveryRequestOptions,
   ProcessWebhookDeliveryResult,
@@ -33,7 +35,13 @@ export type {
 } from "./client/webhook-delivery";
 export {
   createWebhookEventId,
+  parseWebhookPayload,
+  processVerifiedWebhookDelivery,
   processWebhookDelivery,
+  processWebhookDeliveryFromRequest,
+  processWebhookRequest,
+  verifyPaystackWebhookSignature,
+  verifyWebhookRequest,
 } from "./client/webhook-delivery";
 export { parseSafeMetadata } from "./metadata";
 export type {

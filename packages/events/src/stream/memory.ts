@@ -53,7 +53,7 @@ export function memoryStream(options: MemoryStreamOptions = {}): EventStream {
   };
 
   return defineStream({
-    append(channel, message) {
+    write(channel, message) {
       assertOpen();
       sequence += 1;
       const id = createMemoryCursor(sequence);
@@ -72,14 +72,9 @@ export function memoryStream(options: MemoryStreamOptions = {}): EventStream {
       existing.push(entry);
       byChannel.set(channel, existing);
       trim(channel);
+      fanOut(entry);
 
       return Promise.resolve(id);
-    },
-
-    publish(channel, message) {
-      assertOpen();
-      fanOut({ ...message, channel });
-      return Promise.resolve();
     },
 
     readAfter(channel, cursor, readOptions) {

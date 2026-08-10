@@ -9,17 +9,12 @@ Paystack sends event notifications to your webhook URL as signed JSON POST reque
 
 ```mermaid
 flowchart TD
-  Request[Incoming POST Request] --> verifySig[verifyPaystackWebhookSignature]
-  Request --> verifyReq[verifyWebhookRequest]
-  verifyReq --> rawBody[rawBody string]
-  rawBody --> parse[parseWebhookPayload]
-  parse --> event[PaystackWebhookEvent]
-  Request --> processReq[processWebhookRequest]
-  processReq --> event
-  Request --> processDel[processWebhookDelivery]
-  processDel --> dedupe[WebhookDeliveryStore.claim]
+  Request[Incoming POST Request] --> processDel[processWebhookDelivery]
+  processDel --> verify[verify signature + raw body]
+  verify --> parse[parse webhook payload]
+  parse --> dedupe[WebhookDeliveryStore.claim optional]
   dedupe --> handler[handler event]
-  handler --> mark[markProcessed / markFailed]
+  handler --> mark[markProcessed / markFailed optional]
 ```
 
 Re-serializing JSON after reading the body will break signature verification — use the exact bytes Paystack sent.
@@ -30,11 +25,57 @@ Namespace: `paystack.webhook.*` on a `Paystack` client instance (uses the config
 
 | Method | Use case |
 | --- | --- |
-| `verifyPaystackWebhookSignature(rawBody, signature)` | Manual verification when you already have the raw body and `x-paystack-signature` header. Throws `WebhookVerificationError`. |
-| `verifyWebhookRequest(request)` | Web `Request` handler — validates body and header, reads `request.text()`, verifies signature, returns the raw body string. |
-| `parseWebhookPayload(rawBody)` | Parse JSON and Zod-validate into a typed `PaystackWebhookEvent`. Call only after verification. |
-| `processWebhookRequest(request)` | Verify + parse in one call. Best for simple handlers without deduplication. |
-| `processWebhookDelivery(request, options)` | Verify + parse + run `handler` with optional deduplication via `WebhookDeliveryStore`. Best for production routes. |
+| `processWebhookDelivery(request, options)` | **Primary** — verify + parse + run `handler` with optional deduplication via `WebhookDeliveryStore`. |
+| `processWebhookRequest(request)` | Advanced — verify + parse only, no handler. |
+| `verifyWebhookRequest(request)` | Advanced — returns raw body after signature verification. |
+| `parseWebhookPayload(rawBody)` | Advanced — parse JSON and Zod-validate. Call only after verification. |
+| `verifyPaystackWebhookSignature(rawBody, signature)` | Advanced — manual verification when you already have the raw body and header. |
+
+### Production handler (primary)
+
+```ts
+import { Paystack, isPaystackEvent } from "@g14o/paystack";
+
+const paystack = new Paystack({ secretKey: process.env.PAYSTACK_SECRET_KEY! });
+
+export async function POST(request: Request) {
+  const result = await paystack.webhook.processWebhookDelivery(request, {
+    handler: async (event) => {
+      if (isPaystackEvent(event, "charge.success")) {
+        // Fulfill order using event.data.reference
+      }
+    },
+    store: {
+      claim: async ({ eventId }) => {
+        // Return "duplicate" if already processed
+        return "claimed";
+      },
+      markProcessed: async (eventId) => {},
+      markFailed: async (eventId, errorMessage) => {},
+    },
+  });
+
+  if (result.duplicate) {
+    return Response.json({ received: true, duplicate: true });
+  }
+
+  return Response.json({ received: true });
+}
+```
+
+Options: [ProcessWebhookDeliveryRequestOptions](/packages/paystack/api#processwebhookdeliveryrequestoptions), [WebhookDeliveryStore](/packages/paystack/api#webhookdeliverystore).
+
+Omit `store` for at-least-once delivery when deduplication is not required.
+
+### Advanced two-step flow
+
+Use when you need to persist the raw body before handling:
+
+```ts
+const rawBody = await paystack.webhook.verifyWebhookRequest(request);
+await saveRawPayload(rawBody);
+const event = paystack.webhook.parseWebhookPayload(rawBody);
+```
 
 ### Verify signature manually
 
@@ -46,68 +87,15 @@ paystack.webhook.verifyPaystackWebhookSignature(
 // throws WebhookVerificationError on missing/invalid signature
 ```
 
-Error codes: `WEBHOOK_MISSING_SIGNATURE`, `WEBHOOK_INVALID_SIGNATURE`.
-
-### Simple Next.js handler
-
-```ts
-import { Paystack, isPaystackEvent } from "@g14o/paystack";
-
-const paystack = new Paystack({ secretKey: process.env.PAYSTACK_SECRET_KEY! });
-
-export async function POST(request: Request) {
-  const event = await paystack.webhook.processWebhookRequest(request);
-
-  if (isPaystackEvent(event, "charge.success")) {
-    // Fulfill order using event.data.reference
-  }
-
-  return Response.json({ received: true });
-}
-```
-
-### Production handler with deduplication
-
-```ts
-const result = await paystack.webhook.processWebhookDelivery(request, {
-  handler: async (event) => {
-    // Business logic
-  },
-  store: {
-    claim: async ({ eventId }) => {
-      // Return "duplicate" if already processed
-      return "claimed";
-    },
-    markProcessed: async (eventId) => {},
-    markFailed: async (eventId, errorMessage) => {},
-  },
-});
-
-if (result.duplicate) {
-  return Response.json({ received: true, duplicate: true });
-}
-```
-
-Options: [ProcessWebhookDeliveryRequestOptions](/packages/paystack/api#processwebhookdeliveryrequestoptions), [WebhookDeliveryStore](/packages/paystack/api#webhookdeliverystore).
-
-### Two-step flow
-
-Use when you need to persist the raw body before handling:
-
-```ts
-const rawBody = await paystack.webhook.verifyWebhookRequest(request);
-await saveRawPayload(rawBody);
-const event = paystack.webhook.parseWebhookPayload(rawBody);
-```
-
 ## Standalone exports
 
 Import from `@g14o/paystack` (not on the client instance):
 
 | Export | Use case |
 | --- | --- |
-| `processWebhookDelivery(options)` | Same delivery pipeline when verification/parsing happens elsewhere (e.g. queue workers). Requires pre-verified `event` + `rawBody`. |
-| `createWebhookEventId(event)` | Stable dedupe key (`eventType:reference`) from `reference`, `subscription_code`, or `id`. |
+| `processWebhookDelivery(request, options, { secretKey })` | Request-first delivery without a client instance. |
+| `processVerifiedWebhookDelivery(options)` | Advanced — delivery when verification/parsing happens elsewhere (e.g. queue workers). Requires pre-verified `event` + `rawBody`. |
+| `createWebhookEventId(event)` | Advanced — stable dedupe key from Webhook Delivery identity rules. |
 | `parsePaystackWebhookEvent(payload)` | Parse/validate without the client. Throws `ZodError` on failure. |
 | `safeParsePaystackWebhookEvent(payload)` | Non-throwing parse for logging or soft validation. |
 | `isPaystackEvent(event, name)` | Type-narrowing guard in handler blocks. |
@@ -147,8 +135,9 @@ Exported data types include `ChargeSuccessData`, `TransferData`, `SubscriptionCr
 | --- | --- | --- |
 | `WebhookVerificationError` | `WEBHOOK_MISSING_SIGNATURE` | `x-paystack-signature` header absent |
 | `WebhookVerificationError` | `WEBHOOK_INVALID_SIGNATURE` | HMAC mismatch |
-| `PaystackError` | `PAYSTACK_VALIDATION_ERROR` | Invalid body, JSON, or event shape (400) |
-| `PaystackError` | `WEBHOOK_PROCESSING_ERROR` | Handler threw during `processWebhookDelivery` (400) |
+| `WebhookVerificationError` | `WEBHOOK_INVALID_PAYLOAD` | Missing or empty request body during verify |
+| `WebhookDeliveryError` | `WEBHOOK_INVALID_PAYLOAD` | Invalid JSON or event shape after verify (400) |
+| `WebhookDeliveryError` | `WEBHOOK_PROCESSING_ERROR` | Handler threw during `processWebhookDelivery` (400) |
 
 ## Important constraints
 

@@ -169,19 +169,16 @@ export interface PaystackClient {
      */
     parseWebhookPayload: (rawBody: string) => PaystackWebhookEvent;
     /**
-     * Verify, parse, and process a Paystack webhook request with deduplication.
-     * @param request - The request to process.
-     * @param options - Handler and optional persistence store.
-     * @returns Whether the delivery was a duplicate and the parsed event.
+     * Verify, parse, and process a Paystack webhook request with optional deduplication.
+     * Primary Webhook Delivery interface.
      */
     processWebhookDelivery: (
       request: Request | null | undefined,
       options: ProcessWebhookDeliveryRequestOptions
     ) => Promise<ProcessWebhookDeliveryResult>;
     /**
-     * Process a Paystack webhook request.
-     * @param request - The request to process.
-     * @returns The processed webhook payload.
+     * Verify and parse a Paystack webhook request without running a handler.
+     * Advanced escape — prefer {@link PaystackClient.webhook.processWebhookDelivery}.
      */
     processWebhookRequest: (
       request: Request | null | undefined

@@ -40,6 +40,9 @@
       "optional": true
     }
   },
+  "dependencies": {
+    "@g14o/logger": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22",
     "@upstash/redis": "^1.34.0",

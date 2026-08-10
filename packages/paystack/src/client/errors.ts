@@ -4,14 +4,18 @@ export type PaystackErrorCode =
   | "PAYSTACK_VALIDATION_ERROR"
   | "PAYSTACK_NETWORK_ERROR"
   | "PAYSTACK_RATE_LIMIT"
-  | "PAYSTACK_TIMEOUT"
-  | "WEBHOOK_PROCESSING_ERROR";
+  | "PAYSTACK_TIMEOUT";
 
-/** Error codes for webhook signature verification failures. */
+/** Error codes for webhook signature and raw-body verification failures. */
 export type WebhookVerificationErrorCode =
   | "WEBHOOK_MISSING_SIGNATURE"
   | "WEBHOOK_INVALID_SIGNATURE"
   | "WEBHOOK_INVALID_PAYLOAD";
+
+/** Error codes for webhook parse and delivery failures. */
+export type WebhookDeliveryErrorCode =
+  | "WEBHOOK_INVALID_PAYLOAD"
+  | "WEBHOOK_PROCESSING_ERROR";
 
 /** Error codes for subscription lifecycle operations. */
 export type SubscriptionErrorCode =
@@ -57,7 +61,7 @@ export class PaystackError extends Error {
   }
 }
 
-/** Thrown when webhook HMAC-SHA512 verification fails. */
+/** Thrown when webhook HMAC-SHA512 verification or raw-body checks fail. */
 export class WebhookVerificationError extends Error {
   readonly code: WebhookVerificationErrorCode;
 
@@ -65,6 +69,26 @@ export class WebhookVerificationError extends Error {
     super(message);
     this.name = "WebhookVerificationError";
     this.code = code;
+  }
+}
+
+/** Thrown when webhook parse or delivery (handler/store) fails. */
+export class WebhookDeliveryError extends Error {
+  readonly code: WebhookDeliveryErrorCode;
+  readonly statusCode?: number;
+
+  constructor(
+    message: string,
+    options: {
+      code: WebhookDeliveryErrorCode;
+      statusCode?: number;
+      cause?: unknown;
+    }
+  ) {
+    super(message, { cause: options.cause });
+    this.name = "WebhookDeliveryError";
+    this.code = options.code;
+    this.statusCode = options.statusCode;
   }
 }
 
@@ -105,6 +129,7 @@ export class CustomerSyncError extends Error {
 export type PaystackPluginError =
   | PaystackError
   | WebhookVerificationError
+  | WebhookDeliveryError
   | SubscriptionError
   | CheckoutError
   | CustomerSyncError;

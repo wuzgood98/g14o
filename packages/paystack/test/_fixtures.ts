@@ -593,6 +593,7 @@ export function createMockFetch(
         mockJsonResponse({
           status: true,
           message: "Subscription disabled",
+          data: {},
         }),
     },
     {
@@ -601,6 +602,7 @@ export function createMockFetch(
         mockJsonResponse({
           status: true,
           message: "Subscription enabled",
+          data: {},
         }),
     },
     {
@@ -680,7 +682,9 @@ export function createChargeSuccessWebhookEvent(
     reference?: string;
     subscription_code?: string;
     metadata?: Record<string, unknown>;
-    customer?: typeof WEBHOOK_CUSTOMER;
+    customer?: Omit<typeof WEBHOOK_CUSTOMER, "metadata"> & {
+      metadata?: Record<string, unknown> | null;
+    };
     plan?: typeof WEBHOOK_PLAN | null;
   } = {}
 ) {
