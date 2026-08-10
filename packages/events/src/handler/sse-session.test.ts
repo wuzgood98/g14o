@@ -43,6 +43,34 @@ describe("createSseSession", () => {
     await reader.cancel();
   });
 
+  it("drains queued data frames before EOF when closing", async () => {
+    const { close, stream, writeData } = createSseSession({
+      connectionId: "conn-close-drain",
+    });
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+
+    writeData({
+      event: "demo.ping",
+      payload: { message: "queued" },
+      id: "1",
+      timestamp: 123,
+    });
+
+    const closePromise = close();
+
+    const first = await reader.read();
+    expect(first.done).toBe(false);
+    expect(decoder.decode(first.value)).toBe(
+      'data: {"event":"demo.ping","payload":{"message":"queued"},"id":"1","timestamp":123}\n\n'
+    );
+
+    const second = await reader.read();
+    expect(second.done).toBe(true);
+
+    await closePromise;
+  });
+
   it("writes proactive reconnect meta frames", async () => {
     const { stream, writeMeta } = createSseSession({
       connectionId: "conn-reconnect",

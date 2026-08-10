@@ -79,6 +79,8 @@ export function createSseSession(options: CreateSseSessionOptions = {}): {
   const encoder = new TextEncoder();
   let metaController: ReadableStreamDefaultController<Uint8Array> | null = null;
   let closed = false;
+  let closePromise: Promise<void> | null = null;
+  let resolveClose: (() => void) | null = null;
 
   const writeToMetaStream = (frame: string): void => {
     if (!metaController) {
@@ -105,15 +107,22 @@ export function createSseSession(options: CreateSseSessionOptions = {}): {
   };
 
   const close = (): Promise<void> => {
+    if (closePromise) {
+      return closePromise;
+    }
+
     closed = true;
     writer.close();
-    try {
-      metaController?.close();
-    } catch {
-      // Stream may already be closed.
+
+    if (!metaController) {
+      closePromise = Promise.resolve();
+      return closePromise;
     }
-    metaController = null;
-    return Promise.resolve();
+
+    closePromise = new Promise<void>((resolve) => {
+      resolveClose = resolve;
+    });
+    return closePromise;
   };
 
   return {
@@ -128,7 +137,14 @@ export function createSseSession(options: CreateSseSessionOptions = {}): {
             .read()
             .then(({ done, value }) => {
               if (done) {
-                controller.close();
+                try {
+                  controller.close();
+                } catch {
+                  // Stream may already be closed.
+                }
+                metaController = null;
+                resolveClose?.();
+                resolveClose = null;
                 return;
               }
 
