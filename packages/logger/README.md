@@ -234,9 +234,13 @@ import { createCache } from "@g14o/cache";
 
 const appLogger = createLogger({ name: "cache" });
 
+// Console diagnostics
 createCache({
-  verbose: true, // console adapter
-  // or:
+  verbose: true,
+});
+
+// Or route verbose output through createLogger
+createCache({
   verbose: {
     info: (...args) => appLogger.info(String(args[0] ?? "")),
     warn: (...args) => appLogger.warn(String(args[0] ?? "")),
