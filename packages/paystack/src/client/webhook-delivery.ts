@@ -295,13 +295,13 @@ export async function processWebhookDelivery(
 export async function processWebhookDelivery(
   options: ProcessWebhookDeliveryOptions
 ): Promise<ProcessWebhookDeliveryResult>;
-export function processWebhookDelivery(
+export async function processWebhookDelivery(
   requestOrOptions: Request | null | undefined | ProcessWebhookDeliveryOptions,
   options?: ProcessWebhookDeliveryRequestOptions,
   deps?: ProcessWebhookDeliveryDeps
 ): Promise<ProcessWebhookDeliveryResult> {
   if (isPreParsedDeliveryOptions(requestOrOptions)) {
-    return processVerifiedWebhookDelivery(requestOrOptions);
+    return await processVerifiedWebhookDelivery(requestOrOptions);
   }
 
   if (options === undefined) {
@@ -318,5 +318,9 @@ export function processWebhookDelivery(
     );
   }
 
-  return processWebhookDeliveryFromRequest(requestOrOptions, options, deps);
+  return await processWebhookDeliveryFromRequest(
+    requestOrOptions,
+    options,
+    deps
+  );
 }
