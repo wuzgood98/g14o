@@ -1,4 +1,3 @@
-import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { DEFAULT_ON_LISTENER_ERROR } from "../constants/defaults";
 import { bindEventLogger } from "../logging";
 import { runMiddlewarePipeline } from "../pipeline/run-pipeline";
@@ -38,6 +37,7 @@ import type {
 } from "../types/listener";
 import { deepFreeze } from "../utils/freeze";
 import { createEventId, nowTimestamp } from "../utils/id";
+import { resolveVerboseLogger, type VerboseLogger } from "../verbose.js";
 import { type EventBusHooks, runEventHook } from "./hooks";
 import { ListenerRegistry } from "./listener-registry";
 import { normalizeEventError } from "./normalize-error";
@@ -232,16 +232,19 @@ export interface ChannelEmitter<TEvents extends Record<string, unknown>> {
 export interface EventBusOptions {
   /** Lifecycle hooks for pipeline and error routing. */
   hooks?: EventBusHooks;
-  /** Optional injectable logger; wins over `verbose`. */
-  logger?: VerboseLogger;
   /** How listener errors affect other listeners. @default "continue" */
   onListenerError?: OnListenerErrorMode;
   /** Listener execution strategy. @default parallelStrategy */
   strategy?: ExecutionStrategy;
   /** Cross-instance persistence and fan-out backend. */
   stream?: EventStream;
-  /** Log pipeline steps to the console. @default false */
-  verbose?: boolean;
+  /**
+   * Log pipeline steps to the console when `true`, or pass a duck-typed
+   * `{ info, warn, error }` adapter for custom routing. Silent by default.
+   *
+   * @default false
+   */
+  verbose?: boolean | VerboseLogger;
 }
 
 /** Bus configuration when a schema map is provided for schema-first mode. */
@@ -351,10 +354,7 @@ export function createEventBus(
     throw new Error("Stream not configured");
   }
   const stream = config.stream;
-  const logger = resolveVerboseLogger({
-    verbose: config?.verbose,
-    logger: config?.logger,
-  });
+  const logger = resolveVerboseLogger(config?.verbose);
 
   const bus = createEventInternal({
     hooks: config?.hooks,

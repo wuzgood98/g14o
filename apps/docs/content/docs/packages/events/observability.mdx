@@ -23,7 +23,7 @@ export const event = new Event({
 
 ## Verbose console logging
 
-When `verbose: true`, the bus logs diagnostics to the console (`info` / `warn` / `error`). Silent by default. Pass `logger` to route diagnostics through your own `info` / `warn` / `error` adapter instead (wins over `verbose`).
+When `verbose: true`, the bus logs diagnostics to the console (`info` / `warn` / `error`). Silent by default. Pass a duck-typed `{ info, warn, error }` adapter as `verbose` for custom routing.
 
 ```ts
 import { Event } from "@g14o/events";
@@ -33,7 +33,7 @@ export const event = new Event({
   schema,
   stream: memoryStream(),
   verbose: true,
-  // logger: appLogger, // optional injectable adapter
+  // verbose: appLoggerAdapter, // custom { info, warn, error }
 });
 ```
 

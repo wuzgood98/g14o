@@ -1,5 +1,5 @@
-import type { VerboseLogger } from "@g14o/logger/verbose";
 import type { ErrorHandler, MutableEventContext } from "../types/context";
+import type { VerboseLogger } from "../verbose.js";
 
 /** Optional lifecycle hooks for {@link Event}. */
 export interface EventBusHooks {

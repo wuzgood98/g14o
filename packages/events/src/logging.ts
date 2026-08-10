@@ -1,5 +1,5 @@
 /** biome-ignore-all lint/style/noExportedImports: published package entry */
-import { noopVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
+import { noopVerboseLogger, type VerboseLogger } from "./verbose.js";
 
 export type { VerboseLogger };
 

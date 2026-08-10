@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic cache wrapper requires dynamic args */
 
-import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { isInMemoryEnv, resolveEnvName } from "./env";
 import {
   CACHE_TTL,
@@ -17,6 +16,7 @@ import {
 import type { CacheStore } from "./store/interface";
 import { InMemoryCache } from "./store/memory";
 import type { InMemoryEnvOptions, Result } from "./types";
+import { resolveVerboseLogger, type VerboseLogger } from "./verbose.js";
 
 /** TTL overrides for one environment bucket (values in **seconds**). */
 export interface CacheEnvironmentTtlOverride {
@@ -65,13 +65,12 @@ export type CreateCacheOptions = InMemoryEnvOptions &
     staleWhileRevalidate?: number;
     /**
      * When `true`, log cache diagnostics to the console (`info` / `warn` / `error`).
+     * Pass a duck-typed `{ info, warn, error }` adapter for custom routing.
      * Silent by default.
      *
      * @default false
      */
-    verbose?: boolean;
-    /** Optional injectable logger; wins over `verbose`. */
-    logger?: VerboseLogger;
+    verbose?: boolean | VerboseLogger;
   };
 
 /**
@@ -248,10 +247,7 @@ function shouldCacheValue(value: unknown, cacheFailures: boolean): boolean {
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: resolveVerboseLogger({
-      verbose: options.verbose,
-      logger: options.logger,
-    }),
+    logger: resolveVerboseLogger(options.verbose),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     configuredStore: resolveStore(options),
     ttl: options.ttl,

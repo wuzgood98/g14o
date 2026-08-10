@@ -980,10 +980,10 @@ describe("Event", () => {
       }
     });
 
-    it("uses injected logger when provided", async () => {
+    it("uses injected verbose adapter when provided", async () => {
       const info = vi.fn();
       const bus = createTestEvent({
-        logger: { info, warn: vi.fn(), error: vi.fn() },
+        verbose: { info, warn: vi.fn(), error: vi.fn() },
       });
 
       await bus.emit("user.created", { id: "1", email: "a@b.com" });

@@ -12,7 +12,7 @@ Deepen package architecture across six grill candidates.
 **@g14o/events**
 - Replace `EventStream.append` + `publish` with single `write` — custom stream adapters must implement `write`
 - Collapse SSE handler + transport into an internal SSE session module behind `handler()`
-- Add optional injectable `logger` via `@g14o/logger/verbose`
+- Add optional verbose diagnostics via `verbose: boolean | VerboseLogger` (no runtime dependency on `@g14o/logger`)
 
 **@g14o/paystack**
 - Request-first Webhook Delivery as the primary webhook interface
@@ -22,7 +22,7 @@ Deepen package architecture across six grill candidates.
 - Handle `WebhookDeliveryError` from the updated Paystack client
 
 **@g14o/logger**
-- Add `@g14o/logger/verbose` with `resolveVerboseLogger` (boolean + optional injectable logger)
+- Add `@g14o/logger/verbose` with `resolveVerboseLogger` (`boolean | VerboseLogger`)
 
 **@g14o/cache** / **@g14o/ratelimit**
-- Migrate to shared verbose diagnostics; restore optional injectable `logger` on factory options
+- Add optional verbose diagnostics via `verbose: boolean | VerboseLogger` (no runtime dependency on `@g14o/logger`)

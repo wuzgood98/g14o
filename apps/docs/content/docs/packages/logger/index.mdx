@@ -79,7 +79,7 @@ Use `"silent"` to suppress all output. The default threshold is `"info"`, so `tr
 
 ## Verbose diagnostics
 
-`@g14o/logger/verbose` provides `resolveVerboseLogger` for package diagnostics (`@g14o/cache`, `@g14o/events`, `@g14o/ratelimit`). Pass `verbose: true` for console output, or inject a custom `info` / `warn` / `error` logger.
+`@g14o/cache`, `@g14o/events`, and `@g14o/ratelimit` accept optional verbose diagnostics without a runtime dependency on `@g14o/logger`. Pass `verbose: true` for console output, or pass a duck-typed `{ info, warn, error }` adapter as `verbose`. Install `@g14o/logger` separately when you want `createLogger` for structured injection.
 
 ## Next steps
 
