@@ -1,9 +1,6 @@
+import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { DEFAULT_ON_LISTENER_ERROR } from "../constants/defaults";
-import {
-  bindEventLogger,
-  type InternalLogger,
-  resolveLogger,
-} from "../logging";
+import { bindEventLogger } from "../logging";
 import { runMiddlewarePipeline } from "../pipeline/run-pipeline";
 import { flattenSchema } from "../schema/flatten-schema";
 import type {
@@ -235,6 +232,8 @@ export interface ChannelEmitter<TEvents extends Record<string, unknown>> {
 export interface EventBusOptions {
   /** Lifecycle hooks for pipeline and error routing. */
   hooks?: EventBusHooks;
+  /** Optional injectable logger; wins over `verbose`. */
+  logger?: VerboseLogger;
   /** How listener errors affect other listeners. @default "continue" */
   onListenerError?: OnListenerErrorMode;
   /** Listener execution strategy. @default parallelStrategy */
@@ -308,7 +307,7 @@ export interface EventBus<TEvents extends Record<string, unknown>> {
 interface EventBusState<TEvents extends Record<string, unknown>> {
   errorHandlers: ErrorHandler[];
   hooks?: EventBusHooks;
-  logger: InternalLogger;
+  logger: VerboseLogger;
   middleware: import("../types/context").MiddlewareHandler[];
   namespacePrefix?: string;
   onListenerError: OnListenerErrorMode;
@@ -352,7 +351,10 @@ export function createEventBus(
     throw new Error("Stream not configured");
   }
   const stream = config.stream;
-  const logger = resolveLogger(config?.verbose);
+  const logger = resolveVerboseLogger({
+    verbose: config?.verbose,
+    logger: config?.logger,
+  });
 
   const bus = createEventInternal({
     hooks: config?.hooks,
@@ -382,7 +384,7 @@ export function createEventBus(
  */
 function createEventInternal<TEvents extends Record<string, unknown>>(options: {
   hooks?: EventBusHooks;
-  logger: InternalLogger;
+  logger: VerboseLogger;
   namespacePrefix?: string;
   onListenerError?: OnListenerErrorMode;
   parent?: EventBusInternal<TEvents>;
@@ -729,16 +731,7 @@ async function publishToStream(
       continue;
     }
 
-    const id = await stream.append(channel, {
-      event: ctx.name,
-      data: ctx.payload,
-      timestamp: ctx.timestamp,
-      metadata: ctx.metadata,
-    });
-
-    await stream.publish(channel, {
-      id,
-      channel,
+    await stream.write(channel, {
       event: ctx.name,
       data: ctx.payload,
       timestamp: ctx.timestamp,

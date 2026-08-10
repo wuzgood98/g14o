@@ -3,6 +3,6 @@ import { memoryStream } from "../src/stream/memory";
 
 test("memoryStream implements EventStream", () => {
   const stream = memoryStream();
-  expectTypeOf(stream.append).toBeFunction();
+  expectTypeOf(stream.write).toBeFunction();
   expectTypeOf(stream.subscribe).toBeFunction();
 });

@@ -42,12 +42,20 @@
       "types": "./dist/index.d.mts",
       "browser": "./dist/index.mjs",
       "default": "./dist/index.mjs"
+    },
+    "./verbose": {
+      "dev-source": "./src/verbose.ts",
+      "types": "./dist/verbose.d.mts",
+      "default": "./dist/verbose.mjs"
     }
   },
   "typesVersions": {
     "*": {
       "*": [
         "./dist/index.d.mts"
+      ],
+      "verbose": [
+        "./dist/verbose.d.mts"
       ]
     }
   },

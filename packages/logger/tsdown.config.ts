@@ -8,7 +8,7 @@ export default defineConfig({
     incremental: true,
   },
   treeshake: true,
-  entry: ["./src/index.ts"],
+  entry: ["./src/index.ts", "./src/verbose.ts"],
   deps: {
     onlyBundle: false,
   },

@@ -77,6 +77,10 @@ Order (lowest to highest): `trace` < `debug` < `info` / `start` / `success` < `w
 
 Use `"silent"` to suppress all output. The default threshold is `"info"`, so `trace` and `debug` are hidden unless you lower the level.
 
+## Verbose diagnostics
+
+`@g14o/logger/verbose` provides `resolveVerboseLogger` for package diagnostics (`@g14o/cache`, `@g14o/events`, `@g14o/ratelimit`). Pass `verbose: true` for console output, or inject a custom `info` / `warn` / `error` logger.
+
 ## Next steps
 
 - [Formatting](/packages/logger/formatting) — pretty console, JSON, timestamps, errors, Node vs browser

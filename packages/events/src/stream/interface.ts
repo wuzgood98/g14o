@@ -16,12 +16,7 @@ export interface StreamReadOptions {
 
 /** Durable channel backend (persistence + live fan-out). SSE is {@link handler}. */
 export interface EventStream {
-  append(
-    channel: string,
-    message: Omit<StreamMessage, "id" | "channel"> & { channel?: string }
-  ): Promise<string>;
   close(): Promise<void>;
-  publish(channel: string, message: StreamMessage): Promise<void>;
   readAfter(
     channel: string,
     cursor: string | undefined,
@@ -31,4 +26,8 @@ export interface EventStream {
     channels: readonly string[],
     onMessage: (message: StreamMessage) => void | Promise<void>
   ): () => void;
+  write(
+    channel: string,
+    message: Omit<StreamMessage, "id" | "channel"> & { channel?: string }
+  ): Promise<string>;
 }

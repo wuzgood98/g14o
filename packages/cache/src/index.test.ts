@@ -570,6 +570,31 @@ describe("createCache verbose logging", () => {
     }
   });
 
+  it("uses injected logger when provided", async () => {
+    const info = vi.fn();
+    const injectedCache = createCache({
+      env: "test",
+      logger: { info, warn: vi.fn(), error: vi.fn() },
+    });
+    injectedCache.reset();
+
+    try {
+      const cached = injectedCache.withCache(async () => "value", {
+        prefix: "inject",
+        ttl: "short",
+      });
+      await cached();
+      expect(
+        info.mock.calls.some(
+          (call) =>
+            typeof call[0] === "string" && call[0].includes("[cache] Miss:")
+        )
+      ).toBe(true);
+    } finally {
+      injectedCache.reset();
+    }
+  });
+
   it("does not log when verbose is omitted", async () => {
     const infoSpy = vi
       .spyOn(console, "info")

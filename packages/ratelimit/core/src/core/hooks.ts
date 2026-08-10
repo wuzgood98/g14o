@@ -1,4 +1,4 @@
-import type { InternalLogger } from "../logging";
+import type { VerboseLogger } from "@g14o/logger/verbose";
 import type { RateLimitRequest } from "./request";
 import type { RateLimitTier } from "./tiers";
 
@@ -68,7 +68,7 @@ export interface RateLimitHooks<Req extends RateLimitRequest = Request> {
 export async function runHook<Ctx>(
   hook: ((ctx: Ctx) => void | Promise<void>) | undefined,
   ctx: Ctx,
-  logger: InternalLogger
+  logger: VerboseLogger
 ): Promise<void> {
   if (!hook) {
     return;

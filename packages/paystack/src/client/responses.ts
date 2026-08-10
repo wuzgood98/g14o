@@ -1,29 +1,12 @@
 import { z } from "zod";
 
-import { parseSafeMetadata } from "../metadata";
-
-const paystackMetadataField = z.preprocess((value) => {
-  if (value === null || value === undefined) {
-    return value;
-  }
-
-  if (typeof value === "string") {
-    return parseSafeMetadata(value) ?? null;
-  }
-
-  if (typeof value === "object" && !Array.isArray(value)) {
-    return parseSafeMetadata(value as Record<string, unknown>) ?? null;
-  }
-
-  return null;
-}, z.record(z.string(), z.unknown()).nullable().optional());
-
-const paystackReusableField = z
-  .union([z.boolean(), z.number()])
-  .transform((value) => Boolean(value))
-  .optional();
-
-const paystackOpaqueRecord = z.record(z.string(), z.unknown());
+import {
+  paystackAuthorizationCoreSchema,
+  paystackCustomerCoreSchema,
+  paystackOpaqueRecord,
+  paystackPlanCoreSchema,
+  paystackTransactionCoreSchema,
+} from "../resources";
 
 export function paystackResponseEnvelopeSchema<T extends z.ZodType>(
   dataSchema: T
@@ -43,37 +26,15 @@ export function paystackResponseEnvelopeSchema<T extends z.ZodType>(
   }>;
 }
 
-const paystackAuthorizationSchemaImpl = z.object({
-  authorization_code: z.string().optional(),
-  bin: z.string().optional(),
-  last4: z.string().optional(),
-  exp_month: z.string().optional(),
-  exp_year: z.string().optional(),
-  channel: z.string().optional(),
-  card_type: z.string().optional(),
-  bank: z.string().nullable().optional(),
-  country_code: z.string().optional(),
-  brand: z.string().optional(),
-  reusable: paystackReusableField,
-  signature: z.string().nullable().optional(),
-  account_name: z.string().nullable().optional(),
-});
+const paystackAuthorizationSchemaImpl = paystackAuthorizationCoreSchema;
 
-const paystackCustomerSchemaImpl = z.object({
-  id: z.number(),
-  customer_code: z.string(),
+const paystackCustomerSchemaImpl = paystackCustomerCoreSchema.extend({
   email: z.email(),
-  first_name: z.string().nullable().optional(),
-  last_name: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  metadata: paystackMetadataField,
-  risk_action: z.string().optional(),
   domain: z.string().optional(),
   integration: z.number().optional(),
   identified: z.boolean().optional(),
   identifications: z.unknown().nullable().optional(),
   dedicated_account: z.unknown().nullable().optional(),
-  international_format_phone: z.string().nullable().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
   created_at: z.string().optional(),
@@ -88,16 +49,9 @@ const paystackCustomerSchemaImpl = z.object({
     .default([]),
 });
 
-const paystackPlanSchemaImpl = z.object({
-  id: z.number(),
-  name: z.string(),
-  plan_code: z.string(),
-  description: z.string().nullable().optional(),
-  amount: z.number(),
-  interval: z.string(),
+const paystackPlanSchemaImpl = paystackPlanCoreSchema.extend({
   send_invoices: z.boolean().nullable().optional(),
   send_sms: z.boolean().nullable().optional(),
-  currency: z.string(),
   invoice_limit: z.number().nullable().optional(),
   domain: z.string().nullable().optional(),
   integration: z.number().nullable().optional(),
@@ -109,21 +63,9 @@ const paystackPlanSchemaImpl = z.object({
   subscriptions: z.array(z.unknown()).nullable().optional(),
 });
 
-const paystackTransactionSchemaImpl = z.object({
-  id: z.number(),
+const paystackTransactionSchemaImpl = paystackTransactionCoreSchema.extend({
   domain: z.string().nullable().optional(),
-  status: z.string(),
-  reference: z.string(),
-  amount: z.number(),
-  message: z.string().nullable().optional(),
-  gateway_response: z.string().nullable().optional(),
-  paid_at: z.string().nullable().optional(),
-  created_at: z.string().nullable().optional(),
-  channel: z.string().nullable().optional(),
-  currency: z.string(),
   receipt_number: z.string().nullable().optional(),
-  ip_address: z.string().nullable().optional(),
-  fees: z.number().nullable().optional(),
   fees_split: z.unknown().nullable().optional(),
   order_id: z.string().nullable().optional(),
   pos_transaction_data: z.unknown().nullable().optional(),
@@ -140,7 +82,6 @@ const paystackTransactionSchemaImpl = z.object({
   plan_object: paystackOpaqueRecord.nullable().optional(),
   authorization: paystackAuthorizationSchemaImpl.nullable().optional(),
   customer: paystackCustomerSchemaImpl.nullable().optional(),
-  metadata: paystackMetadataField,
   plan: z.unknown().nullable().optional(),
 });
 

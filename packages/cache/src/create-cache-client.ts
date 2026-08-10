@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: generic cache wrapper requires dynamic args */
 
+import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { isInMemoryEnv, resolveEnvName } from "./env";
 import {
   CACHE_TTL,
@@ -8,8 +9,6 @@ import {
   type CacheOptions,
   defaultKeyGenerator,
 } from "./internals";
-import type { InternalLogger } from "./logging";
-import { resolveLogger } from "./logging";
 import {
   createFallbackMemoryStore,
   type ResolveStoreOptions,
@@ -71,6 +70,8 @@ export type CreateCacheOptions = InMemoryEnvOptions &
      * @default false
      */
     verbose?: boolean;
+    /** Optional injectable logger; wins over `verbose`. */
+    logger?: VerboseLogger;
   };
 
 /**
@@ -170,7 +171,7 @@ interface CacheRuntime {
   envName: string;
   inMemoryDuringBuild: boolean;
   keyGenerator?: CreateCacheOptions["keyGenerator"];
-  logger: InternalLogger;
+  logger: VerboseLogger;
   staleWhileRevalidate?: number;
   ttl?: CacheTtlOverride | CacheEnvironmentTtlOverride;
 }
@@ -247,7 +248,10 @@ function shouldCacheValue(value: unknown, cacheFailures: boolean): boolean {
 function createCacheRuntime(options: CreateCacheOptions = {}): CacheRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: resolveLogger(options.verbose),
+    logger: resolveVerboseLogger({
+      verbose: options.verbose,
+      logger: options.logger,
+    }),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     configuredStore: resolveStore(options),
     ttl: options.ttl,
@@ -296,7 +300,7 @@ function resolveTtlForRuntime(
 async function readCachedValue<T>(
   cache: CacheStore,
   cacheKey: string,
-  logger: InternalLogger
+  logger: VerboseLogger
 ): Promise<{ hit: T | null; stale: T | null }> {
   try {
     const cached = await cache.get<unknown>(cacheKey);
@@ -330,7 +334,7 @@ async function writeCachedValue(
   value: unknown,
   ttlValue: number,
   staleWhileRevalidate: number,
-  logger: InternalLogger
+  logger: VerboseLogger
 ): Promise<void> {
   try {
     const storeValue =

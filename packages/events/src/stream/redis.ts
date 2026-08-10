@@ -92,7 +92,7 @@ export function redisStream(options: RedisStreamOptions): EventStream {
   const io = isIoRedis(client);
 
   return defineStream({
-    async append(channel, message) {
+    async write(channel, message) {
       const key = streamKey(prefix, channel);
       const fields = serializeMessage({
         ...message,
@@ -136,19 +136,28 @@ export function redisStream(options: RedisStreamOptions): EventStream {
       }
 
       if (!id) {
-        throw new Error("Redis stream append failed to allocate a cursor.");
+        throw new Error("Redis stream write failed to allocate a cursor.");
       }
 
       if (options.expireAfterSecs) {
         await client.expire(key, options.expireAfterSecs);
       }
 
-      return id;
-    },
+      await client.publish(
+        key,
+        JSON.stringify({
+          id,
+          channel,
+          event: message.event,
+          data: message.data,
+          timestamp: message.timestamp,
+          ...(message.metadata === undefined
+            ? {}
+            : { metadata: message.metadata }),
+        } satisfies StreamMessage)
+      );
 
-    async publish(channel, message) {
-      const key = streamKey(prefix, channel);
-      await client.publish(key, JSON.stringify(message));
+      return id;
     },
 
     async readAfter(channel, cursor, readOptions) {

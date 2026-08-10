@@ -25,6 +25,13 @@
 
 import { z } from "zod";
 
+import {
+  paystackAuthorizationWebhookSchema,
+  paystackChargeMetadataField,
+  paystackCustomerWebhookSchema,
+  paystackPlanWebhookSchema,
+} from "./resources";
+
 /* ------------------------------------------------------------------ */
 /* Shared / reusable primitives                                       */
 /* ------------------------------------------------------------------ */
@@ -45,43 +52,10 @@ const nullishIsoDate = isoDateString.nullish();
 const nullishAmount = amount.nullish();
 const nullishRecordArray = z.array(z.record(z.string(), z.unknown())).nullish();
 
-const customerSchema = z.object({
-  id: z.number(),
-  first_name: z.string().nullable(),
-  last_name: z.string().nullable(),
-  email: z.string(),
-  customer_code: z.string(),
-  phone: nullishString,
-  metadata: z.record(z.string(), z.unknown()).nullish(),
-  risk_action: nullishString,
-  international_format_phone: nullishString,
-});
-
-const authorizationSchema = z.object({
-  authorization_code: z.string(),
-  bin: z.string(),
-  last4: z.string(),
-  exp_month: z.string(),
-  exp_year: z.string(),
-  channel: z.string(),
-  card_type: z.string(),
-  bank: z.string().nullable(),
-  country_code: z.string(),
-  brand: z.string(),
-  reusable: z.boolean(),
-  signature: nullishString,
-  account_name: nullishString,
-});
-
-const planSchema = z.object({
-  id: z.number(),
-  name: z.string(),
-  plan_code: z.string(),
-  description: nullishString,
-  amount,
-  interval: z.string(),
-  currency,
-});
+const customerSchema = paystackCustomerWebhookSchema;
+const authorizationSchema = paystackAuthorizationWebhookSchema;
+const planSchema = paystackPlanWebhookSchema;
+const metadataSchema = paystackChargeMetadataField;
 
 const subscriptionRefSchema = z.object({
   id: z.number(),
@@ -92,13 +66,6 @@ const subscriptionRefSchema = z.object({
   next_payment_date: nullishIsoDate,
   status: z.string(),
 });
-
-const metadataSchema = z.union([
-  z.record(z.string(), z.unknown()),
-  z.string(),
-  z.number(),
-  z.null(),
-]);
 
 /* ------------------------------------------------------------------ */
 /* charge.success                                                      */

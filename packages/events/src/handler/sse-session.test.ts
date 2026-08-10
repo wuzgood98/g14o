@@ -1,16 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
-import { createServerSseConnection } from "./server-sse-connection";
+import { describe, expect, it } from "vitest";
+import { createSseSession } from "./sse-session";
 
-describe("createServerSseConnection", () => {
+describe("createSseSession", () => {
   it("writes meta frames and data frames on the combined stream", async () => {
-    const { connectionId, stream, transport, writeMeta } =
-      createServerSseConnection({ connectionId: "conn-1" });
+    const { connectionId, stream, writeData, writeMeta } = createSseSession({
+      connectionId: "conn-1",
+    });
     const reader = stream.getReader();
     const decoder = new TextDecoder();
 
     writeMeta({ connectionId });
 
-    await transport.publish({
+    writeData({
       event: "demo.ping",
       payload: { message: "hello" },
       id: "1",
@@ -25,31 +26,11 @@ describe("createServerSseConnection", () => {
       'data: {"event":"demo.ping","payload":{"message":"hello"},"id":"1","timestamp":123}\n\n'
     );
 
-    await transport.close();
-  });
-
-  it("delivers inbound envelopes to subscribers via receive()", () => {
-    const { transport } = createServerSseConnection();
-    const handler = vi.fn();
-
-    transport.subscribe(handler);
-    transport.receive({
-      event: "demo.ping",
-      payload: { message: "inbound" },
-      id: "2",
-      timestamp: Date.now(),
-    });
-
-    expect(handler).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: "demo.ping",
-        payload: { message: "inbound" },
-      })
-    );
+    await reader.cancel();
   });
 
   it("writes keepalive comment frames", async () => {
-    const { stream, writeKeepalive } = createServerSseConnection({
+    const { stream, writeKeepalive } = createSseSession({
       connectionId: "conn-keepalive",
     });
     const reader = stream.getReader();
@@ -59,10 +40,11 @@ describe("createServerSseConnection", () => {
 
     const { value } = await reader.read();
     expect(decoder.decode(value)).toBe(": keepalive\n\n");
+    await reader.cancel();
   });
 
   it("writes proactive reconnect meta frames", async () => {
-    const { stream, writeMeta } = createServerSseConnection({
+    const { stream, writeMeta } = createSseSession({
       connectionId: "conn-reconnect",
     });
     const reader = stream.getReader();
@@ -74,5 +56,6 @@ describe("createServerSseConnection", () => {
     expect(decoder.decode(value)).toBe(
       'event: meta\ndata: {"reconnect":true}\n\n'
     );
+    await reader.cancel();
   });
 });

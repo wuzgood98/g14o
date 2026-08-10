@@ -9,7 +9,7 @@ export function describeStream(
   factory: () => EventStream | Promise<EventStream>
 ): void {
   describe(name, () => {
-    it("appends, publishes, and replays after cursor", async () => {
+    it("writes, fans out live, and replays after cursor", async () => {
       const stream = await factory();
       const channel = `contract:${Date.now()}`;
 
@@ -18,27 +18,13 @@ export function describeStream(
         received.push(message.id);
       });
 
-      const firstId = await stream.append(channel, {
-        event: "demo.ping",
-        data: { n: 1 },
-        timestamp: Date.now(),
-      });
-      await stream.publish(channel, {
-        id: firstId,
-        channel,
+      const firstId = await stream.write(channel, {
         event: "demo.ping",
         data: { n: 1 },
         timestamp: Date.now(),
       });
 
-      const secondId = await stream.append(channel, {
-        event: "demo.ping",
-        data: { n: 2 },
-        timestamp: Date.now(),
-      });
-      await stream.publish(channel, {
-        id: secondId,
-        channel,
+      const secondId = await stream.write(channel, {
         event: "demo.ping",
         data: { n: 2 },
         timestamp: Date.now(),

@@ -1,8 +1,7 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: route handler wrappers use dynamic args */
 
+import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { isInMemoryEnv, resolveEnvName } from "../env";
-import type { InternalLogger } from "../logging";
-import { resolveLogger } from "../logging";
 import type { Duration } from "../parse-duration";
 import type { ResolveStoreOptions } from "../store/factory";
 import { createFallbackMemoryStore, resolveStore } from "../store/factory";
@@ -107,6 +106,8 @@ export type CreateRateLimitOptions<Req extends RateLimitRequest = Request> =
      * @default false
      */
     verbose?: boolean;
+    /** Optional injectable logger; wins over `verbose`. */
+    logger?: VerboseLogger;
   } & ResolveStoreOptions;
 
 /**
@@ -199,7 +200,7 @@ interface RateLimitRuntime {
   configuredStore: RateLimitStore | undefined;
   envName: string;
   inMemoryDuringBuild: boolean;
-  logger: InternalLogger;
+  logger: VerboseLogger;
   skipRateLimit?: boolean;
   tiers?: RateLimitTiersOverride;
 }
@@ -209,7 +210,10 @@ function createRateLimitRuntime<Req extends RateLimitRequest = Request>(
 ): RateLimitRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: resolveLogger(options.verbose),
+    logger: resolveVerboseLogger({
+      verbose: options.verbose,
+      logger: options.logger,
+    }),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     skipRateLimit: options.skipRateLimit,
     tiers: options.tiers,

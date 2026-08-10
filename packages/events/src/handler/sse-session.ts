@@ -1,12 +1,12 @@
-import type { EventEnvelope, TransportState, Unsubscribe } from "./types";
-
-function notifyEnvelopeSubscribers(
-  subscribers: Iterable<(envelope: EventEnvelope) => void | Promise<void>>,
-  envelope: EventEnvelope
-): void {
-  for (const handler of subscribers) {
-    Promise.resolve(handler(envelope)).catch(() => undefined);
-  }
+/** Wire-level envelope for events crossing the SSE boundary. @internal */
+interface EventEnvelope<Payload = unknown> {
+  channels?: string[];
+  event: string;
+  id: string;
+  metadata?: Record<string, unknown>;
+  payload: Payload;
+  source?: { connectionId?: string; authenticatedUserId?: string };
+  timestamp: number;
 }
 
 function createSseResponseWriter(): {
@@ -57,85 +57,28 @@ function createSseResponseWriter(): {
   };
 }
 
-/** Server-side per-connection SSE writer with optional inbound delivery. */
-export interface ServerSseConnectionTransport {
-  close(): Promise<void>;
-  readonly connectionId: string;
-  publish(envelope: EventEnvelope): Promise<void>;
-  /** Delivers an inbound envelope into local subscribers. */
-  receive(envelope: EventEnvelope): void;
-  readonly state: TransportState;
-  subscribe(
-    handler: (envelope: EventEnvelope) => void | Promise<void>
-  ): Unsubscribe;
-}
-
-export interface CreateServerSseConnectionOptions {
+export interface CreateSseSessionOptions {
   /** Override connection ID generation (defaults to `crypto.randomUUID()`). */
   connectionId?: string;
 }
 
 /**
- * Creates a server-side SSE connection: outbound via SSE frames,
- * inbound via {@link ServerSseConnectionTransport.receive}.
+ * Creates one server-side SSE session: merged meta + data frames for a single
+ * GET connection.
  */
-export function createServerSseConnection(
-  options: CreateServerSseConnectionOptions = {}
-): {
+export function createSseSession(options: CreateSseSessionOptions = {}): {
+  close(): Promise<void>;
   connectionId: string;
   stream: ReadableStream<Uint8Array>;
-  transport: ServerSseConnectionTransport;
-  writeKeepalive: () => void;
-  writeMeta: (data: Record<string, unknown>) => void;
+  writeData(envelope: EventEnvelope): void;
+  writeKeepalive(): void;
+  writeMeta(data: Record<string, unknown>): void;
 } {
   const connectionId = options.connectionId ?? crypto.randomUUID();
   const { stream: dataStream, writer } = createSseResponseWriter();
   const encoder = new TextEncoder();
   let metaController: ReadableStreamDefaultController<Uint8Array> | null = null;
-  const subscribers = new Set<
-    (envelope: EventEnvelope) => void | Promise<void>
-  >();
-  let state: TransportState = "open";
-
-  const transport: ServerSseConnectionTransport = {
-    connectionId,
-
-    get state() {
-      return state;
-    },
-
-    close(): Promise<void> {
-      state = "closed";
-      writer.close();
-      try {
-        metaController?.close();
-      } catch {
-        // Stream may already be closed.
-      }
-      metaController = null;
-      return Promise.resolve();
-    },
-
-    publish(envelope): Promise<void> {
-      if (state !== "open") {
-        throw new Error("Server SSE connection transport is not open.");
-      }
-
-      writer.write(envelope);
-      return Promise.resolve();
-    },
-
-    subscribe(handler) {
-      subscribers.add(handler);
-      return () => {
-        subscribers.delete(handler);
-      };
-    },
-
-    receive(envelope) {
-      notifyEnvelopeSubscribers(subscribers, envelope);
-    },
-  };
+  let closed = false;
 
   const writeToMetaStream = (frame: string): void => {
     if (!metaController) {
@@ -151,6 +94,26 @@ export function createServerSseConnection(
 
   const writeKeepalive = (): void => {
     writeToMetaStream(": keepalive\n\n");
+  };
+
+  const writeData = (envelope: EventEnvelope): void => {
+    if (closed) {
+      throw new Error("SSE session is closed.");
+    }
+
+    writer.write(envelope);
+  };
+
+  const close = (): Promise<void> => {
+    closed = true;
+    writer.close();
+    try {
+      metaController?.close();
+    } catch {
+      // Stream may already be closed.
+    }
+    metaController = null;
+    return Promise.resolve();
   };
 
   return {
@@ -180,8 +143,9 @@ export function createServerSseConnection(
         pump();
       },
     }),
-    transport,
+    writeData,
     writeMeta,
     writeKeepalive,
+    close,
   };
 }
