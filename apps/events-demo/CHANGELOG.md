@@ -1,5 +1,13 @@
 # events-demo
 
+## 0.0.4
+
+### Patch Changes
+
+- Updated dependencies [7c74d51]
+  - @g14o/events@0.2.0
+  - @g14o/logger@0.2.0
+
 ## 0.0.3
 
 ### Patch Changes
