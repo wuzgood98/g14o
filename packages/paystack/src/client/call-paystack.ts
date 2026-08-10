@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import { PaystackError } from "./errors";
 import type { HttpMethod, PaystackHttpClient, RequestOptions } from "./http";
@@ -25,7 +25,9 @@ function parseResponseEnvelope<T>(
   schema: z.ZodType<T>,
   response: unknown
 ): { data: T; message: string } {
-  const envelope = paystackResponseEnvelopeSchema(schema).safeParse(response);
+  const envelope = paystackResponseEnvelopeSchema(
+    z.unknown().optional()
+  ).safeParse(response);
 
   if (!envelope.success) {
     throw new PaystackError("Invalid Paystack API response shape", {
@@ -41,8 +43,16 @@ function parseResponseEnvelope<T>(
     });
   }
 
+  const data = schema.safeParse(envelope.data.data);
+  if (!data.success) {
+    throw new PaystackError("Invalid Paystack API response shape", {
+      code: "PAYSTACK_VALIDATION_ERROR",
+      cause: data.error,
+    });
+  }
+
   return {
-    data: envelope.data.data,
+    data: data.data,
     message: envelope.data.message,
   };
 }
