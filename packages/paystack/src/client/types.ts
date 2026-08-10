@@ -94,15 +94,15 @@ export interface PaystackClient {
     /**
      * Disable a subscription.
      * @param params - The parameters for disabling a subscription.
-     * @returns The disabled subscription.
+     * @returns Paystack's success message (these endpoints return no `data`).
      */
-    disable: (params: DisableSubscriptionParams) => Promise<unknown>;
+    disable: (params: DisableSubscriptionParams) => Promise<string>;
     /**
      * Enable a subscription.
      * @param params - The parameters for enabling a subscription.
-     * @returns The enabled subscription.
+     * @returns Paystack's success message (these endpoints return no `data`).
      */
-    enable: (params: DisableSubscriptionParams) => Promise<unknown>;
+    enable: (params: DisableSubscriptionParams) => Promise<string>;
     /**
      * List all subscriptions.
      * @param query - The query parameters for listing subscriptions.

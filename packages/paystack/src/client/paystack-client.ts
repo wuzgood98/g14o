@@ -175,6 +175,7 @@ export class Paystack implements PaystackClient {
           body: asBody(params),
           bodySchema: disableSubscriptionParamsSchema,
           dataSchema: z.unknown().optional(),
+          returnMessage: true,
         }),
       enable: (params) =>
         callPaystack(this.http, {
@@ -183,6 +184,7 @@ export class Paystack implements PaystackClient {
           body: asBody(params),
           bodySchema: disableSubscriptionParamsSchema,
           dataSchema: z.unknown().optional(),
+          returnMessage: true,
         }),
       list: (query) =>
         callPaystack(this.http, {

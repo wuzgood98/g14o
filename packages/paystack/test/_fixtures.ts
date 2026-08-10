@@ -593,7 +593,6 @@ export function createMockFetch(
         mockJsonResponse({
           status: true,
           message: "Subscription disabled",
-          data: {},
         }),
     },
     {
@@ -602,7 +601,6 @@ export function createMockFetch(
         mockJsonResponse({
           status: true,
           message: "Subscription enabled",
-          data: {},
         }),
     },
     {
