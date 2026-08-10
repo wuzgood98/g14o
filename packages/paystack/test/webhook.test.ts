@@ -178,10 +178,10 @@ describe("paystack.webhook.parseWebhookPayload", () => {
   it("strips unsafe metadata keys from webhook customer and charge payloads", () => {
     const payload = createChargeSuccessWebhookEvent({
       reference: "ref_safe_meta",
-      metadata: { userId: "user_1", __proto__: { polluted: true } },
+      metadata: { userId: "user_1", ["__proto__"]: { polluted: true } },
       customer: {
         ...createChargeSuccessWebhookEvent().data.customer,
-        metadata: { tier: "pro", __proto__: { polluted: true } },
+        metadata: { tier: "pro", ["__proto__"]: { polluted: true } },
       },
     });
 
