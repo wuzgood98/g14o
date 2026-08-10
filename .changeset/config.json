@@ -24,5 +24,8 @@
     "paystack-demo",
     "@workspace/ui",
     "@workspace/typescript-config"
-  ]
+  ],
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "onlyUpdatePeerDependentsWhenOutOfRange": true
+  }
 }
