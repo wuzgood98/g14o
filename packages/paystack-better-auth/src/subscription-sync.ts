@@ -1,4 +1,5 @@
-import { PaystackError, type PaystackSubscription } from "@g14o/paystack";
+import type { PaystackSubscription } from "@g14o/paystack";
+import { PaystackError } from "@g14o/paystack";
 import type { GenericEndpointContext } from "better-auth";
 import { resolvePaystackCustomerId } from "./customer";
 import { upsertSubscription } from "./hooks";
