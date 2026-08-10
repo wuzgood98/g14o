@@ -570,11 +570,11 @@ describe("createCache verbose logging", () => {
     }
   });
 
-  it("uses injected logger when provided", async () => {
+  it("uses injected verbose adapter when provided", async () => {
     const info = vi.fn();
     const injectedCache = createCache({
       env: "test",
-      logger: { info, warn: vi.fn(), error: vi.fn() },
+      verbose: { info, warn: vi.fn(), error: vi.fn() },
     });
     injectedCache.reset();
 

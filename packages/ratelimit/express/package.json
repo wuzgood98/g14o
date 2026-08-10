@@ -22,7 +22,6 @@
     "prepack": "tsdown",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "pretest:integration": "pnpm --filter @g14o/logger build",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {

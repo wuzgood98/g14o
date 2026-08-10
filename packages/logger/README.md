@@ -226,7 +226,7 @@ export const logger = createLogger({
 });
 ```
 
-`@g14o/cache`, `@g14o/events`, and `@g14o/ratelimit` share verbose diagnostics via `@g14o/logger/verbose`. Pass `verbose: true` for zero-config console output, or inject a custom logger:
+`@g14o/cache`, `@g14o/events`, and `@g14o/ratelimit` accept optional verbose diagnostics. They do not depend on `@g14o/logger` at install time. Pass `verbose: true` for zero-config console output, or pass a duck-typed `{ info, warn, error }` adapter as `verbose`. Installing `@g14o/logger` is optional when you want structured logging via `createLogger`:
 
 ```ts
 import { createLogger } from "@g14o/logger";
@@ -237,7 +237,7 @@ const appLogger = createLogger({ name: "cache" });
 createCache({
   verbose: true, // console adapter
   // or:
-  logger: {
+  verbose: {
     info: (...args) => appLogger.info(String(args[0] ?? "")),
     warn: (...args) => appLogger.warn(String(args[0] ?? "")),
     error: (...args) => appLogger.error(new Error(String(args[0] ?? ""))),
@@ -245,7 +245,7 @@ createCache({
 });
 ```
 
-See [`@g14o/logger/verbose`](./src/verbose.ts) for `resolveVerboseLogger`.
+See [`@g14o/logger/verbose`](./src/verbose.ts) for the same helper API when building apps that use this package.
 
 ## API
 

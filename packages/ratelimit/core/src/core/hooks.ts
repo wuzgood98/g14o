@@ -1,4 +1,4 @@
-import type { VerboseLogger } from "@g14o/logger/verbose";
+import type { VerboseLogger } from "../verbose.js";
 import type { RateLimitRequest } from "./request";
 import type { RateLimitTier } from "./tiers";
 

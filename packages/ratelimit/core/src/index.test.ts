@@ -221,11 +221,11 @@ describe("createRateLimit (factory API)", () => {
       }
     });
 
-    it("uses injected logger when provided", async () => {
+    it("uses injected verbose adapter when provided", async () => {
       const info = vi.fn();
       const limited = createRateLimit({
         env: "test",
-        logger: { info, warn: vi.fn(), error: vi.fn() },
+        verbose: { info, warn: vi.fn(), error: vi.fn() },
       });
 
       try {

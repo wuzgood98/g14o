@@ -1,6 +1,5 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: route handler wrappers use dynamic args */
 
-import { resolveVerboseLogger, type VerboseLogger } from "@g14o/logger/verbose";
 import { isInMemoryEnv, resolveEnvName } from "../env";
 import type { Duration } from "../parse-duration";
 import type { ResolveStoreOptions } from "../store/factory";
@@ -11,6 +10,7 @@ import type {
   RateLimitStoreLimiter,
 } from "../store/interface";
 import type { InMemoryEnvOptions } from "../types";
+import { resolveVerboseLogger, type VerboseLogger } from "../verbose.js";
 import {
   applyRateLimitHeadersToResponse,
   buildRateLimitExceededBody,
@@ -101,13 +101,12 @@ export type CreateRateLimitOptions<Req extends RateLimitRequest = Request> =
     tiers?: RateLimitTiersOverride;
     /**
      * When `true`, log rate-limit diagnostics to the console (`info` / `warn` / `error`).
+     * Pass a duck-typed `{ info, warn, error }` adapter for custom routing.
      * Silent by default.
      *
      * @default false
      */
-    verbose?: boolean;
-    /** Optional injectable logger; wins over `verbose`. */
-    logger?: VerboseLogger;
+    verbose?: boolean | VerboseLogger;
   } & ResolveStoreOptions;
 
 /**
@@ -210,10 +209,7 @@ function createRateLimitRuntime<Req extends RateLimitRequest = Request>(
 ): RateLimitRuntime {
   return {
     envName: resolveEnvName(options.env),
-    logger: resolveVerboseLogger({
-      verbose: options.verbose,
-      logger: options.logger,
-    }),
+    logger: resolveVerboseLogger(options.verbose),
     inMemoryDuringBuild: options.inMemoryDuringBuild ?? true,
     skipRateLimit: options.skipRateLimit,
     tiers: options.tiers,
