@@ -71,7 +71,11 @@ Default `channelPrefix` is `@g14o:events`. Do **not** put `/` in the prefix (or 
 import { defineStream } from "@g14o/events/stream";
 
 const stream = defineStream({
-  async write(channel, message) { /* persist + fan-out */ return id; },
+  async write(channel, message) {
+    /* persist + fan-out */
+    const id = "0-1";
+    return id;
+  },
   async readAfter(channel, cursor) { return []; },
   subscribe(channels, onMessage) { return () => {}; },
   async close() {},
