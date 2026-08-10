@@ -28,6 +28,6 @@ export interface EventStream {
   ): () => void;
   write(
     channel: string,
-    message: Omit<StreamMessage, "id" | "channel"> & { channel?: string }
+    message: Omit<StreamMessage, "id" | "channel">
   ): Promise<string>;
 }
