@@ -72,7 +72,7 @@ createStore(primitives, {
 });
 ```
 
-`null` return values from cached functions are not cached (`CacheStore.get` uses `null` for missing keys). `undefined` return values are cached and served as hits.
+Bare `null` and `undefined` return values from cached functions are not cached (`CacheStore.get` uses `null` for missing keys). Use a `Result` or domain value when an intentional empty answer should be cached.
 ## Examples
 
 ### Wrap a server function with `withCache`
