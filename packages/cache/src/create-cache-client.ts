@@ -231,8 +231,9 @@ function isNestedTtlOverride(
 }
 
 function shouldCacheValue(value: unknown, cacheFailures: boolean): boolean {
-  // Bare null is ambiguous with CacheStore.get's missing-key null; skip it.
-  if (value === null) {
+  // Bare nullish is not cacheable: null is the missing-key signal;
+  // undefined must not negative-cache "no value" either.
+  if (value === null || value === undefined) {
     return false;
   }
   if (isResultShape(value)) {
@@ -300,7 +301,8 @@ async function readCachedValue<T>(
 ): Promise<{ hit: T | null; stale: T | null }> {
   try {
     const cached = await cache.get<unknown>(cacheKey);
-    // Only missing keys (`null`) are misses; a stored `undefined` is a hit.
+    // Only missing keys (`null`) are misses. Direct store.set may still persist
+    // undefined via the store sentinel; withCache no longer writes bare nullish.
     if (cached === null) {
       logger.info(`[cache] Miss: ${cacheKey}`);
       return { hit: null, stale: null };
