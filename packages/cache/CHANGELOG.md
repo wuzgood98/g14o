@@ -1,5 +1,11 @@
 # @g14o/cache
 
+## 0.6.0
+
+### Minor Changes
+
+- eb8545f: Stop caching bare `null` and bare `undefined` return values in `withCache`. Previously only `null` was skipped; `undefined` was cached and served as a hit. Intentional empty answers should use a `Result` or domain value. Direct `store.set` undefined round-trips via the store sentinel are unchanged.
+
 ## 0.5.0
 
 ### Minor Changes
