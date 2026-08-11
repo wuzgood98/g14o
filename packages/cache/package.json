@@ -1,6 +1,6 @@
 {
   "name": "@g14o/cache",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Framework-agnostic caching with pluggable stores (memory, Upstash, Redis).",
   "type": "module",
   "sideEffects": false,
