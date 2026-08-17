@@ -59,3 +59,7 @@ _Avoid_: Treating REST envelope or webhook event payload as a second source of t
 **Response envelope**:
 Paystack `{ status, message, data }` owned by the deep API-call module.
 _Avoid_: Per-endpoint envelope parsing; treating HTTP status alone as success
+
+**Ratelimit family**:
+The set of packages `@g14o/ratelimit`, `@g14o/ratelimit-nextjs`, `@g14o/ratelimit-express`, and `@g14o/ratelimit-hono`.
+_Avoid_: Using `@g14o/ratelimit` to mean the whole family

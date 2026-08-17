@@ -1,0 +1,10 @@
+{
+  "title": "Ratelimit",
+  "defaultOpen": false,
+  "pages": [
+    "ratelimit",
+    "ratelimit-nextjs",
+    "ratelimit-express",
+    "ratelimit-hono"
+  ]
+}
