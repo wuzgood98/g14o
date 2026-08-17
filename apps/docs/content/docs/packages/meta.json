@@ -4,10 +4,7 @@
     "cache",
     "logger",
     "events",
-    "ratelimit",
-    "ratelimit-nextjs",
-    "ratelimit-express",
-    "ratelimit-hono",
+    "(ratelimit)",
     "env-core",
     "paystack",
     "paystack-better-auth"
